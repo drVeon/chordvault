@@ -143,13 +143,11 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
     if (isLocal) {
       remove(String(setlistId));
       toast(t('setlist.deleted'), 'success');
-      location.hash = '';
       navigate(user ? 'setlists' : 'public-setlists');
     } else {
       try {
         await apiCall('DELETE', `/api/setlists/${setlistId}`);
         toast(t('setlist.deleted'), 'success');
-        location.hash = '';
         navigate('setlists');
       } catch (e) { toast((e as Error).message, 'error'); }
     }
