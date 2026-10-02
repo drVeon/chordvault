@@ -12,7 +12,7 @@ import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { Loading } from '../components/Loading';
-import { renderChordPro, getSongKey, clampFontSize, songHasKey, resolveEffectivePreferences, autoFit } from '../lib/chords';
+import { renderChordPro, getSongKey, getOriginalKey, clampFontSize, songHasKey, resolveEffectivePreferences, autoFit } from '../lib/chords';
 import { useSetlistPreferences } from '../hooks/useSetlistPreferences';
 import { stepKey } from '../lib/keys';
 import { entrySemitones } from '../lib/setlistKeys';
@@ -75,6 +75,7 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   const semitones = useMemo(() => entrySemitones(content, entry?.target_key), [entry?.target_key, content]);
 
   const keyDisplay = entry ? getSongKey(content, semitones) : '';
+  const originalKey = useMemo(() => getOriginalKey(content), [content]);
 
   const renderedHtml = useMemo(() => {
     if (!entry) return '';
@@ -256,6 +257,7 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
 
       <Toolbar
         currentKey={keyDisplay}
+        originalKey={originalKey}
         nashville={!!effNum}
         nashvilleDisabled={!songHasKey(content, semitones)}
         onNashvilleChange={toggleEntryNum}

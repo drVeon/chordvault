@@ -424,6 +424,13 @@
 }
 .key-pill:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
 .key-pill.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; box-shadow: var(--shadow-sm); }
+.key-pill.original { position: relative; border-style: dashed; border-color: var(--accent); }
+.key-pill.original::after {
+  content: 'orig'; position: absolute; top: 1px; right: 4px;
+  font-family: var(--font-sans); font-size: 8px; font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--accent);
+}
+.key-pill.original.active::after { color: #000; }
 
 /* -- YouTube Link ----------------------─ */
 .yt-link {

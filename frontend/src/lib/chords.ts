@@ -14,7 +14,7 @@ const PARSERS = [
 
 const DIRECTIVE_RE = /^\{([a-z_]+):\s*([^}]*)\}$/i;
 const DIRECTIVE_LINE_RE = /^\{[a-z_]+:.*\}$/i;
-const DIRECTIVE_ORDER = ['title', 'artist', 'key', 'tempo', 'capo', 'x_youtube', 'x_tags', 'x_language'];
+const DIRECTIVE_ORDER = ['title', 'artist', 'key', 'x_original_key', 'tempo', 'capo', 'x_youtube', 'x_tags', 'x_language'];
 
 const SECTION_NAMES = 'Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain';
 // Matches a section label with or without surrounding brackets and a trailing colon,
@@ -25,6 +25,14 @@ export function extractDirective(content: string, name: string): string | null {
   const re = new RegExp(`^\\{${name}:\\s*([^}]*)\\}`, 'im');
   const m = content.match(re);
   return m ? m[1].trim() : null;
+}
+
+const KEY_NAME_RE = /^([A-Ga-g])([b#]?)(m?)$/;
+
+/** The song's {x_original_key:}, spelled like {key:} is; '' when absent or not a key name. */
+export function getOriginalKey(content: string): string {
+  const m = extractDirective(content, 'x_original_key')?.match(KEY_NAME_RE);
+  return m ? normalizeKey(m[1].toUpperCase() + m[2] + m[3]) : '';
 }
 
 export function updateDirective(content: string, name: string, value: string | null): string {

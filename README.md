@@ -49,7 +49,7 @@
 - **Advanced search:** find songs by title, artist, or **lyrics** using SQLite FTS5 (full-text search). Powered by a `trigram` tokenizer for excellent CJK (Chinese, Japanese, Korean) support. Search your own library on the "My Songs" page or browse public songs.
 - **Multi-format input:** paste ChordPro, chords-over-lyrics, or Ultimate Guitar. Auto-detected on save.
 - **OCR (image/PDF → chord sheet):** snap a photo, pick an image, or upload a PDF — extract text with Gemini Flash, review the result, then use conversational refinement to fix any mistakes before saving (e.g. "move the G chord to the next word", "verse 2 should be Am not Em"). Choose your preferred Gemini model in Settings or per-extraction in the OCR modal. Works with CJK languages (Chinese, Japanese, Korean) and other non-Latin scripts.
-- **Key picker:** tap the current key to see all 12 keys, tap any key to transpose instantly
+- **Key picker:** tap the current key to see all 12 keys, tap any key to transpose instantly. Set an original key (`{x_original_key: A}`, or the Original key field in the editor) and it is marked in the picker and shown under the title.
 - **Number notation:** toggle to convert chords to numbers (1, 4, 5) — key-agnostic
 - **Song versioning:** multiple arrangements per song, each optionally linked to a YouTube video
 - **YouTube link:** attach a YouTube URL to any song or version, opens in a new tab

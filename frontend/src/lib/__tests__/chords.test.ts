@@ -1,4 +1,4 @@
-import { extractDirective, updateDirective, toChordPro, ensureKeyDirective, detectFormat, getSongKey } from '../chords';
+import { extractDirective, updateDirective, toChordPro, ensureKeyDirective, detectFormat, getSongKey, getOriginalKey } from '../chords';
 
 // ─── extractDirective ───────────────────────────────────────────────
 
@@ -339,5 +339,22 @@ describe('prepareSong', () => {
   // chords, so content without chords still yields a song rather than null.
   it('still returns a song for chordless content', () => {
     expect(prepareSong('just some words')).not.toBeNull();
+  });
+});
+
+describe('getOriginalKey', () => {
+  it('reads {x_original_key:}', () => {
+    expect(getOriginalKey('{key: G}\n{x_original_key: A}\n[G]x')).toBe('A');
+  });
+
+  it('spells it like {key:} (case, enharmonics, minor)', () => {
+    expect(getOriginalKey('{x_original_key: f#}')).toBe('F#');
+    expect(getOriginalKey('{x_original_key: Db}')).toBe('C#');
+    expect(getOriginalKey('{x_original_key: A#m}')).toBe('Bbm');
+  });
+
+  it('returns empty when absent or not a key name', () => {
+    expect(getOriginalKey('{key: G}\n[G]x')).toBe('');
+    expect(getOriginalKey('{x_original_key: A major}')).toBe('');
   });
 });

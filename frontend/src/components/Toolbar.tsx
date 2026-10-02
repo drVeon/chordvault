@@ -3,6 +3,7 @@ import { KeyPicker } from './KeyPicker';
 
 interface ToolbarProps {
   currentKey: string;
+  originalKey?: string;
   nashville: boolean;
   nashvilleDisabled?: boolean;
   onNashvilleChange: (checked: boolean) => void;
@@ -25,6 +26,7 @@ interface ToolbarProps {
 
 export function Toolbar({
   currentKey,
+  originalKey,
   nashville,
   nashvilleDisabled,
   onNashvilleChange,
@@ -130,6 +132,7 @@ export function Toolbar({
       </div>
       <KeyPicker
         currentKey={currentKey}
+        originalKey={originalKey}
         onPickKey={onPickKey}
         visible={pickerOpen}
         isModified={isModified}

@@ -381,6 +381,7 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
   font-weight: 600;
   font-size: 12px;
 }
+.badge-key-original { background: transparent; border: 1px dashed var(--accent); text-transform: none; }
 
 /* -- Format Badge ------------------------ */
 .format-badge {

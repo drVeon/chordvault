@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { extractDirective, updateDirective, detectFormat } from '../lib/chords';
+import { extractDirective, updateDirective, detectFormat, getOriginalKey } from '../lib/chords';
 
 export interface SongEditorState {
   title: string;
@@ -7,6 +7,7 @@ export interface SongEditorState {
   content: string;
   youtubeUrl: string;
   bpm: string;
+  originalKey: string;
   tags: string[];
   language: string;
   formatBadge: { text: string; cls: string } | null;
@@ -18,6 +19,7 @@ export function useSongEditor(initialContent: string = '') {
   const [artist, setArtist] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [bpm, setBpm] = useState('');
+  const [originalKey, setOriginalKey] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [language, setLanguage] = useState('');
   const [formatBadge, setFormatBadge] = useState<{ text: string; cls: string } | null>(null);
@@ -38,6 +40,7 @@ export function useSongEditor(initialContent: string = '') {
     const tempo = extractDirective(text, 'tempo');
     setBpm(tempo && /^\d+$/.test(tempo) ? tempo : '');
     setYoutubeUrl(extractDirective(text, 'x_youtube') || '');
+    setOriginalKey(getOriginalKey(text));
     const tagStr = extractDirective(text, 'x_tags');
     setTags(tagStr ? tagStr.split(',').map(t => t.trim()).filter(Boolean) : []);
     setLanguage(extractDirective(text, 'x_language') || '');
@@ -87,7 +90,7 @@ export function useSongEditor(initialContent: string = '') {
   }, []);
 
   return {
-    state: { title, artist, content, youtubeUrl, bpm, tags, language, formatBadge },
+    state: { title, artist, content, youtubeUrl, bpm, originalKey, tags, language, formatBadge },
     setInitialContent,
     handleContentChange,
     handleFieldChange,
@@ -98,6 +101,7 @@ export function useSongEditor(initialContent: string = '') {
     setArtist,
     setYoutubeUrl,
     setBpm,
+    setOriginalKey,
     setTags,
     setLanguage
   };

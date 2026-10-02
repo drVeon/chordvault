@@ -76,4 +76,18 @@ describe('KeyPicker', () => {
     );
     expect(screen.queryByText('Save this key?')).toBeNull();
   });
+
+  it('marks the original key without making it active', () => {
+    render(<KeyPicker currentKey="G" originalKey="A" onPickKey={onPickKey} visible={true} />);
+    const orig = screen.getByText('A');
+    expect(orig.className).toContain('original');
+    expect(orig.className).not.toContain('active');
+    expect(orig.getAttribute('title')).toBe('Original key');
+    expect(screen.getByText('G').className).not.toContain('original');
+  });
+
+  it('marks nothing when the original key is in the other mode', () => {
+    const { container } = render(<KeyPicker currentKey="Em" originalKey="A" onPickKey={onPickKey} visible={true} />);
+    expect(container.querySelector('.original')).toBeNull();
+  });
 });

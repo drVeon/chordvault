@@ -12,6 +12,7 @@ import { CodeMirrorEditor } from '../components/CodeMirrorEditor';
 import { EditorPreview } from '../components/EditorPreview';
 import { detectFormat, toChordPro, ensureKeyDirective, extractDirective, updateDirective } from '../lib/chords';
 import type { Song } from '../types';
+import { ALL_KEYS, ALL_KEYS_MINOR } from '../lib/keys';
 
 interface SongEditViewProps {
   songId?: number;
@@ -182,10 +183,22 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
           <label>BPM</label>
           <input type="number" value={state.bpm} onChange={(e) => handleFieldChange('tempo', e.target.value, editor.setBpm)} placeholder="e.g. 120" min="1" max="300" />
         </div>
-      </div>
-      <div className="field">
-        <label>YouTube URL</label>
-        <input type="url" value={state.youtubeUrl} onChange={(e) => handleFieldChange('x_youtube', e.target.value, editor.setYoutubeUrl)} placeholder="https://youtube.com/watch?v=..." />
+        <div className="field">
+          <label htmlFor="original-key">Original key</label>
+          <select id="original-key" value={state.originalKey} onChange={(e) => handleFieldChange('x_original_key', e.target.value, editor.setOriginalKey)}>
+            <option value="">—</option>
+            <optgroup label="Major">
+              {ALL_KEYS.map((k) => <option key={k} value={k}>{k}</option>)}
+            </optgroup>
+            <optgroup label="Minor">
+              {ALL_KEYS_MINOR.map((k) => <option key={k} value={k}>{k}</option>)}
+            </optgroup>
+          </select>
+        </div>
+        <div className="field">
+          <label>YouTube URL</label>
+          <input type="url" value={state.youtubeUrl} onChange={(e) => handleFieldChange('x_youtube', e.target.value, editor.setYoutubeUrl)} placeholder="https://youtube.com/watch?v=..." />
+        </div>
       </div>
       <div className="field">
         <label>Tags</label>

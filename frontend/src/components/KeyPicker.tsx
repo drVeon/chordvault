@@ -2,6 +2,7 @@ import { normalizeKey, ALL_KEYS, ALL_KEYS_MINOR } from '../lib/keys';
 
 interface KeyPickerProps {
   currentKey: string;
+  originalKey?: string;
   onPickKey: (key: string) => void;
   visible: boolean;
   isModified?: boolean;
@@ -11,6 +12,7 @@ interface KeyPickerProps {
 
 export function KeyPicker({ 
   currentKey, 
+  originalKey,
   onPickKey, 
   visible, 
   isModified, 
@@ -29,7 +31,8 @@ export function KeyPicker({
         {keys.map((k) => (
           <button
             key={k}
-            className={`key-pill${k === norm ? ' active' : ''}`}
+            className={`key-pill${k === norm ? ' active' : ''}${k === originalKey ? ' original' : ''}`}
+            title={k === originalKey ? 'Original key' : undefined}
             onClick={() => onPickKey(k)}
           >
             {k}

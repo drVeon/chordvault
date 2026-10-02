@@ -11,7 +11,7 @@ import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { Loading } from '../components/Loading';
 import { AddToSetlistModal } from '../components/AddToSetlistModal';
-import { renderChordPro, songHasKey, autoFit } from '../lib/chords';
+import { renderChordPro, songHasKey, autoFit, getOriginalKey, getSongKey } from '../lib/chords';
 import { languageName } from '../lib/languages';
 import type { Song, SongVersion, Correction } from '../types';
 
@@ -54,6 +54,12 @@ export function SongView({ songId, navigate }: SongViewProps) {
   }, [song, songId, apiCall, user]);
 
   const content = song?.content || '';
+  const originalKey = useMemo(() => getOriginalKey(content), [content]);
+  // Only worth a badge when the song is stored in a different key.
+  const showOriginalKey = useMemo(
+    () => !!originalKey && originalKey !== getSongKey(content, 0),
+    [originalKey, content],
+  );
   const chord = useChordRenderer(content);
   const { setTargetKey: resetChordKey, setNashville: resetChordNashville } = chord;
   const fontScale = useFontScale();
@@ -169,6 +175,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
         {song.artist && <div className="song-view-artist">{song.artist}</div>}
         <div className="song-view-meta">
           {!isOwner && song.username && <span className="song-view-by">@{song.username}</span>}
+          {showOriginalKey && <span className="badge badge-key badge-key-original" title="Original key">Original {originalKey}</span>}
           {song.bpm && <span className="badge badge-bpm">{song.bpm} bpm</span>}
           {song.language && <span className="badge badge-lang" title={languageName(song.language)}>{song.language.toUpperCase()}</span>}
           {isOwner && song.visibility === 'private' && <span className="badge badge-private">&#128274; Private</span>}
@@ -193,6 +200,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
 
       <Toolbar
         currentKey={chord.currentKey}
+        originalKey={originalKey}
         nashville={chord.nashville}
         nashvilleDisabled={!songHasKey(content, chord.transpose)}
         onNashvilleChange={chord.toggleNashville}

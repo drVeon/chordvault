@@ -266,4 +266,32 @@ describe('SongEditView two-way sync', () => {
     expect(titlePos).toBeLessThan(artistPos);
     expect(artistPos).toBeLessThan(tempoPos);
   });
+
+  // ─── Original key sync ────────────────────────────────────────
+
+  it('picking an original key adds {x_original_key:} after {key:}', async () => {
+    await renderEditor();
+    fireEvent.change(getEditor(), { target: { value: '{title: Ledena}\n{key: G}\n[G]Le kaj' } });
+    fireEvent.change(screen.getByLabelText('Original key'), { target: { value: 'A' } });
+
+    expect(getEditor().value).toBe('{title: Ledena}\n{key: G}\n{x_original_key: A}\n[G]Le kaj');
+  });
+
+  it('clearing the original key removes the directive', async () => {
+    await renderEditor();
+    const select = screen.getByLabelText('Original key');
+    fireEvent.change(select, { target: { value: 'F#' } });
+    fireEvent.change(select, { target: { value: '' } });
+
+    expect(getEditor().value).not.toContain('x_original_key');
+  });
+
+  it('typing {x_original_key:} in the editor updates the field, normalized', async () => {
+    await renderEditor();
+    fireEvent.change(getEditor(), { target: { value: '{x_original_key: a#}\n[C]x' } });
+
+    await waitFor(() => {
+      expect((screen.getByLabelText('Original key') as HTMLSelectElement).value).toBe('Bb');
+    });
+  });
 });
