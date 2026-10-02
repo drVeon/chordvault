@@ -39,7 +39,11 @@ const {
   exportLimiter,
 } = require('./lib/rateLimiter');
 
-app.set('trust proxy', 1);
+// Number of reverse proxies in front of the app, so req.ip (used for rate
+// limiting) is the real client and not the innermost proxy.
+// e.g. 2 for Cloudflare Tunnel -> Traefik -> app.
+const trustProxy = Number.parseInt(process.env.TRUST_PROXY ?? '1', 10);
+app.set('trust proxy', Number.isNaN(trustProxy) ? 1 : trustProxy);
 
 app.use(express.json({ limit: LIMITS.MAX_BODY_JSON }));
 app.use(express.static(path.join(__dirname, 'public')));

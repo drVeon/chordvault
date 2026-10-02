@@ -168,6 +168,7 @@ A pre-commit hook (via Husky) automatically runs lint on staged files, TypeScrip
 |----------|---------|-------------|
 | `JWT_SECRET` | *(required)* | Secret key for signing auth tokens. **Must be set.** |
 | `PORT` | `3100` | Port the server listens on |
+| `TRUST_PROXY` | `1` | Number of reverse proxies in front of the app (e.g. `2` for Cloudflare Tunnel → Traefik). Used to determine the client IP for rate limiting |
 | `TURNSTILE_SITE_KEY` | *(optional)* | Cloudflare Turnstile site key — enables bot protection on registration and invite redemption |
 | `TURNSTILE_SECRET_KEY` | *(optional)* | Cloudflare Turnstile secret key (pair with `TURNSTILE_SITE_KEY`) |
 
