@@ -13,7 +13,7 @@ Turn each photo of a chord sheet in the folder `$ARGUMENTS` into a ChordPro file
 
 1. **Collect.** List the images in the folder (`.jpg`, `.jpeg`, `.png`, `.webp`) that have no `.cho` with the same basename. Done when you have the list. If it is empty, say so and stop.
 2. **Transcribe** each image in its own general-purpose subagent, pointing it at this file (`.claude/skills/chord-sheet-ocr/SKILL.md`), its Transcription rules, and the image and output paths. One subagent per image keeps photos out of your context and contains a blocked image (below) to that one song. Never merge two photos into one file, even if they look like pages of the same song. Done when every listed image has its `.cho` (full or skeleton) and each file passes the Import check.
-3. **Report** one line per file: the song title, its key, and its `# Check:` items. List every skeleton file separately under **Blocked**, so the user knows which songs need lyrics typed in or the app's own OCR (**Import from image or PDF** in the song editor). End by telling the user to import the files in ChordVault from **Settings → Import Songs**: select all the `.cho` files at once. The import runs as an admin, makes songs public, and skips songs already in the library.
+3. **Report** one line per file: the song title, its key, its tags (with any suggested genre, see Tags), and its `# Check:` items. List every skeleton file separately under **Blocked**, so the user knows which songs need lyrics typed in or the app's own OCR (**Import from image or PDF** in the song editor). End by telling the user to import the files in ChordVault from **Settings → Import Songs**: select all the `.cho` files at once. The import runs as an admin, makes songs public, and skips songs already in the library.
 
 ### Blocked images
 
@@ -65,6 +65,8 @@ Header directives in this order, then a blank line, then any `#` notes:
 {artist: Josh Turner}
 {key: G}
 {x_original_key: F#}
+{tempo: 76}
+{x_tags: medium}
 {x_language: en}
 # The sheet gives each chord in G, F# and A.
 # Check: [D]mind and [D]to at the end of each bridge.
@@ -72,8 +74,22 @@ Header directives in this order, then a blank line, then any `#` notes:
 
 - `{title:}` in normal case (`LEDENA` → `Ledena`). The import rejects a file without it.
 - `{key:}` is the key you wrote the chords in.
+- `{tempo:}` only when the sheet gives a BPM (often a handwritten number by the artist). Count-ins ("1 2 3 4") are `#` comments where they appear.
+- `{x_tags:}` as described under Tags.
 - `{x_language:}` is the lyrics' ISO 639-1 code (`sl`, `en`, `hr`). The import rejects an invalid code.
 - One `# Check:` line per spot you were unsure of: a guessed chord placement, an unreadable handwritten mark, an ambiguous `B`, text cut off at the page edge. These are the user's proofreading list.
+
+### Tags
+
+`{x_tags:}` is a comma-separated list, lowercase, no spaces: `{x_tags: rock,medium}`. Use only ChordVault's preset tags: `easy`, `medium`, `hard`, `instrumental`, `pop`, `rock`, `christmas`. Leave the line out when no tag applies.
+
+- **Genre**: `pop` or `rock`, from what you know of the artist and song. Unsure of the artist: do one web search (`<artist> glasba žanr` for a Slovenian or other regional artist). When neither fits (country, folk, blues, singer-songwriter / kantavtor, schlager), tag no genre and name the real one in your report as a suggestion; never invent a tag.
+- **christmas**: the lyrics are about Christmas (Christmas, božič, sveta noč, Božiček, Jezušček).
+- **instrumental**: the sheet has chords but no lyrics.
+- **Difficulty** (exactly one) from the chords in the file. Count distinct chords with 7ths and sus variants folded in (`C7` counts as `C`). Barre chords: F, B, B♭, Bm, F#m, C#m, G#m, E♭, A♭, and any minor other than Am, Em, Dm.
+  - `easy`: no barre chord and at most 5 distinct chords.
+  - `medium`: one or two barre chords, 6–8 distinct chords, or a key change.
+  - `hard`: three or more barre chords, 9 or more distinct chords, or jazz chords (maj7, dim, aug, m7b5, slash chords).
 
 ## Import check
 
