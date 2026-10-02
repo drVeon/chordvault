@@ -10,6 +10,7 @@ describe('enharmonic spelling coverage', () => {
   const AWKWARD = /^(Cb|Fb|E#|B#)/;
   const DOUBLE = /(##|bb)/;
 
+  // ~800 full renders: can exceed the 5s default timeout when the suite runs in parallel.
   it('never renders Cb, Fb, E#, B# or a double accidental in any key', () => {
     const body = ROOTS.flatMap((r) => QUALITIES.map((q) => `[${r}${q}]x`)).join(' ')
       + ' ' + ROOTS.map((r) => `[C/${r}]y`).join(' ');
@@ -27,5 +28,5 @@ describe('enharmonic spelling coverage', () => {
       }
     }
     expect([...found].sort()).toEqual([]);
-  });
+  }, 20_000);
 });
