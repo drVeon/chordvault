@@ -219,33 +219,33 @@ describe('SongEditView two-way sync', () => {
     await renderEditor();
 
     // TagPicker renders buttons for each preset tag
-    const worshipBtn = screen.getByText('worship');
-    fireEvent.click(worshipBtn);
+    const easyBtn = screen.getByText('easy');
+    fireEvent.click(easyBtn);
 
-    expect(getEditor().value).toContain('{x_tags: worship}');
+    expect(getEditor().value).toContain('{x_tags: easy}');
   });
 
   it('clicking multiple tags creates comma-separated {x_tags:}', async () => {
     await renderEditor();
 
-    fireEvent.click(screen.getByText('worship'));
-    fireEvent.click(screen.getByText('praise'));
+    fireEvent.click(screen.getByText('easy'));
+    fireEvent.click(screen.getByText('rock'));
 
-    expect(getEditor().value).toContain('{x_tags: worship,praise}');
+    expect(getEditor().value).toContain('{x_tags: easy,rock}');
   });
 
   it('toggling a tag off removes it from {x_tags:}', async () => {
     await renderEditor();
 
     // Add two tags
-    fireEvent.click(screen.getByText('worship'));
-    fireEvent.click(screen.getByText('praise'));
-    expect(getEditor().value).toContain('{x_tags: worship,praise}');
+    fireEvent.click(screen.getByText('easy'));
+    fireEvent.click(screen.getByText('rock'));
+    expect(getEditor().value).toContain('{x_tags: easy,rock}');
 
-    // Remove worship
-    fireEvent.click(screen.getByText('worship'));
-    expect(getEditor().value).toContain('{x_tags: praise}');
-    expect(getEditor().value).not.toContain('worship');
+    // Remove easy
+    fireEvent.click(screen.getByText('easy'));
+    expect(getEditor().value).toContain('{x_tags: rock}');
+    expect(getEditor().value).not.toContain('easy');
   });
 
   // ─── Directive ordering ───────────────────────────────────────

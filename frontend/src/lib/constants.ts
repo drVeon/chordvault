@@ -1,6 +1,5 @@
 export const PRESET_TAGS = [
-  'worship', 'praise', 'hymn', 'opener', 'closer', 'communion',
-  'christmas', 'easter', 'kids', 'instrumental',
+  'easy', 'medium', 'hard', 'instrumental', 'pop', 'rock', 'christmas',
 ];
 
 export const MAX_LOCAL_SETLISTS = 50;
