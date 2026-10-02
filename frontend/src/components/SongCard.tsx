@@ -6,9 +6,10 @@ interface SongCardProps {
   isOwner?: boolean;
   onClick: () => void;
   onEdit?: () => void;
+  onTagClick?: (tag: string) => void;
 }
 
-export function SongCard({ song, isOwner, onClick, onEdit }: SongCardProps) {
+export function SongCard({ song, isOwner, onClick, onEdit, onTagClick }: SongCardProps) {
   return (
     <div className="song-card" onClick={onClick}>
       <div className="song-card-info">
@@ -17,7 +18,19 @@ export function SongCard({ song, isOwner, onClick, onEdit }: SongCardProps) {
         {song.tags && (
           <div className="song-card-tags">
             {song.tags.split(',').map((tag) => (
-              <span key={tag} className="badge badge-tag">{tag}</span>
+              onTagClick ? (
+                <button
+                  key={tag}
+                  type="button"
+                  className="badge badge-tag badge-tag-link"
+                  title={`Show songs tagged ${tag}`}
+                  onClick={(e) => { e.stopPropagation(); onTagClick(tag); }}
+                >
+                  {tag}
+                </button>
+              ) : (
+                <span key={tag} className="badge badge-tag">{tag}</span>
+              )
             ))}
           </div>
         )}

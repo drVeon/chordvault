@@ -6,6 +6,7 @@ import { useToast } from '../context/ToastContext';
 import { SongCard } from '../components/SongCard';
 import { EmptyState } from '../components/EmptyState';
 import { Pagination } from '../components/Pagination';
+import { TagFilter } from '../components/TagFilter';
 import type { SongListItem } from '../types';
 import { LANGUAGES } from '../lib/languages';
 import { getSessionItem, setSessionItem } from '../lib/storage';
@@ -22,6 +23,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
   const [songs, setSongs] = useState<SongListItem[]>([]);
   const [query, setQuery] = useState(() => getSessionItem('cv_browse_query') || '');
   const [langFilter, setLangFilter] = useState(() => getSessionItem('cv_browse_lang') || '');
+  const [tagFilter, setTagFilter] = useState(() => getSessionItem('cv_browse_tag') || '');
   const [showFilters, setShowFilters] = useState(() => getSessionItem('cv_browse_show_filters') === 'true');
   const [loaded, setLoaded] = useState(false);
   const [page, setPage] = useState(() => {
@@ -30,12 +32,13 @@ export function BrowseView({ navigate }: BrowseViewProps) {
   });
   const [totalPages, setTotalPages] = useState(1);
 
-  const load = useCallback(async (q = '', lang = '', targetPage = 1) => {
+  const load = useCallback(async (q = '', lang = '', tag = '', targetPage = 1) => {
     try {
       let url = '/api/songs/public';
       const params: string[] = [];
       if (q) params.push(`q=${encodeURIComponent(q)}`);
       if (lang) params.push(`language=${encodeURIComponent(lang)}`);
+      if (tag) params.push(`tag=${encodeURIComponent(tag)}`);
       params.push(`page=${targetPage}`);
       params.push(`limit=20`);
       url += '?' + params.join('&');
@@ -55,28 +58,38 @@ export function BrowseView({ navigate }: BrowseViewProps) {
       
       setSessionItem('cv_browse_query', q);
       setSessionItem('cv_browse_lang', lang);
+      setSessionItem('cv_browse_tag', tag);
       setSessionItem('cv_browse_page', String(data.page));
     } catch (e) { toast((e as Error).message, 'error'); }
   }, [api, toast]);
 
   useEffect(() => {
-    load(query, langFilter, page);
+    load(query, langFilter, tagFilter, page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [load]);
 
   const handleClear = () => {
     setQuery('');
-    load('', langFilter, 1);
+    load('', langFilter, tagFilter, 1);
   };
 
-  const doSearch = () => load(query, langFilter, 1);
+  const doSearch = () => load(query, langFilter, tagFilter, 1);
+
+  const changeTag = (tag: string) => {
+    setTagFilter(tag);
+    if (tag) {
+      setShowFilters(true);
+      setSessionItem('cv_browse_show_filters', 'true');
+    }
+    load(query, langFilter, tag, 1);
+  };
 
   const handlePageChange = (newPage: number) => {
-    load(query, langFilter, newPage);
+    load(query, langFilter, tagFilter, newPage);
     window.scrollTo(0, 0);
   };
 
-  const showHero = !user && !query && !langFilter && loaded && songs.length === 0 && page === 1;
+  const showHero = !user && !query && !langFilter && !tagFilter && loaded && songs.length === 0 && page === 1;
 
   return (
     <>
@@ -113,7 +126,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
             </div>
             <button className="btn btn-ghost btn-sm" onClick={doSearch}>{t('songs.search')}</button>
             <button
-              className={`btn btn-ghost btn-sm${showFilters || langFilter ? ' active' : ''}`}
+              className={`btn btn-ghost btn-sm${showFilters || langFilter || tagFilter ? ' active' : ''}`}
               onClick={() => {
                 const next = !showFilters;
                 setShowFilters(next);
@@ -132,13 +145,14 @@ export function BrowseView({ navigate }: BrowseViewProps) {
               <select
                 className="language-filter"
                 value={langFilter}
-                onChange={(e) => { setLangFilter(e.target.value); load(query, e.target.value, 1); }}
+                onChange={(e) => { setLangFilter(e.target.value); load(query, e.target.value, tagFilter, 1); }}
               >
                 <option value="">All languages</option>
                 {LANGUAGES.map(l => (
                   <option key={l.code} value={l.code}>{l.name}</option>
                 ))}
               </select>
+              <TagFilter selected={tagFilter} onChange={changeTag} />
             </div>
           )}
           <div className="song-grid">
@@ -152,6 +166,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
                   isOwner={user?.username === s.username}
                   onClick={() => navigate('song-view', { id: String(s.id) })}
                   onEdit={() => navigate('song-edit', { id: String(s.id) })}
+                  onTagClick={changeTag}
                 />
               ))
             )}

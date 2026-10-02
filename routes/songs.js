@@ -52,17 +52,17 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
   const router = express.Router();
 
   router.get('/songs', requireAuth, (req, res) => {
-    const { q, language, page, limit } = req.query;
+    const { q, language, tag, page, limit } = req.query;
     const userId = req.user.id;
     const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
-    res.json(Song.listForUser(userId, { q, language, page: pageNum, limit: limitNum }));
+    res.json(Song.listForUser(userId, { q, language, tag, page: pageNum, limit: limitNum }));
   });
 
   router.get('/songs/public', (req, res) => {
-    const { q, language, page, limit } = req.query;
+    const { q, language, tag, page, limit } = req.query;
     const userId = req.user ? req.user.id : 0;
     const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
-    res.json(Song.listPublic({ q, language, userId, page: pageNum, limit: limitNum }));
+    res.json(Song.listPublic({ q, language, tag, userId, page: pageNum, limit: limitNum }));
   });
 
   router.get('/songs/export', withSkipGlobal(exportLimiter), requireAuth, (req, res) => {

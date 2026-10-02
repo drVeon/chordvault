@@ -5,6 +5,7 @@ import { useToast } from '../context/ToastContext';
 import { SongCard } from '../components/SongCard';
 import { EmptyState } from '../components/EmptyState';
 import { Pagination } from '../components/Pagination';
+import { TagFilter } from '../components/TagFilter';
 import type { SongListItem } from '../types';
 import { getSessionItem, setSessionItem } from '../lib/storage';
 
@@ -18,6 +19,7 @@ export function MySongsView({ navigate }: MySongsViewProps) {
   const toast = useToast();
   const [songs, setSongs] = useState<SongListItem[]>([]);
   const [query, setQuery] = useState(() => getSessionItem('cv_mysongs_query') || '');
+  const [tagFilter, setTagFilter] = useState(() => getSessionItem('cv_mysongs_tag') || '');
   const [loaded, setLoaded] = useState(false);
   const [page, setPage] = useState(() => {
     const saved = getSessionItem('cv_mysongs_page');
@@ -25,10 +27,11 @@ export function MySongsView({ navigate }: MySongsViewProps) {
   });
   const [totalPages, setTotalPages] = useState(1);
 
-  const load = useCallback((q = '', targetPage = 1) => {
+  const load = useCallback((q = '', tag = '', targetPage = 1) => {
     let url = '/api/songs';
     const params: string[] = [];
     if (q.trim()) params.push(`q=${encodeURIComponent(q.trim())}`);
+    if (tag) params.push(`tag=${encodeURIComponent(tag)}`);
     params.push(`page=${targetPage}`);
     params.push(`limit=20`);
     url += '?' + params.join('&');
@@ -48,25 +51,31 @@ export function MySongsView({ navigate }: MySongsViewProps) {
         setTotalPages(data.totalPages);
         setLoaded(true);
         setSessionItem('cv_mysongs_query', q);
+        setSessionItem('cv_mysongs_tag', tag);
         setSessionItem('cv_mysongs_page', String(data.page));
       })
       .catch((e) => toast(e.message, 'error'));
   }, [api, toast]);
 
   useEffect(() => {
-    load(query, page);
+    load(query, tagFilter, page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [load]);
 
   const handleClear = () => {
     setQuery('');
-    load('', 1);
+    load('', tagFilter, 1);
   };
 
-  const doSearch = () => load(query, 1);
+  const doSearch = () => load(query, tagFilter, 1);
+
+  const changeTag = (tag: string) => {
+    setTagFilter(tag);
+    load(query, tag, 1);
+  };
 
   const handlePageChange = (newPage: number) => {
-    load(query, newPage);
+    load(query, tagFilter, newPage);
     window.scrollTo(0, 0);
   };
 
@@ -97,12 +106,15 @@ export function MySongsView({ navigate }: MySongsViewProps) {
         <button className="btn btn-ghost btn-sm" onClick={doSearch}>{t('songs.search')}</button>
         <button className="btn btn-sm" onClick={() => navigate('song-edit')}>{t('songs.newSong')}</button>
       </div>
+      <div className="search-filters">
+        <TagFilter selected={tagFilter} onChange={changeTag} />
+      </div>
       <div className="song-grid">
         {loaded && songs.length === 0 ? (
           <EmptyState
             icon="&#127928;"
-            text={query ? t('songs.noMatches') : t('songs.noSongs')}
-            action={!query ? { label: t('songs.addFirst'), onClick: () => navigate('song-edit') } : undefined}
+            text={query || tagFilter ? t('songs.noMatches') : t('songs.noSongs')}
+            action={!query && !tagFilter ? { label: t('songs.addFirst'), onClick: () => navigate('song-edit') } : undefined}
           />
         ) : (
           songs.map((s) => (
@@ -112,6 +124,7 @@ export function MySongsView({ navigate }: MySongsViewProps) {
               isOwner
               onClick={() => navigate('song-view', { id: String(s.id) })}
               onEdit={() => navigate('song-edit', { id: String(s.id) })}
+              onTagClick={changeTag}
             />
           ))
         )}
