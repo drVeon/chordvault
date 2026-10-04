@@ -39,8 +39,8 @@ Sheets use Central European notation:
 ### Which key to write
 
 - **Chord groups** like `G(F#)A` or `a(g#)h` give the same chord in two or three keys. Use the first chord of each group. The parenthesized key is usually the recording's.
-- **Original key** is the key printed after the artist (`Siddharta (A)`, `Josh Turner (F#)`). When it differs from the key you write, set `{x_original_key: A}`.
-- **Handwritten chords win.** Handwriting that renames every printed chord by one fixed interval (printed E, A, B7 with handwritten G, C, D7) is a transposition: write the whole song in the handwritten key by applying that interval to every chord, including ones without handwriting, and set `{x_original_key:}` to the printed key. A single handwritten chord written over a printed one (a `D7` above `D(E)`) is a correction: use the handwritten chord.
+- **Original key** is the recording's key: the key printed after the artist (`Siddharta (A)`, `Josh Turner (F#)`). When it differs from the key you write, set `{x_original_key: A}`.
+- **Handwritten chords win.** Handwriting that renames every printed chord by one fixed interval (printed E, A, B7 with handwritten G, C, D7) is a transposition: write the whole song in the handwritten key by applying that interval to every chord, including ones without handwriting. Set `{x_original_key:}` to the key after the artist, or to the printed chords' key when no key follows the artist. A single handwritten chord written over a printed one (a `D7` above `D(E)`) is a correction: use the handwritten chord.
 
 ### Placement
 
@@ -89,7 +89,8 @@ Header directives in this order, then a blank line, then any `#` notes:
 - **Difficulty** (exactly one) from the chords in the file. Count distinct chords with 7ths and sus variants folded in (`C7` counts as `C`). Barre chords: F, B, B♭, Bm, F#m, C#m, G#m, E♭, A♭, and any minor other than Am, Em, Dm.
   - `easy`: no barre chord and at most 5 distinct chords.
   - `medium`: one or two barre chords, 6–8 distinct chords, or a key change.
-  - `hard`: three or more barre chords, 9 or more distinct chords, or jazz chords (maj7, dim, aug, m7b5, slash chords).
+  - `hard`: three or more barre chords, 9 or more distinct chords, or jazz chords (maj7, dim, aug, m7b5). A slash chord over an open shape (`G/B`, `C/G` in a bass walk-down) counts as its plain chord.
+- **Settled artists** keep the genre already chosen for them, over a fresh guess: `pop` for Andrej Šifrer, Brendi, Neca Falk, Pepel in kri, Gu Gu; `rock` for Siddharta, Queen, Creedence Clearwater Revival; no genre (kantavtor / folk) for Tomaž Domicelj, Adi Smolar, Aleksander Mežek.
 
 ## Import check
 
