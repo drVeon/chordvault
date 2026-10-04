@@ -1,5 +1,7 @@
 import { ActionIcon, Divider, Group } from '@mantine/core';
-import { IconAdjustmentsHorizontal, IconDownload, IconRestore } from '@tabler/icons-react';
+import { IconDownload, IconRestore } from '@tabler/icons-react';
+import type { ReactNode } from 'react';
+import { SetlistDefaultsButton } from './SetlistDefaultsButton';
 import { ColumnsToggle, FitButton, KeyGroup, TextSizeGroup } from './ToolbarControls';
 
 export interface ToolbarProps {
@@ -17,15 +19,14 @@ export interface ToolbarProps {
   onSaveOnline?: () => void;
   onSaveLocal?: () => void;
   onExportPdf?: () => void;
-  onToggleSettings?: () => void;
   isModified?: boolean;
   overrides?: { num?: boolean; twoCol?: boolean; font?: boolean };
-  settingsActive?: boolean;
+  settingsPanel?: ReactNode;
   renderKey?: number | string;
 }
 
 export function Toolbar(props: ToolbarProps) {
-  const { twoCol, fontSize, onReset, onAutoFit, onExportPdf, onToggleSettings, settingsActive, overrides = {} } = props;
+  const { twoCol, fontSize, onReset, onAutoFit, onExportPdf, settingsPanel, overrides = {} } = props;
   return (
     <Group className="transpose-bar" role="toolbar" aria-label="Display" gap="xs">
       <KeyGroup {...props} numOverridden={overrides.num} />
@@ -38,11 +39,7 @@ export function Toolbar(props: ToolbarProps) {
           <IconDownload size={20} aria-hidden />
         </ActionIcon>
       )}
-      {onToggleSettings && (
-        <ActionIcon variant={settingsActive ? 'default' : 'subtle'} size="input-md" aria-label="Setlist defaults" aria-expanded={settingsActive} title="Settings" onClick={onToggleSettings}>
-          <IconAdjustmentsHorizontal size={20} aria-hidden />
-        </ActionIcon>
-      )}
+      {settingsPanel && <SetlistDefaultsButton panel={settingsPanel} />}
       <ActionIcon variant="subtle" size="input-md" aria-label="Reset font and columns" title="Reset font and columns" onClick={onReset} disabled={fontSize === 0 && !twoCol}>
         <IconRestore size={20} aria-hidden />
       </ActionIcon>

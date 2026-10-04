@@ -1,8 +1,9 @@
 import { ActionIcon, Button, Divider, Group, Stack, Text, Title } from '@mantine/core';
-import { IconAdjustmentsHorizontal, IconArrowLeft, IconChevronLeft, IconChevronRight, IconX } from '@tabler/icons-react';
+import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconX } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
 import type { PlaybackLayout } from '../hooks/usePlaybackLayout';
 import type { PlaybackNav } from './PlaybackDock';
+import { SetlistDefaultsButton } from './SetlistDefaultsButton';
 import { Toolbar, type ToolbarProps } from './Toolbar';
 
 interface PlaybackTopBarProps {
@@ -45,11 +46,7 @@ export function PlaybackTopBar({ layout, title, position, nav, onExit, toolbar, 
       <ActionIcon size="input-md" className="btn-exit" aria-label="Exit playback" onClick={onExit}><IconX size={22} aria-hidden /></ActionIcon>
       <TitleBlock title={title} position={position} layout={layout} />
       <Group gap={0} wrap="nowrap">
-        {toolbar.onToggleSettings && (
-          <ActionIcon variant={toolbar.settingsActive ? 'default' : 'subtle'} size="input-md" aria-label="Setlist defaults" aria-expanded={toolbar.settingsActive} onClick={toolbar.onToggleSettings}>
-            <IconAdjustmentsHorizontal size={22} aria-hidden />
-          </ActionIcon>
-        )}
+        {toolbar.settingsPanel && <SetlistDefaultsButton panel={toolbar.settingsPanel} />}
         {more}
       </Group>
     </Group>

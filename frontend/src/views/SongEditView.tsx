@@ -206,7 +206,7 @@ modals.openConfirmModal({ children: t('songEdit.confirmDelete'), labels: { confi
       <div className="field">
         <div className="chordpro-hint-row">
           <p className="chordpro-hint" dangerouslySetInnerHTML={{ __html: t('songEdit.chordproHint') + ' You can also paste chords-over-lyrics or Ultimate Guitar format — it will be auto-converted.' }} />
-          {state.formatBadge && <Badge size="md" h="auto" py={4} color={state.formatBadge.ok ? 'green' : 'orange'} styles={{ label: { whiteSpace: 'normal' } }}>{state.formatBadge.text}</Badge>}
+          {state.formatBadge && <Badge size="md" h="auto" py={4} color={state.formatBadge.ok ? 'green' : 'orange'} styles={{ root: { flexShrink: state.formatBadge.ok ? 0 : 1 }, label: { whiteSpace: 'normal' } }}>{state.formatBadge.text}</Badge>}
         </div>
         {user && (
           <div className="ocr-row">

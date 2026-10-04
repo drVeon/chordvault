@@ -43,7 +43,6 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   // Global setlist settings
   const [slNashville, setSlNashville] = useState(false);
   const [slHideYt, setSlHideYt] = useState(false);
-  const [slOptionsOpen, setSlOptionsOpen] = useState(false);
   const fontScale = useFontScale();
   const twoColState = useTwoCol();
   const layout = usePlaybackLayout();
@@ -236,8 +235,19 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
     onSaveOnline: isOwner ? () => saveOnline(false) : undefined,
     onSaveLocal: () => saveLocal(false),
     onExportPdf: handleExportAllPdf,
-    onToggleSettings: () => setSlOptionsOpen((v) => !v),
-    settingsActive: slOptionsOpen,
+    settingsPanel: (
+      <SettingsPanel
+        nashville={slNashville}
+        onNashvilleChange={setSlNashville}
+        hideYt={slHideYt}
+        onHideYtChange={setSlHideYt}
+        twoCol={twoColState.twoCol}
+        onTwoColChange={twoColState.setTwoColTo}
+        fontSize={fontScale.fontSize}
+        onFontChange={fontScale.changeFontSize}
+        onFontReset={resetFont}
+      />
+    ),
     isModified,
     renderKey: index,
     overrides: { num: entry._num != null, twoCol: entry._twoCol != null, font: entry._font != null },
@@ -254,19 +264,6 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
       <PlaybackTopBar layout={layout} title={entry.title} position={`${index + 1} of ${total}, ${setlist.name}`}
         nav={nav} onExit={exit} toolbar={toolbar} more={more} />
 
-      {slOptionsOpen && (
-        <SettingsPanel
-          nashville={slNashville}
-          onNashvilleChange={setSlNashville}
-          hideYt={slHideYt}
-          onHideYtChange={setSlHideYt}
-          twoCol={twoColState.twoCol}
-          onTwoColChange={twoColState.setTwoColTo}
-          fontSize={fontScale.fontSize}
-          onFontChange={fontScale.changeFontSize}
-          onFontReset={resetFont}
-        />
-      )}
 
       {editing ? (
         <div className="setlist-editor">

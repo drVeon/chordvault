@@ -129,6 +129,20 @@ describe('SetlistPlayView target key', () => {
     expect(document.querySelector('.chord-sheet-wrap')).not.toHaveClass('two-col');
   });
 
+  it('opens setlist defaults beside their button and Escape closes them without leaving playback', async () => {
+    mockApiCall.mockResolvedValue(setlistWith(null));
+    const navigate = vi.fn();
+    render(<SetlistPlayView setlistId={1} navigate={navigate} />);
+    const button = await screen.findByRole('button', { name: 'Setlist defaults' });
+    fireEvent.click(button);
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+    const panel = screen.getByRole('dialog');
+    expect(panel).toHaveTextContent('Setlist defaults for all songs');
+    fireEvent.keyDown(panel, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByText('Setlist defaults for all songs')).not.toBeInTheDocument());
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
   it('Escape closes the key chooser without leaving playback', async () => {
     mockApiCall.mockResolvedValue(setlistWith(null));
     const navigate = vi.fn();

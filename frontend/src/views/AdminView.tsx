@@ -165,7 +165,7 @@ export function AdminView({ navigate }: AdminViewProps) {
       <h3 className="admin-section-title">{t('admin.inviteUsers')}</h3>
       <Paper withBorder className="ocr-invite-card">
         <div style={{ marginBottom: 14 }}>
-          <Switch className="sl-option" label={<> Open Registration </>} type="checkbox" checked={config.allowRegistration} onChange={(e) => toggleReg(e.target.checked)} disabled={demoMode || busy}  />
+          <Switch mb="sm" label="Open Registration" checked={config.allowRegistration} onChange={(e) => toggleReg(e.target.checked)} disabled={demoMode || busy}  />
           <div className="muted-text" style={{ marginTop: 4 }}>
             {config.allowRegistration ? 'Anyone can create an account — no email verification, so open to spam. Use invite codes instead.' : 'Registration is closed. Use invite codes to add new users.'}
           </div>

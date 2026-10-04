@@ -45,3 +45,22 @@ describe('badges', () => {
     expect(chordVaultTheme.components?.Badge?.defaultProps).toMatchObject({ variant: 'light', tt: 'none' });
   });
 });
+
+describe('selected-state text in dark mode', () => {
+  // Mantine computes these once from the light primary shade, which is white
+  // text in both schemes; dark mode's selected fill is light, so use the
+  // per-scheme contrast variable instead.
+  const theme = mergeMantineTheme(DEFAULT_THEME, createTheme(chordVaultTheme));
+  const rootVars = (name: 'Chip' | 'Pagination') => {
+    const vars = chordVaultTheme.components?.[name]?.vars as ((t: typeof theme, p: object) => { root: Record<string, string> }) | undefined;
+    return vars?.(theme, {}).root ?? {};
+  };
+
+  it('keeps checked tag chips readable', () => {
+    expect(rootVars('Chip')['--chip-color']).toBe('var(--mantine-primary-color-contrast)');
+  });
+
+  it('keeps the current page number readable', () => {
+    expect(rootVars('Pagination')['--pagination-active-color']).toBe('var(--mantine-primary-color-contrast)');
+  });
+});

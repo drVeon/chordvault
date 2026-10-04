@@ -1,4 +1,4 @@
-import { createTheme, defaultVariantColorsResolver, localStorageColorSchemeManager, type CSSVariablesResolver } from '@mantine/core';
+import { Chip, createTheme, defaultVariantColorsResolver, localStorageColorSchemeManager, Pagination, type CSSVariablesResolver } from '@mantine/core';
 
 const fontFamily = '"Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "PingFang TC", "PingFang SC", "Microsoft YaHei", "Noto Sans TC", sans-serif';
 
@@ -26,6 +26,9 @@ export const chordVaultTheme = createTheme({
     Button: { defaultProps: { variant: 'light' } },
     ActionIcon: { defaultProps: { variant: 'subtle', size: 'lg' } },
     Badge: { defaultProps: { variant: 'light', size: 'lg', radius: 'xl', tt: 'none', fw: 600 } },
+    // Mantine works these out once from the light shade; dark mode's selected fill is light, so follow the scheme.
+    Chip: Chip.extend({ vars: () => ({ root: { '--chip-color': 'var(--mantine-primary-color-contrast)' } }) }),
+    Pagination: Pagination.extend({ vars: () => ({ root: { '--pagination-active-color': 'var(--mantine-primary-color-contrast)' } }) }),
     Modal: { defaultProps: { centered: true, size: 'lg', overlayProps: { backgroundOpacity: 0.5, blur: 0 } } },
   },
 });

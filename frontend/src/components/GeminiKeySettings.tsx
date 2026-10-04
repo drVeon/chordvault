@@ -1,4 +1,4 @@
-import { Paper, Button, PasswordInput } from '@mantine/core';
+import { Button, PasswordInput, Stack } from '@mantine/core';
 import { useCallback, useEffect, useState } from 'react';
 import { useApi } from '../hooks/useApi';
 
@@ -59,7 +59,7 @@ export function GeminiKeySettings() {
   };
 
   return (
-    <Paper withBorder className="auth-card">
+    <Stack gap="sm">
       <div className={`gemini-key-status${hasKey ? ' configured' : ''}`} role="status">
         {hasKey === null ? 'Checking key status…' : hasKey ? '✓ Key configured' : 'No key configured'}
       </div>
@@ -89,6 +89,6 @@ export function GeminiKeySettings() {
           {message.text}
         </div>
       )}
-    </Paper>
+    </Stack>
   );
 }
