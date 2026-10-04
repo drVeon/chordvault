@@ -227,7 +227,6 @@ export function SettingsView() {
               <NativeSelect label={<>Model</>}
                 value={ocrModel}
                 onChange={(e) => saveOcrModel(e.target.value)}
-                style={{ fontSize: 14, padding: '8px 12px' }}
               >
                 {modelList.map(m => (
                   <option key={m.id} value={m.id}>{m.label} — {m.hint}</option>
@@ -243,7 +242,7 @@ export function SettingsView() {
                 placeholder={defaultPrompt}
                 rows={7}
                 maxLength={MAX_OCR_PROMPT}
-                style={{ fontFamily: 'monospace', fontSize: 12, resize: 'vertical' }}
+                styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: 12, resize: 'vertical' } }}
               />
               <div className="muted-text" style={{ fontSize: 11, textAlign: 'right', marginTop: 4 }}>
                 {ocrPrompt.length} / {MAX_OCR_PROMPT}
