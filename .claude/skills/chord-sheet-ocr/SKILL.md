@@ -39,7 +39,7 @@ Sheets use Central European notation:
 ### Which key to write
 
 - **Chord groups** like `G(F#)A` or `a(g#)h` give the same chord in two or three keys. Use the first chord of each group. The parenthesized key is usually the recording's.
-- **Original key** is the recording's key: the key printed after the artist (`Siddharta (A)`, `Josh Turner (F#)`). When it differs from the key you write, set `{x_original_key: A}`.
+- **Original key** is the recording's key: the key printed after the artist (`Siddharta (A)`, `Josh Turner (F#)`). A key printed `B` there means B♭ (`Gu Gu (B)` → `Bb`); B natural is printed `H`. When it differs from the key you write, set `{x_original_key: A}`.
 - **Handwritten chords win.** Handwriting that renames every printed chord by one fixed interval (printed E, A, B7 with handwritten G, C, D7) is a transposition: write the whole song in the handwritten key by applying that interval to every chord, including ones without handwriting. Set `{x_original_key:}` to the key after the artist, or to the printed chords' key when no key follows the artist. A single handwritten chord written over a printed one (a `D7` above `D(E)`) is a correction: use the handwritten chord.
 
 ### Placement
