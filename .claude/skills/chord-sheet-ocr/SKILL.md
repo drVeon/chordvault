@@ -88,8 +88,9 @@ Header directives in this order, then a blank line, then any `#` notes:
 - **instrumental**: the sheet has chords but no lyrics.
 - **Difficulty** (exactly one, or none when the sheet has no chords at all) from the chords in the file. Count distinct chords with 7ths and sus variants folded in (`C7` counts as `C`). Barre chords: F, B, Bm, any chord with a sharp or flat root (F#m, C#, B♭, E♭, …), and any minor other than Am, Em, Dm.
   - `easy`: no barre chord and at most 5 distinct chords.
-  - `medium`: one or two barre chords, 6–8 distinct chords, or a key change.
-  - `hard`: three or more barre chords, 9 or more distinct chords, or jazz chords (dim, aug, m7b5, and maj7/9/11/13 chords that need a barre). Chords with an open shape count as their plain chord: `Cmaj7`, `Fmaj7`, `G9`, and a slash chord in a bass walk-down (`G/B`, `C/G`).
+  - `medium`: one to four barre chords, 6–8 distinct chords, or a key change.
+  - `hard`: five or more barre chords, 9 or more distinct chords, or jazz chords (dim, aug, m7b5, and maj7/9/11/13 chords that need a barre). Chords with an open shape count as their plain chord: `Cmaj7`, `Fmaj7`, `G9`, and a slash chord in a bass walk-down (`G/B`, `C/G`).
+  - A riff-based rock song played on power chords (the sheet shows a single-note riff or `A5`-style chords, as in "Smoke on the Water") counts no barre chords: two-finger power chords are easy to play.
 - **Artist names**: on these sheets "Don Holc", "Dom Holc" and "D.H." all mean **Dean Holc**; write `{artist: Dean Holc}` (not the better-known Domen Don Holc of Koala Voice).
 - **Settled artists** keep the genre already chosen for them, over a fresh guess: `pop` for Andrej Šifrer, Brendi, Neca Falk, Pepel in kri, Gu Gu, Oliver Dragojević, Magnifico, Novi Fosili, Čudežna polja, Elvis Presley, Oto Pestner, Faraoni, Moni Kovačič, Ditka; `rock` for Siddharta, Queen, Creedence Clearwater Revival, Rod Stewart, The Beatles, Guns N' Roses, Status Quo, The Animals, Hazard, Bazar, Deep Purple, Prince; `singer-songwriter` for Tomaž Domicelj, Adi Smolar, Aleksander Mežek, Cat Stevens, Dean Holc; `folk` for Klapa Sufit, Slapovi, Družina Galič; `country` for Josh Turner, Chris Stapleton.
 
