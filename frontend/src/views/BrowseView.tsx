@@ -1,4 +1,5 @@
-import { ActionIcon, Button, CloseButton, NativeSelect, TextInput } from '@mantine/core';
+import { SearchField } from '../components/SearchField';
+import { ActionIcon, Button, NativeSelect } from '@mantine/core';
 import { IconAdjustmentsHorizontal, IconPlus } from '@tabler/icons-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
@@ -94,16 +95,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
       ) : (
         <>
           <div className="search-row">
-            <TextInput aria-label={t('songs.searchPlaceholder')}
-              type="search"
-              flex={3}
-              miw={0}
-              placeholder={t('songs.searchPlaceholder')}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') doSearch(); }}
-              rightSection={query ? <CloseButton aria-label="Clear search" title="Clear search" onClick={handleClear} /> : null}
-            />
+            <SearchField label={t('songs.searchPlaceholder')} value={query} onChange={setQuery} onSearch={doSearch} onClear={handleClear} />
             <Button variant="default" size="sm" onClick={doSearch}>{t('songs.search')}</Button>
             <ActionIcon
               size="input-sm"

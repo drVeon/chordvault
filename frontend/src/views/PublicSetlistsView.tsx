@@ -1,3 +1,4 @@
+import { SearchField } from '../components/SearchField';
 import { Tabs, Button, TextInput } from '@mantine/core';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
@@ -88,24 +89,7 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
       {showSearch && (
         <>
           <div className="search-row">
-            <div className="search-input-wrapper">
-              <TextInput aria-label={t('setlist.searchPlaceholder')}
-                type="search"
-                placeholder={t('setlist.searchPlaceholder')}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
-              />
-              {query && (
-                <Button
-                  className="search-clear-btn"
-                  onClick={handleClear}
-                  title="Clear search"
-                >
-                  &times;
-                </Button>
-              )}
-            </div>
+            <SearchField label={t('setlist.searchPlaceholder')} value={query} onChange={setQuery} onSearch={handleSearch} onClear={handleClear} />
             <Button variant="default" size="xs"
               className="btn btn-ghost btn-sm"
               onClick={() => {

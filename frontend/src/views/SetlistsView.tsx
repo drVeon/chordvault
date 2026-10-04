@@ -1,3 +1,4 @@
+import { SearchField } from '../components/SearchField';
 import { Tabs, Button, TextInput } from '@mantine/core';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
@@ -154,30 +155,15 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
         </div>
       )}
       <div className="search-row">
-        <div className="search-input-wrapper">
-          <TextInput aria-label={t('setlist.searchPlaceholder')}
-            type="search"
-            placeholder={t('setlist.searchPlaceholder')}
-            value={query}
-            onChange={(e) => {
-              const val = e.target.value;
-              setQuery(val);
-              if (activeTab === 'local') {
-                setSessionItem('cv_setlists_query', val);
-              }
-            }}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
-          />
-          {query && (
-            <Button
-              className="search-clear-btn"
-              onClick={handleClear}
-              title="Clear search"
-            >
-              &times;
-            </Button>
-          )}
-        </div>
+        <SearchField label={t('setlist.searchPlaceholder')} value={query} onSearch={handleSearch} onClear={handleClear}
+
+          onChange={(val) => {
+
+            setQuery(val);
+
+            if (activeTab === 'local') setSessionItem('cv_setlists_query', val);
+
+          }} />
         {activeTab === 'cloud' && (
           <Button variant="default" size="xs"
             className="btn btn-ghost btn-sm"

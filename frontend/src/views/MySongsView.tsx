@@ -1,4 +1,5 @@
-import { Button, TextInput } from '@mantine/core';
+import { SearchField } from '../components/SearchField';
+import { Button } from '@mantine/core';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../context/I18nContext';
@@ -77,24 +78,7 @@ export function MySongsView({ navigate }: MySongsViewProps) {
         <PageTitle className="view-title">{t('songs.mySongs')}</PageTitle>
       </div>
       <div className="search-row">
-        <div className="search-input-wrapper">
-          <TextInput aria-label={t('songs.searchPlaceholder')}
-            type="search"
-            placeholder={t('songs.searchPlaceholder')}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') doSearch(); }}
-          />
-          {query && (
-            <Button
-              className="search-clear-btn"
-              onClick={handleClear}
-              title="Clear search"
-            >
-              &times;
-            </Button>
-          )}
-        </div>
+        <SearchField label={t('songs.searchPlaceholder')} value={query} onChange={setQuery} onSearch={doSearch} onClear={handleClear} />
         <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={doSearch}>{t('songs.search')}</Button>
         <Button size="xs" className="btn btn-sm" onClick={() => navigate('song-edit')}>{t('songs.newSong')}</Button>
       </div>
