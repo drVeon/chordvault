@@ -9,6 +9,7 @@ import { SetlistPlayView } from '../SetlistPlayView';
 const mockApiCall = vi.fn();
 const { user } = vi.hoisted(() => ({ user: { id: 1 } }));
 
+vi.mock('../../hooks/usePlaybackLayout', () => ({ usePlaybackLayout: () => 'tablet' }));
 vi.mock('../../hooks/useApi', () => ({ useApi: () => mockApiCall }));
 vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user }) }));
 vi.mock('../../context/I18nContext', () => ({ useI18n: () => ({ t: (k: string) => k }) }));
