@@ -10,6 +10,7 @@ const viewports = [
   { name: 'below-640', width: 639, height: 900, mobile: true },
   { name: 'above-640', width: 641, height: 900, mobile: true },
   { name: 'tablet-portrait', width: 768, height: 1024, mobile: true },
+  { name: 'small-landscape', width: 960, height: 600, mobile: true },
   { name: 'tablet-landscape', width: 1024, height: 768, mobile: true },
   { name: 'desktop', width: 1440, height: 900, mobile: false },
 ];
@@ -49,6 +50,7 @@ function inspect() {
   const bar = document.querySelector('.playback-topbar');
   return {
     barOverflow: bar.scrollWidth > bar.clientWidth,
+    sidePad: Math.round(parseFloat(getComputedStyle(wrap).paddingLeft)),
     sheetOverflow: wrap.scrollWidth > wrap.clientWidth,
     pageOverflow: document.documentElement.scrollWidth > window.innerWidth,
     wrappedChordRows: wrapped,
@@ -76,6 +78,8 @@ for (const scheme of ['light', 'dark']) {
       if (r.sheetOverflow) problems.push('sheet scrolls sideways');
       if (r.pageOverflow) problems.push('page scrolls sideways');
       if (r.barOverflow) problems.push('top bar controls cut off');
+      const expectedPad = vp.width >= 1024 ? 48 : vp.width >= 640 ? 20 : 18;
+      if (r.sidePad !== expectedPad) problems.push(`sheet side padding ${r.sidePad}px, spec ${expectedPad}px`);
       const notes = [];
       if (r.wrappedChordRows) (r.cleanFitExists ? problems : notes).push(`${r.wrappedChordRows} wrapped chord rows${r.cleanFitExists ? '' : ' (no layout fits without wrapping)'}`);
       if (r.lastLineHidden) problems.push('last line under the dock');

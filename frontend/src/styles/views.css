@@ -380,6 +380,14 @@
   background: transparent;
 }
 
+/* Sheet side padding follows the playback layouts: 48px desktop, 20px tablet, 18px phone. */
+@media (max-width: 1023px) {
+  .setlist-play-container .chord-sheet-wrap { padding: 20px 20px 48px; }
+}
+@media (max-width: 639px) {
+  .setlist-play-container .chord-sheet-wrap { padding-inline: 18px; }
+}
+
 .setlist-play-container::-webkit-scrollbar {
   display: none;
 }
@@ -388,10 +396,6 @@
   .setlist-play-container {
     /* Negate mobile app padding (16px 12px) */
     margin: -16px -12px;
-  }
-
-  .setlist-play-container .chord-sheet-wrap {
-    padding: 20px 20px 48px;
   }
 }
 
