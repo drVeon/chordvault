@@ -16,7 +16,7 @@ export function PlaybackMoreMenu({ nashville, nashvilleDisabled, onNashvilleChan
   return (
     <Menu position="bottom-end" shadow="md" width={240}>
       <Menu.Target>
-        <ActionIcon variant="subtle" size={44} aria-label="More display options"><IconDots size={22} aria-hidden /></ActionIcon>
+        <ActionIcon size="input-md" aria-label="More display options"><IconDots size={22} aria-hidden /></ActionIcon>
       </Menu.Target>
       <Menu.Dropdown>
         {bpm ? <Menu.Label>{bpm} bpm</Menu.Label> : null}

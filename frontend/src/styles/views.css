@@ -228,28 +228,6 @@
   margin: 16px 0;
   flex-wrap: wrap;
 }
-.toolbar-spacer { flex: 1; }
-.control-group { position: relative; display: inline-flex; align-items: center; gap: 2px; padding: 3px; border-radius: 12px; background: var(--ctrl); }
-.control-seg {
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  height: 38px; min-width: 40px; padding: 0 11px; border: 0; border-radius: 9px;
-  background: transparent; color: var(--mantine-color-default-color); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
-}
-.control-seg:hover:not(:disabled) { background: var(--ctrl-hover); }
-.control-seg[aria-pressed="true"] { background: var(--bg); color: var(--text); box-shadow: 0 0 0 1px var(--border), 0 1px 2px rgba(29, 27, 25, 0.12); }
-.control-seg:disabled { opacity: 0.4; cursor: default; }
-.key-current[data-dimmed] { opacity: 0.5; }
-.key-current-value { font-family: var(--font-chord); font-stretch: 78%; font-weight: 700; color: var(--chord); }
-.control-icon {
-  display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px;
-  border: 0; border-radius: 10px; background: var(--ctrl); color: var(--mantine-color-default-color); cursor: pointer; position: relative;
-}
-.control-icon:hover { background: var(--ctrl-hover); }
-.control-icon[aria-pressed="true"] { background: var(--selected); color: var(--selected-text); }
-.control-btn { height: 44px; border-radius: 10px; background: var(--ctrl); border: 0; font-weight: 600; }
-[data-overridden="true"]::after { content: ""; position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--text); }
-.control-icon[aria-pressed="true"][data-overridden="true"]::after { background: var(--selected-text); }
-.control-seg:focus-visible, .control-icon:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
 .key-picker { margin-bottom: 12px; }
 .key-picker-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 
@@ -469,49 +447,13 @@
 }
 
 /* -- Playback bars ------------------------ */
-.playback-topbar {
-  display: flex; align-items: center; gap: 8px;
-  min-height: 72px; padding: 0 20px; background: var(--band); color: var(--text);
-}
-/* The band spans the screen; the sheet keeps the app width, so Fit measures the same space. */
+/* Layout and colour come from Mantine props; this is what props cannot express. */
 .playback-topbar:not(.compact) { width: 100vw; margin-inline: calc(50% - 50vw); }
-.playback-topbar:not(.compact) .playback-title { flex: 0 1 auto; min-width: 140px; }
-.playback-topbar .btn-exit, .playback-topbar .mantine-ActionIcon-root, .playback-topbar .transpose-bar { flex-shrink: 0; }
-.playback-topbar.compact { min-height: 60px; padding: 0 8px; justify-content: space-between; }
+.playback-topbar .btn-exit, .playback-topbar .transpose-bar { flex-shrink: 0; }
 .playback-topbar .transpose-bar { margin: 0; padding: 0; background: none; flex-wrap: nowrap; }
-.playback-divider { width: 1px; align-self: stretch; margin: 14px 4px; background: var(--border); }
-.playback-title { display: flex; flex-direction: column; min-width: 0; padding: 0 6px; }
-.playback-topbar.compact .playback-title { align-items: center; text-align: center; flex: 1; }
-.playback-title-main { margin: 0; font-size: 21px; line-height: 1.15; font-weight: 700; font-stretch: 94%; letter-spacing: -0.012em; text-wrap: balance; overflow-wrap: anywhere; }
-.playback-title-sub { font-size: 13px; color: var(--muted); font-weight: 500; }
-.playback-topbar-actions { display: flex; align-items: center; }
-
-.playback-dock {
-  --dock-h: 76px;
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
-  display: flex; align-items: center; gap: 8px;
-  min-height: var(--dock-h); padding: 10px 12px calc(14px + env(safe-area-inset-bottom));
-  background: var(--band);
-}
-.dock-controls { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; }
-.dock-nav-btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
-  height: 52px; min-width: 52px; padding: 0 16px; border: 0; border-radius: 14px;
-  background: var(--bg); color: var(--text); box-shadow: 0 0 0 1px var(--border);
-  font: inherit; font-weight: 700; cursor: pointer;
-}
-.dock-nav-btn:disabled { opacity: 0.4; cursor: default; }
-.dock-nav-btn:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
-.playback-dock .control-seg { height: 46px; }
+.playback-title-main { font-stretch: 94%; letter-spacing: -0.012em; text-wrap: balance; overflow-wrap: anywhere; }
+.playback-dock-bar { min-height: 76px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
 .setlist-play-container.has-dock .chord-sheet-wrap { padding-bottom: calc(76px + env(safe-area-inset-bottom) + 32px); }
-
-@media (max-width: 639px) {
-  .playback-title-main { font-size: 18px; }
-  .playback-dock { gap: 6px; padding: 8px 8px calc(12px + env(safe-area-inset-bottom)); }
-  .dock-nav-btn { padding: 0; }
-  .dock-controls { gap: 6px; }
-  .playback-dock .control-seg { min-width: 38px; padding: 0 8px; }
-}
 
 /* -- Setlist Options Panel ---------------- */
 .sl-options-panel {

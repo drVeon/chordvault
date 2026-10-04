@@ -14,10 +14,14 @@ export const chordVaultTheme = createTheme({
   defaultRadius: 'md',
   autoContrast: true,
   luminanceThreshold: 0.179,
-  variantColorResolver: (input) => ({
-    ...defaultVariantColorsResolver(input),
-    ...(input.variant === 'filled' && input.color === 'ink' ? { color: 'var(--mantine-primary-color-contrast)' } : {}),
-  }),
+  variantColorResolver: (input) => {
+    const resolved = defaultVariantColorsResolver(input);
+    if (input.color !== 'ink') return resolved;
+    if (input.variant === 'filled') return { ...resolved, color: 'var(--mantine-primary-color-contrast)' };
+    // Controls sit on the muted taupe tray rather than a tint of the ink colour.
+    if (input.variant === 'light') return { ...resolved, background: 'var(--cv-ctrl)', hover: 'var(--cv-ctrl-hover)', color: 'var(--mantine-color-text)' };
+    return resolved;
+  },
   components: {
     Button: { defaultProps: { variant: 'light' } },
     ActionIcon: { defaultProps: { variant: 'subtle', size: 'lg' } },

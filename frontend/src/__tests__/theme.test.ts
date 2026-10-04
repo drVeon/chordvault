@@ -26,3 +26,16 @@ describe('Rubric palette', () => {
     expect(resolved.dark['--mantine-color-disabled']).toBe('#211f1e');
   });
 });
+
+describe('control variants', () => {
+  const theme = mergeMantineTheme(DEFAULT_THEME, createTheme(chordVaultTheme));
+  const resolve = (variant: string) => chordVaultTheme.variantColorResolver!({ color: 'ink', theme, variant });
+
+  it('puts light controls on the taupe tray', () => {
+    expect(resolve('light')).toMatchObject({ background: 'var(--cv-ctrl)', hover: 'var(--cv-ctrl-hover)', color: 'var(--mantine-color-text)' });
+  });
+
+  it('keeps filled ink as the selected state', () => {
+    expect(resolve('filled').color).toBe('var(--mantine-primary-color-contrast)');
+  });
+});

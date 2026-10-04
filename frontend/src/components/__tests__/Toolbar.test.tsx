@@ -33,7 +33,7 @@ describe('Toolbar', () => {
   it('marks temporary overrides on the group, not with dashed outlines', () => {
     render(<Toolbar {...base} overrides={{ font: true, twoCol: true }} />);
     expect(screen.getByRole('group', { name: 'Text size' })).toHaveAttribute('data-overridden', 'true');
-    expect(screen.getByRole('button', { name: 'Multi-column layout' })).toHaveAttribute('data-overridden', 'true');
+    expect(screen.getByRole('button', { name: 'Multi-column layout' }).closest('[data-overridden="true"]')).not.toBeNull();
     expect(document.querySelector('.overridden')).toBeNull();
   });
 
