@@ -15,7 +15,7 @@ interface EditorActionBarProps {
 export function EditorActionBar({ title, dirty, onLeave, saveLabel, onSave, onSaveAsVersion, onDelete, t }: EditorActionBarProps) {
   const hasMenu = !!(onSaveAsVersion || onDelete);
   return (
-    <Group component="header" className="editor-action-bar" wrap="nowrap" gap="xs" pos="sticky" top={64} px="sm" py="xs" mb="lg" bg="var(--cv-band)" style={{ zIndex: 50, borderRadius: 14 }}>
+    <Group component="header" className="editor-action-bar" wrap="nowrap" gap="xs" pos="sticky" top={0} px="sm" py="xs" mb="lg" bg="var(--cv-band)" style={{ zIndex: 50, borderRadius: 14 }}>
       <ActionIcon size="input-md" aria-label={t('songEdit.back')} title={t('songEdit.back')} onClick={onLeave}>
         <IconArrowLeft size={22} aria-hidden />
       </ActionIcon>
