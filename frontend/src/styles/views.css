@@ -473,6 +473,10 @@
   display: flex; align-items: center; gap: 8px;
   min-height: 72px; padding: 0 20px; background: var(--band); color: var(--text);
 }
+/* The band spans the screen; the sheet keeps the app width, so Fit measures the same space. */
+.playback-topbar:not(.compact) { width: 100vw; margin-inline: calc(50% - 50vw); }
+.playback-topbar:not(.compact) .playback-title { flex: 0 1 auto; min-width: 140px; }
+.playback-topbar .btn-exit, .playback-topbar .mantine-ActionIcon-root, .playback-topbar .transpose-bar { flex-shrink: 0; }
 .playback-topbar.compact { min-height: 60px; padding: 0 8px; justify-content: space-between; }
 .playback-topbar .transpose-bar { margin: 0; padding: 0; background: none; flex-wrap: nowrap; }
 .playback-divider { width: 1px; align-self: stretch; margin: 14px 4px; background: var(--border); }
