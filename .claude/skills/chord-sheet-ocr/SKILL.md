@@ -89,8 +89,8 @@ Header directives in this order, then a blank line, then any `#` notes:
 - **Difficulty** (exactly one) from the chords in the file. Count distinct chords with 7ths and sus variants folded in (`C7` counts as `C`). Barre chords: F, B, B♭, Bm, F#m, C#m, G#m, E♭, A♭, and any minor other than Am, Em, Dm.
   - `easy`: no barre chord and at most 5 distinct chords.
   - `medium`: one or two barre chords, 6–8 distinct chords, or a key change.
-  - `hard`: three or more barre chords, 9 or more distinct chords, or jazz chords (maj7, dim, aug, m7b5). A slash chord over an open shape (`G/B`, `C/G` in a bass walk-down) counts as its plain chord.
-- **Settled artists** keep the genre already chosen for them, over a fresh guess: `pop` for Andrej Šifrer, Brendi, Neca Falk, Pepel in kri, Gu Gu; `rock` for Siddharta, Queen, Creedence Clearwater Revival; `singer-songwriter` for Tomaž Domicelj, Adi Smolar, Aleksander Mežek; `folk` for Klapa Sufit.
+  - `hard`: three or more barre chords, 9 or more distinct chords, or jazz chords (dim, aug, m7b5, and maj7/9/11/13 chords that need a barre). Chords with an open shape count as their plain chord: `Cmaj7`, `Fmaj7`, `G9`, and a slash chord in a bass walk-down (`G/B`, `C/G`).
+- **Settled artists** keep the genre already chosen for them, over a fresh guess: `pop` for Andrej Šifrer, Brendi, Neca Falk, Pepel in kri, Gu Gu; `rock` for Siddharta, Queen, Creedence Clearwater Revival, Rod Stewart, The Beatles, Guns N' Roses; `singer-songwriter` for Tomaž Domicelj, Adi Smolar, Aleksander Mežek, Cat Stevens; `folk` for Klapa Sufit.
 
 ## Import check
 
