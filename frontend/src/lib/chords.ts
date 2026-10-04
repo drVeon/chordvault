@@ -194,6 +194,16 @@ export function ensureKeyDirective(content: string): string {
   return content;
 }
 
+/** Text of a comment line, or null. ChordSheetJS 18 sends `{comment: x}` as a Tag on a plain line. */
+function commentText(l: ChordSheetJS.Line): string | null {
+  const firstItem = l.items[0];
+  if (firstItem instanceof ChordSheetJS.Tag && firstItem.isComment()) return firstItem.value || '';
+  if (l.type !== 'comment') return null;
+  return (firstItem && 'content' in firstItem ? (firstItem as ChordSheetJS.Comment).content :
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (firstItem && 'lyrics' in firstItem ? (firstItem as any).lyrics : '')) || '';
+}
+
 class ResponsiveHtmlFormatter {
   format(song: ChordSheetJS.Song): string {
     return song.paragraphs.map(p => this.renderParagraph(p)).join('');
@@ -238,17 +248,13 @@ class ResponsiveHtmlFormatter {
 
   private renderLine(l: ChordSheetJS.Line): string {
 
-    if (l.type === 'comment') {
-      const firstItem = l.items[0];
-      const content = (firstItem && 'content' in firstItem ? (firstItem as ChordSheetJS.Comment).content :
-                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                     (firstItem && 'lyrics' in firstItem ? (firstItem as any).lyrics : '')) || '';
-
-      if (SECTION_LABEL_RE.test(content.trim())) {
-        const cleanLabel = content.trim().replace(/[[\]:]/g, '');
+    const comment = commentText(l);
+    if (comment !== null) {
+      if (SECTION_LABEL_RE.test(comment.trim())) {
+        const cleanLabel = comment.trim().replace(/[[\]:]/g, '');
         return `<div class="row"><h3 class="label">${escHtml(cleanLabel)}</h3></div>`;
       }
-      return `<div class="comment">${escHtml(content)}</div>`;
+      return `<div class="comment">${escHtml(comment)}</div>`;
     }
 
     // Check for section labels on normal lyric lines or bracketed chords
