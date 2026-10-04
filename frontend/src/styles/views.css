@@ -5,9 +5,9 @@
   margin-bottom: 8px;
 }
 .hero-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 42px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--cv-brand);
   letter-spacing: 0.01em;
   margin-bottom: 8px;
@@ -29,9 +29,9 @@
 /* -- About Page -------------------------- */
 .about-page { max-width: 600px; margin: 0 auto; }
 .about-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 36px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--cv-brand);
   text-align: center;
 }
@@ -92,9 +92,9 @@
 }
 
 .auth-logo {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 36px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--cv-brand);
   text-align: center;
   margin-bottom: 6px;
@@ -112,27 +112,30 @@
 /* -- Setlist Tabs -------------------------- */
 .setlist-tabs { margin-bottom: 16px; }
 .setlist-tabs .mantine-Tabs-list {
-  background: var(--surface2);
+  background: var(--ctrl);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 3px;
+  border-radius: 12px;
+  padding: 4px;
 }
 .setlist-tabs .mantine-Tabs-tab { border: 1px solid transparent; font-weight: 500; }
 .setlist-tabs .mantine-Tabs-tab[data-active] {
-  background: var(--mantine-primary-color-light);
-  border-color: var(--mantine-primary-color-filled);
+  background: var(--bg);
+  border-color: var(--border);
   color: var(--text);
+  box-shadow: 0 1px 2px rgba(29, 27, 25, 0.12);
 }
 @media (hover: hover) {
   .setlist-tabs .mantine-Tabs-tab:not([data-disabled]):hover {
-    background: var(--mantine-primary-color-light-hover);
+    background: var(--ctrl-hover);
     color: var(--text);
   }
 }
 
 /* -- Settings ------------------------------ */
-.settings-section { margin-bottom: 32px; break-inside: avoid; }
-.settings-grid { column-gap: 32px; }
+/* Surface comes from Mantine Paper; this is the two-column masonry only. */
+.settings-grid { column-gap: 16px; }
+.settings-section { margin-bottom: 16px; break-inside: avoid; }
+.settings-section .muted-hint { margin-bottom: 14px; }
 @media (min-width: 900px) {
   .settings-grid { column-count: 2; }
 }
@@ -153,23 +156,13 @@
   -ms-overflow-style: none;
 }
 .correction-preview::-webkit-scrollbar { display: none; }
-.badge-pending { background: rgba(240,160,48,0.15); color: #f0a030; }
 
 /* -- Song View ---------------------------- */
 .song-view-header { margin-bottom: 24px; }
 .song-view-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 
-.song-view-title {
-  font-family: var(--font-serif);
-  font-size: 38px;
-  font-weight: 500;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
-  color: var(--text);
-}
-
 .song-view-artist {
-  font-size: 20px;
+  font-size: 17px;
   color: var(--muted);
   margin-top: 4px;
 }
@@ -198,9 +191,7 @@
 }
 
 .version-selector-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 12px;
   color: var(--muted);
   font-weight: 600;
 }
@@ -221,20 +212,13 @@
 .transpose-bar {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  gap: 8px;
+  padding: 8px;
+  background: var(--band);
+  border-radius: 14px;
   margin: 16px 0;
-  box-shadow: var(--shadow-sm);
   flex-wrap: wrap;
 }
-
-.toolbar-divider { height: 24px; border-left: 1px solid var(--border); margin: 0 2px; }
-.toolbar-spacer { flex: 1; }
-.key-current { font-family: var(--font-mono); }
-.transpose-bar .overridden { outline: 1px dashed var(--mantine-primary-color-filled); outline-offset: 2px; }
 .key-picker { margin-bottom: 12px; }
 .key-picker-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 
@@ -248,7 +232,7 @@
 
 /* -- Edit Form ---------------------------- */
 .edit-header { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
-.edit-header h2 { font-family: var(--font-serif); font-size: 24px; flex: 1; }
+.edit-header h2 { font-family: var(--font-sans); font-weight: 700; font-size: 24px; flex: 1; }
 .edit-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
 
 .chordpro-hint-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
@@ -257,11 +241,11 @@
 
 .setlist-name-row { margin-bottom: 12px; }
 .setlist-name-input {
-  font-family: var(--font-serif); font-size: 32px; font-weight: 600;
+  font-family: var(--font-sans); font-size: 32px; font-weight: 700; font-stretch: 92%; letter-spacing: -0.015em;
   color: var(--text); border: none; background: none; width: 100%; outline: none;
   padding: 4px 0; border-bottom: 1px solid transparent; transition: all 0.2s;
 }
-.setlist-name-input:focus { border-bottom-color: var(--accent); }
+.setlist-name-input:focus { border-bottom-color: var(--text); }
 
 .setlist-meta-row {
   display: flex;
@@ -283,7 +267,6 @@
 .stat-card {
   background: var(--ui-card-bg);
   border: 1px solid var(--border);
-  border-top: 2px solid var(--accent);
   border-radius: var(--radius);
   padding: 22px 20px;
   text-align: center;
@@ -291,25 +274,23 @@
 }
 
 .stat-value {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 36px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--accent);
   line-height: 1.2;
 }
 
 .stat-label {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   margin-top: 4px;
 }
 
 .admin-section-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 20px;
-  font-weight: 600;
+  font-weight: 700;
   margin-top: 28px;
   margin-bottom: 12px;
 }
@@ -340,14 +321,14 @@
 }
 
 .setlist-song-pos {
-  font-family: var(--font-serif);
-  font-size: 20px;
-  font-weight: 600;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
   color: var(--muted);
   margin-right: 16px;
   width: 24px;
   text-align: center;
-  opacity: 0.6;
 }
 
 .setlist-drag-handle {
@@ -366,7 +347,7 @@
 }
 
 .setlist-drag-handle:hover {
-  color: var(--accent);
+  color: var(--text);
 }
 
 .setlist-drag-handle:active {
@@ -374,10 +355,9 @@
 }
 
 .song-card.setlist-song-item.dragging {
-  opacity: 0.4;
-  border-style: dashed;
-  border-color: var(--accent);
-  transform: scale(0.99);
+  border-color: var(--line-strong);
+  box-shadow: 0 12px 28px rgba(29, 27, 25, 0.16);
+  transform: translateY(-4px);
 }
 
 .setlist-remove-btn {
@@ -424,7 +404,7 @@
 
 .setlist-play-container .chord-sheet-wrap {
   margin: 0;
-  padding: 40px 10% 120px 10%; /* Extra bottom padding for mobile nav bars */
+  padding: 28px 48px 48px;
   border-radius: 0;
   border: none;
   box-shadow: none;
@@ -442,111 +422,18 @@
   }
 
   .setlist-play-container .chord-sheet-wrap {
-    padding: 20px 16px 120px 16px;
-  }
-
-  .sl-options-panel {
-    right: 12px;
-    left: 12px;
-    width: auto;
-    top: 110px;
+    padding: 20px 20px 48px;
   }
 }
 
-.setlist-play-header {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 16px 32px;
-  background: var(--bg);
-  z-index: 50;
-  color: var(--text);
-  border-bottom: 1px solid var(--border);
-}
-
-.setlist-play-header-left, .setlist-play-header-right {
-  flex: 1;
-  display: flex;
-  align-items: center;
-}
-.setlist-play-header-right { justify-content: flex-end; gap: 12px; }
-
-.setlist-play-center {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.setlist-play-container .transpose-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 24px;
-  background: var(--bg);
-  border: none;
-  border-bottom: 1px solid var(--border);
-  border-radius: 0;
-  margin: 0;
-  box-shadow: none;
-}
-
-.setlist-play-indicator {
-  font-family: var(--font-serif);
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--text);
-  text-align: center;
-  white-space: normal;
-}
-
-.setlist-play-indicator .badge {
-  transform: translateY(-1px);
-}
-
-.setlist-play-indicator .yt-link {
-  margin-left: 0;
-  padding: 3px 10px;
-}
-
-/* -- Setlist Options Panel ---------------- */
-.sl-options-panel {
-  position: absolute;
-  top: 130px;
-  right: 32px;
-  width: 320px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: var(--shadow-lg);
-  z-index: 100;
-  color: var(--text);
-  animation: viewFadeIn 0.2s ease-out;
-}
-
-.sl-options-title {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-  margin-bottom: 16px;
-  font-weight: 600;
-}
-
-.sl-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-  font-size: 14px;
-}
-
-.sl-font-btns {
-  display: flex;
-  gap: 6px;
-}
+/* -- Playback bars ------------------------ */
+/* Layout and colour come from Mantine props; this is what props cannot express. */
+.playback-topbar:not(.compact) { width: 100vw; margin-inline: calc(50% - 50vw); }
+.playback-topbar .btn-exit, .playback-topbar .transpose-bar { flex-shrink: 0; }
+.playback-topbar .transpose-bar { margin: 0; padding: 0; background: none; flex-wrap: nowrap; }
+.playback-title-main { font-stretch: 94%; letter-spacing: -0.012em; text-wrap: balance; overflow-wrap: anywhere; }
+.playback-dock-bar { min-height: 76px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+.setlist-play-container.has-dock .chord-sheet-wrap { padding-bottom: calc(76px + env(safe-area-inset-bottom) + 32px); }
 
 /* -- Responsive --------------------------─ */
 @media (max-width: 900px) {
@@ -554,11 +441,8 @@
   .nav-zone { display: none; }
 
   #app { padding: 16px 12px 100px 12px; overflow-x: hidden; }
-  .song-view-title { font-size: 28px; }
   .chord-sheet-wrap { padding: 20px 16px; }
-  .setlist-play-header { padding: 8px 12px; flex-wrap: wrap; gap: 4px 8px; }
   .transpose-bar { margin: 8px 0; padding: 6px 8px; gap: 4px; }
-  .setlist-play-indicator { font-size: 19px; }
   .admin-stats { grid-template-columns: 1fr; }
 }
 
@@ -583,17 +467,14 @@
   color: var(--muted);
 }
 
-@media (pointer: coarse), (max-width: 600px) { .transpose-bar button, .setlist-play-header button, .sl-font-btns button { min-height: 44px; min-width: 44px; } .transpose-bar .mantine-Checkbox-root { padding: 10px 4px; } }
+
+/* Mantine's md controls are 42px; touch screens need 44. */
+@media (pointer: coarse) {
+  .transpose-bar button, .playback-topbar :is(button, a), .playback-dock button, .setlist-defaults-panel button { min-width: 44px; min-height: 44px; }
+}
 
 .setlist-drag-handle { touch-action: none; min-width: 44px; min-height: 44px; }
 
 @media (max-width: 600px) {
-  .setlist-play-container .transpose-bar { padding: 8px 12px; gap: 6px; }
-  .setlist-play-header-left { flex: 0; }
-  .setlist-play-center { flex: 1; min-width: 0; gap: 8px; }
-  .setlist-play-indicator { min-width: 0; flex: 1; overflow-wrap: anywhere; }
-  .setlist-play-header-right:empty { display: none; }
-  .setlist-play-header-right { flex-basis: 100%; }
-  .setlist-play-container .sl-options-panel { position: static; margin: 8px 12px; width: auto; }
   .auth-card { padding: 24px; }
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
 
-const DEFAULT_COLUMNS_QUERY = '(min-width: 1024px), (min-width: 768px) and (orientation: landscape)';
+const DEFAULT_COLUMNS_QUERY = '(min-width: 768px)';
 
 export function useTwoCol() {
   const responsiveDefault = useMediaQuery(DEFAULT_COLUMNS_QUERY, undefined, { getInitialValueInEffect: false });

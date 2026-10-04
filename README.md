@@ -8,7 +8,7 @@
 
 ![Node.js](https://img.shields.io/badge/Node.js-24-green) ![SQLite](https://img.shields.io/badge/Database-SQLite-blue) ![Docker](https://img.shields.io/badge/Docker-Ready-blue) ![License](https://img.shields.io/badge/License-AGPL--3.0-blue)
 
-**[Try the live demo](https://demochordvault.rudysam.com)** — login as `demo` / `demopass123` (resets every 6 hours)
+**[Try the live demo](https://demochordvault.rudysam.com)**: log in as `demo` / `demopass123` (resets every 6 hours)
 
 ## Why ChordVault?
 
@@ -31,18 +31,28 @@
 - Swipe through setlists during rehearsal with one hand. Side taps, swipe gestures, or arrow keys.
 - Adjust font size, hide distractions, go fullscreen. Whatever helps you focus on the music.
 
-![ChordVault: Browse songs](docs/screenshots/browse.png)
+![ChordVault: setlist playback](docs/screenshots/setlist-play.png)
 
 <details>
 <summary>More screenshots</summary>
 
-| Song view (dark) | Song view (light) | Mobile |
-|---|---|---|
+#### Playing a setlist
+
+| Desktop (light) | Tablet |
+| --- | --- |
+| ![Setlist playback on desktop in light mode](docs/screenshots/setlist-play-light.png) | ![Setlist playback on a portrait tablet with the bottom dock](docs/screenshots/tablet-setlist-play.png) |
+
+#### Reading a song
+
+| Dark | Light | Phone |
+| --- | --- | --- |
 | ![Song view in dark mode](docs/screenshots/song-view.png) | ![Song view in light mode](docs/screenshots/song-view-light.png) | ![Song view at phone width](docs/screenshots/mobile-song-view.png) |
 
-| Setlist playback (dark) | Setlist playback (light) |
-| --- | --- |
-| ![Setlist playback with brick chords in dark mode](docs/screenshots/setlist-play.png) | ![Setlist playback with brick chords on cream](docs/screenshots/setlist-play-light.png) |
+#### Building the library
+
+| Songs | Setlists | Editor |
+| --- | --- | --- |
+| ![Browse songs](docs/screenshots/browse.png) | ![Setlists page](docs/screenshots/setlists.png) | ![Song editor with live preview](docs/screenshots/song-editor.png) |
 
 </details>
 
@@ -52,20 +62,20 @@
 - **Rich chord editor:** CodeMirror 6 with ChordPro syntax highlighting (chords, sections, and directives each colored distinctly) + live preview side-by-side on desktop, tabbed on mobile
 - **Advanced search:** find songs by title, artist, or **lyrics** using SQLite FTS5 (full-text search). Powered by a `trigram` tokenizer for excellent CJK (Chinese, Japanese, Korean) support. Search your own library on the "My Songs" page or browse public songs.
 - **Multi-format input:** paste ChordPro, chords-over-lyrics, or Ultimate Guitar. Auto-detected on save.
-- **OCR (image/PDF → chord sheet):** snap a photo, pick an image, or upload a PDF — extract text with Gemini Flash, review the result, then use conversational refinement to fix any mistakes before saving (e.g. "move the G chord to the next word", "verse 2 should be Am not Em"). Choose your preferred Gemini model in Settings or per-extraction in the OCR modal. Works with CJK languages (Chinese, Japanese, Korean) and other non-Latin scripts.
+- **OCR (image/PDF → chord sheet):** snap a photo, pick an image, or upload a PDF. Gemini Flash extracts the text, then you review the result and use conversational refinement to fix any mistakes before saving (e.g. "move the G chord to the next word", "verse 2 should be Am not Em"). Choose your preferred Gemini model in Settings or per-extraction in the OCR modal. Works with CJK languages (Chinese, Japanese, Korean) and other non-Latin scripts.
 - **Key picker:** tap the current key to see all 12 keys, tap any key to transpose instantly
-- **Number notation:** toggle to convert chords to numbers (1, 4, 5) — key-agnostic
+- **Number notation:** toggle to convert chords to numbers (1, 4, 5), independent of key
 - **Song versioning:** multiple arrangements per song, each optionally linked to a YouTube video
 - **YouTube link:** attach a YouTube URL to any song or version, opens in a new tab
 - **BPM & tags:** track tempo and categorize with preset tags (worship, praise, hymn, opener, closer, etc.)
 - **Song language:** required on every song, searchable ISO 639-1 dropdown with preferred languages pinned at top. Filter songs by language on the browse page.
-- **Public/private songs:** toggle visibility per song — private songs are only visible to you and admins
+- **Public/private songs:** toggle visibility per song. Private songs are only visible to you and admins
 - **Browse without an account:** all public songs and public setlists are readable by anyone
 
 ### Setlists & Display
 - **Build setlists:** ordered song lists with per-song key transpositions and session-level display overrides.
 - **Local browser setlists:** no account needed, stored in your browser
-- **Swipe playback:** swipe, tap side buttons, or use keyboard to navigate between songs. Key transpositions can be saved online or locally.
+- **Swipe playback:** swipe, tap side buttons, or use keyboard to navigate between songs. Desktop keeps every control in one top bar; tablets and phones move key, text size, Fit and Prev/Next into a thumb-reach dock at the bottom. Key transpositions can be saved online or locally.
 - **PDF export:** export a single song or an entire setlist with selectable text on a white page, black lyrics, and larger brick-red chords. Embedded regular and semibold fonts preserve Chinese text, and long titles wrap above the metadata. Shrinks long songs toward one page when possible; keeps the requested size if they still need multiple pages.
 - **Settings panel:** global defaults (number notation, hide YouTube, multi-column, font size) with session-level per-song overrides
 - **Multi-column layout:** split long chord sheets into columns for landscape or wide screens
@@ -79,8 +89,8 @@
 - **Admin panel:** manage users, review corrections, bulk import (up to 500 songs)
 
 ## Technical
-- **React + TypeScript frontend:** built with Vite, using Mantine core, hooks, form, modals and notifications for shared controls and UI behavior
-- **Light and dark themes:** shared Mantine controls, cream reading surfaces in light mode, brick-red branding and chords, and muted taupe actions
+- **React + TypeScript frontend:** built with Vite, using Mantine core, hooks, form, modals and notifications for shared controls and UI behavior, with Tabler icons
+- **Light and dark themes:** warm paper in light mode and warm charcoal in dark, with brick-red chords and branding throughout
 - **Node.js + Express backend:** modular API with robust validation and rate limiting
 - **CodeMirror 6 editor:** ChordPro syntax highlighting, bracket matching, dark/light theme, live preview pane
 - **Single-file database:** SQLite via better-sqlite3 with WAL mode, no external DB server
@@ -175,7 +185,7 @@ A pre-commit hook (via Husky) automatically runs lint on staged files, TypeScrip
 |----------|---------|-------------|
 | `JWT_SECRET` | *(required)* | Secret key for signing auth tokens. **Must be set.** |
 | `PORT` | `3100` | Port the server listens on |
-| `TURNSTILE_SITE_KEY` | *(optional)* | Cloudflare Turnstile site key — enables bot protection on registration and invite redemption |
+| `TURNSTILE_SITE_KEY` | *(optional)* | Cloudflare Turnstile site key. Enables bot protection on registration and invite redemption |
 | `TURNSTILE_SECRET_KEY` | *(optional)* | Cloudflare Turnstile secret key (pair with `TURNSTILE_SITE_KEY`) |
 
 > **Registration** is disabled by default on fresh installs. The first user to register becomes the owner. After that, the owner enables registration from the admin panel or generates invite codes.
@@ -216,7 +226,7 @@ docs/           Contributor guide, screenshots
 3. **Add a song** click **+ New Song**, paste lyrics in any supported format, and save
 
 ### Viewing Songs
-1. Open any song to see rendered chords. Tap the key (e.g. "G") to expand a picker with all 12 keys — tap any to transpose instantly.
+1. Open any song to see rendered chords. Tap the key (e.g. "G") to expand a picker with all 12 keys, then tap any to transpose instantly.
 2. Toggle **123** to convert chords to numbers (1, 4, 5). Toggle **||** for multi-column layout. Use **A-/A+** to adjust font size. **Fit** auto-sizes font and columns for your screen.
 3. Add a YouTube URL when editing a song. A link appears in the song view metadata row.
 
@@ -254,9 +264,9 @@ C                G
 When I find myself in times of trouble
 ```
 
-**Image or PDF (via OCR):** Use the "Import from image or PDF" button in the song editor to extract text from a photo or PDF of a chord sheet. After extraction, use the built-in chat to refine the result — describe what's wrong and Gemini will fix it. Requires a Gemini Flash API key (configured in Settings). Max file size: 18MB.
+**Image or PDF (via OCR):** Use the "Import from image or PDF" button in the song editor to extract text from a photo or PDF of a chord sheet. After extraction, use the built-in chat to refine the result: describe what's wrong and Gemini will fix it. Requires a Gemini Flash API key (configured in Settings). Max file size: 18MB.
 
-A live format badge in the editor shows which format was detected. The editor itself is CodeMirror 6 with ChordPro syntax highlighting — the right pane shows a live rendered preview that updates as you type.
+A live format badge in the editor shows which format was detected. The editor itself is CodeMirror 6 with ChordPro syntax highlighting, and the right pane shows a live rendered preview that updates as you type.
 
 </details>
 
@@ -413,12 +423,12 @@ Unauthenticated reads must pass both the burst and sustained limiters. Auth endp
 All validators centralized in `validation.js`, all limits defined in `constants.js`:
 
 - All route params parsed via `parseId()` (rejects NaN)
-- Username length: 3–50 characters
+- Username length: 3 to 50 characters
 - Content size: 100KB max on create, update, version, and correction
 - Setlist name: max 200 characters
 - Setlist reorder array capped at 1000 entries
 - Transpose range: -12 to +12
-- BPM: 1–300
+- BPM: 1 to 300
 - Date format: YYYY-MM-DD
 
 ### XSS Protection
@@ -437,7 +447,7 @@ All validators centralized in `validation.js`, all limits defined in `constants.
 | Limitation | Reason |
 |------------|--------|
 | CSP allows `unsafe-inline` | Required for SPA inline styles |
-| JWT stored in localStorage | Mitigated — all inputs are escaped, no XSS vectors |
+| JWT stored in localStorage | Mitigated: all inputs are escaped, no XSS vectors |
 | No token revocation | 30-day expiry is acceptable for self-hosted |
 | No CSRF protection | Bearer auth via `Authorization` header is immune to CSRF |
 | No audit logging | Overkill for a small self-hosted app |

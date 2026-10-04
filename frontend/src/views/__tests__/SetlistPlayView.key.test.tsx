@@ -9,6 +9,7 @@ import { SetlistPlayView } from '../SetlistPlayView';
 const mockApiCall = vi.fn();
 const { user } = vi.hoisted(() => ({ user: { id: 1 } }));
 
+vi.mock('../../hooks/usePlaybackLayout', () => ({ usePlaybackLayout: () => 'tablet' }));
 vi.mock('../../hooks/useApi', () => ({ useApi: () => mockApiCall }));
 vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user }) }));
 vi.mock('../../context/I18nContext', () => ({ useI18n: () => ({ t: (k: string) => k }) }));
@@ -61,7 +62,7 @@ describe('SetlistPlayView target key', () => {
     const { keyLabel, chords } = await renderPlayer();
 
     // C -> A is -3 semitones, so C G F sounds as A E D.
-    expect(keyLabel()).toBe('KEY A');
+    expect(keyLabel()).toBe('Key A');
     expect(chords()).toEqual(['A', 'E', 'D']);
   });
 
@@ -69,7 +70,7 @@ describe('SetlistPlayView target key', () => {
     mockApiCall.mockResolvedValue(setlistWith(null));
     const { keyLabel, chords } = await renderPlayer();
 
-    expect(keyLabel()).toBe('KEY C');
+    expect(keyLabel()).toBe('Key C');
     expect(chords()).toEqual(['C', 'G', 'F']);
   });
 
@@ -79,7 +80,7 @@ describe('SetlistPlayView target key', () => {
     mockApiCall.mockResolvedValue(setlistWith('A'));
     const { keyLabel, chords } = await renderPlayer();
 
-    expect(keyLabel()).toBe('KEY C');
+    expect(keyLabel()).toBe('Key C');
     expect(chords()).toEqual(['C', 'G', 'F']);
   });
 
@@ -88,7 +89,7 @@ describe('SetlistPlayView target key', () => {
     mockApiCall.mockResolvedValue(setlistWith(null));
     const { keyLabel, chords } = await renderPlayer();
 
-    expect(keyLabel()).toBe('KEY D');
+    expect(keyLabel()).toBe('Key D');
     expect(chords()).toEqual(['D', 'A', 'G']);
   });
 
@@ -108,7 +109,7 @@ describe('SetlistPlayView target key', () => {
     localStorage.setItem('cv_fontsize', '0');
     const navigate = vi.fn();
     const view = render(<SetlistPlayView setlistId={1} navigate={navigate} />);
-    await screen.findByRole('button', { name: 'KEY C' });
+    await screen.findByRole('button', { name: 'Key C' });
     const scale = () => document.querySelector<HTMLElement>('.chord-sheet-wrap')!.style.getPropertyValue('--font-scale');
     fireEvent.click(screen.getByRole('button', { name: 'Increase font size' }));
     fireEvent.click(screen.getByRole('button', { name: 'Multi-column layout' }));
@@ -123,16 +124,30 @@ describe('SetlistPlayView target key', () => {
     expect(localStorage.getItem('cv_fontsize')).toBe('1');
     view.unmount();
     render(<SetlistPlayView setlistId={1} navigate={navigate} />);
-    await screen.findByRole('button', { name: 'KEY C' });
+    await screen.findByRole('button', { name: 'Key C' });
     expect(scale()).toBe('1.12');
     expect(document.querySelector('.chord-sheet-wrap')).not.toHaveClass('two-col');
+  });
+
+  it('opens setlist defaults beside their button and Escape closes them without leaving playback', async () => {
+    mockApiCall.mockResolvedValue(setlistWith(null));
+    const navigate = vi.fn();
+    render(<SetlistPlayView setlistId={1} navigate={navigate} />);
+    const button = await screen.findByRole('button', { name: 'Setlist defaults' });
+    fireEvent.click(button);
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+    const panel = screen.getByRole('dialog');
+    expect(panel).toHaveTextContent('Setlist defaults for all songs');
+    fireEvent.keyDown(panel, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByText('Setlist defaults for all songs')).not.toBeInTheDocument());
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it('Escape closes the key chooser without leaving playback', async () => {
     mockApiCall.mockResolvedValue(setlistWith(null));
     const navigate = vi.fn();
     render(<SetlistPlayView setlistId={1} navigate={navigate} />);
-    fireEvent.click(await screen.findByRole('button', { name: 'KEY C' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Key C' }));
     expect(screen.getByRole('group', { name: 'Transpose key' })).toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole('button', { name: 'C' }), { key: 'Escape' });
     await waitFor(() => expect(screen.queryByRole('group', { name: 'Transpose key' })).not.toBeInTheDocument());

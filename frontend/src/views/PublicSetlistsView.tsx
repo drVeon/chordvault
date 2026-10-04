@@ -1,3 +1,4 @@
+import { SearchField } from '../components/SearchField';
 import { Tabs, Button, TextInput } from '@mantine/core';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
@@ -8,6 +9,7 @@ import { EmptyState } from '../components/EmptyState';
 import { Pagination } from '../components/Pagination';
 import type { SetlistListItem } from '../types';
 import { getSessionItem, setSessionItem } from '../lib/storage';
+import { PageTitle } from '../components/PageTitle';
 
 interface PublicSetlistsViewProps {
   navigate: (view: string, params?: Record<string, string>) => void;
@@ -79,7 +81,7 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
   return (
     <>
       <div className="view-header">
-        <h2 className="view-title">{t('setlist.browseSetlists')}</h2>
+        <PageTitle className="view-title">{t('setlist.browseSetlists')}</PageTitle>
       </div>
       <Tabs variant="pills" value="public" onChange={(tab) => navigate(tab === 'public' ? 'public-setlists' : 'setlists')} className="setlist-tabs">
         <Tabs.List grow><Tabs.Tab value="mine">My Setlists</Tabs.Tab><Tabs.Tab value="public">Public Setlists</Tabs.Tab></Tabs.List>
@@ -87,24 +89,7 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
       {showSearch && (
         <>
           <div className="search-row">
-            <div className="search-input-wrapper">
-              <TextInput aria-label={t('setlist.searchPlaceholder')}
-                type="search"
-                placeholder={t('setlist.searchPlaceholder')}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
-              />
-              {query && (
-                <Button
-                  className="search-clear-btn"
-                  onClick={handleClear}
-                  title="Clear search"
-                >
-                  &times;
-                </Button>
-              )}
-            </div>
+            <SearchField label={t('setlist.searchPlaceholder')} value={query} onChange={setQuery} onSearch={handleSearch} onClear={handleClear} />
             <Button variant="default" size="xs"
               className="btn btn-ghost btn-sm"
               onClick={() => {

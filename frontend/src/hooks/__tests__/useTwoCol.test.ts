@@ -14,3 +14,10 @@ it('follows viewport changes until manual choice, and resets on remount', () => 
   unmount(); const next = renderHook(() => useTwoCol()); expect(next.result.current.twoCol).toBe(true); next.unmount();
   window.matchMedia = original;
 });
+
+it('defaults to two columns from 768px wide in either orientation', () => {
+  vi.mocked(window.matchMedia).mockClear();
+  const { unmount } = renderHook(() => useTwoCol());
+  expect(window.matchMedia).toHaveBeenCalledWith('(min-width: 768px)');
+  unmount();
+});

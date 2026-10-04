@@ -5,6 +5,7 @@ import { useSetlistPlayer } from '../../hooks/useSetlistPlayer';
 
 // ─── Mocks ──────────────────────────────────────────────────────────
 
+vi.mock('../../hooks/usePlaybackLayout', () => ({ usePlaybackLayout: () => 'tablet' }));
 vi.mock('../../lib/chords', async () => {
   const actual = await vi.importActual('../../lib/chords');
   return {

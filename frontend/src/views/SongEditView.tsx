@@ -1,4 +1,4 @@
-import { Tabs, Switch, Button, TextInput, useComputedColorScheme } from '@mantine/core';
+import { Badge, Tabs, Switch, Button, TextInput, useComputedColorScheme } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
@@ -13,6 +13,7 @@ import { CodeMirrorEditor } from '../components/CodeMirrorEditor';
 import { EditorPreview } from '../components/EditorPreview';
 import { detectFormat, toChordPro, ensureKeyDirective, extractDirective, updateDirective } from '../lib/chords';
 import type { Song } from '../types';
+import { PageTitle } from '../components/PageTitle';
 
 interface SongEditViewProps {
   songId?: number;
@@ -163,9 +164,9 @@ modals.openConfirmModal({ children: t('songEdit.confirmDelete'), labels: { confi
             )}
           </div>
         </div>
-        <h1 className="song-view-title">
+        <PageTitle order={1} className="song-view-title">
           {songId ? (isOwner ? t('songEdit.editSong') : 'Create Version') : t('songEdit.newSong')}
-        </h1>
+        </PageTitle>
       </div>
       <div className="edit-cols">
         <div className="field">
@@ -205,7 +206,7 @@ modals.openConfirmModal({ children: t('songEdit.confirmDelete'), labels: { confi
       <div className="field">
         <div className="chordpro-hint-row">
           <p className="chordpro-hint" dangerouslySetInnerHTML={{ __html: t('songEdit.chordproHint') + ' You can also paste chords-over-lyrics or Ultimate Guitar format — it will be auto-converted.' }} />
-          {state.formatBadge && <span className={`format-badge ${state.formatBadge.cls}`}>{state.formatBadge.text}</span>}
+          {state.formatBadge && <Badge size="md" h="auto" py={4} color={state.formatBadge.ok ? 'green' : 'orange'} styles={{ root: { flexShrink: state.formatBadge.ok ? 0 : 1 }, label: { whiteSpace: 'normal' } }}>{state.formatBadge.text}</Badge>}
         </div>
         {user && (
           <div className="ocr-row">

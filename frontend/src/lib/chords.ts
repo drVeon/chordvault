@@ -459,6 +459,11 @@ function documentTop(output: Element): number {
   return output.getBoundingClientRect().top + window.scrollY;
 }
 
+/** The playback dock is fixed over the bottom of the screen, so its height is not usable. */
+function dockHeight(): number {
+  return document.querySelector('.playback-dock')?.getBoundingClientRect().height ?? 0;
+}
+
 /**
  * Height the sheet may occupy: the space it actually has where it sits, with the
  * page scrolled to the top. Budgeting a whole screen instead (on the grounds
@@ -467,7 +472,7 @@ function documentTop(output: Element): number {
  * the wrap, which grows to its own content and so always "fits".
  */
 function availableHeight(output: Element): number {
-  return viewportHeight() - documentTop(output) - FIT_MARGIN;
+  return viewportHeight() - documentTop(output) - dockHeight() - FIT_MARGIN;
 }
 
 function fitsVertically(output: Element): boolean {

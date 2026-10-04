@@ -1,54 +1,78 @@
-import { createTheme, defaultVariantColorsResolver, localStorageColorSchemeManager, type CSSVariablesResolver } from '@mantine/core';
+import { Chip, createTheme, defaultVariantColorsResolver, localStorageColorSchemeManager, Pagination, type CSSVariablesResolver } from '@mantine/core';
 
-const fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "PingFang TC", "PingFang SC", "Microsoft YaHei", "Noto Sans TC", sans-serif';
+const fontFamily = '"Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "PingFang TC", "PingFang SC", "Microsoft YaHei", "Noto Sans TC", sans-serif';
 
 export const chordVaultTheme = createTheme({
   fontFamily,
-  headings: { fontFamily, fontWeight: '600' },
-  primaryColor: 'taupe',
-  colors: { taupe: ['#fcf4ea', '#ede7e0', '#d4cec6', '#bbb2a8', '#a69b8f', '#998d7f', '#938575', '#807262', '#736555', '#665744'] },
-  primaryShade: { light: 8, dark: 3 },
+  headings: { fontFamily, fontWeight: '700' },
+  primaryColor: 'ink',
+  colors: {
+    ink: ['#eeeae4', '#e8e4dd', '#d6d1c8', '#bdb7ad', '#a39c92', '#8a847a', '#6c6761', '#4a4642', '#2b2825', '#1d1b19'],
+    dark: ['#eeeae4', '#c9c4bd', '#a8a29b', '#7d7872', '#433f3b', '#363331', '#2c2a28', '#171615', '#121110', '#0d0c0c'],
+  },
+  primaryShade: { light: 9, dark: 0 },
   defaultRadius: 'md',
   autoContrast: true,
   luminanceThreshold: 0.179,
-  variantColorResolver: (input) => ({
-    ...defaultVariantColorsResolver(input),
-    ...(input.variant === 'filled' && input.color === 'taupe' ? { color: 'var(--mantine-primary-color-contrast)' } : {}),
-  }),
+  variantColorResolver: (input) => {
+    const resolved = defaultVariantColorsResolver(input);
+    if (input.color !== 'ink') return resolved;
+    if (input.variant === 'filled') return { ...resolved, color: 'var(--mantine-primary-color-contrast)' };
+    // Controls sit on the muted taupe tray rather than a tint of the ink colour.
+    if (input.variant === 'light') return { ...resolved, background: 'var(--cv-ctrl)', hover: 'var(--cv-ctrl-hover)', color: 'var(--mantine-color-text)' };
+    return resolved;
+  },
   components: {
     Button: { defaultProps: { variant: 'light' } },
     ActionIcon: { defaultProps: { variant: 'subtle', size: 'lg' } },
+    Badge: { defaultProps: { variant: 'light', size: 'lg', radius: 'xl', tt: 'none', fw: 600 } },
+    // Mantine works these out once from the light shade; dark mode's selected fill is light, so follow the scheme.
+    Chip: Chip.extend({ vars: () => ({ root: { '--chip-color': 'var(--mantine-primary-color-contrast)' } }) }),
+    Pagination: Pagination.extend({ vars: () => ({ root: { '--pagination-active-color': 'var(--mantine-primary-color-contrast)' } }) }),
     Modal: { defaultProps: { centered: true, size: 'lg', overlayProps: { backgroundOpacity: 0.5, blur: 0 } } },
   },
 });
 
 export const colorSchemeManager = localStorageColorSchemeManager({ key: 'cv_theme' });
 
+const light = {
+  bg: '#faf8f4', band: '#efece6', ctrl: '#e8e4dd', ctrlHover: '#ddd8d0', line: '#e1ddd5', lineStrong: '#cfcac1',
+  text: '#1d1b19', muted: '#6c6761', chord: '#8e3f3b', raise: '#fcfbf8', selected: '#1d1b19', selectedText: '#faf8f4',
+};
+const dark = {
+  bg: '#171615', band: '#211f1e', ctrl: '#2c2a28', ctrlHover: '#363331', line: '#302d2b', lineStrong: '#433f3b',
+  text: '#eeeae4', muted: '#a8a29b', chord: '#dda19b', raise: '#1c1b1a', selected: '#eeeae4', selectedText: '#171615',
+};
+
+function schemeVariables(c: typeof light): Record<string, string> {
+  return {
+    '--mantine-color-body': c.bg,
+    '--mantine-color-default': c.raise,
+    '--mantine-color-default-hover': c.ctrlHover,
+    '--mantine-color-default-color': c.text,
+    '--mantine-color-default-border': c.lineStrong,
+    '--mantine-color-text': c.text,
+    '--mantine-color-dimmed': c.muted,
+    '--mantine-color-disabled': c.band,
+    '--mantine-color-disabled-color': c.muted,
+    '--mantine-color-disabled-border': c.line,
+    '--cv-chord': c.chord,
+    '--cv-brand': c.chord,
+    '--cv-surface': c.bg,
+    '--cv-surface-secondary': c.band,
+    '--cv-border': c.line,
+    '--cv-band': c.band,
+    '--cv-ctrl': c.ctrl,
+    '--cv-ctrl-hover': c.ctrlHover,
+    '--cv-line-strong': c.lineStrong,
+    '--cv-raise': c.raise,
+    '--cv-selected': c.selected,
+    '--cv-selected-text': c.selectedText,
+  };
+}
+
 export const chordVaultVariables: CSSVariablesResolver = () => ({
   variables: {},
-  light: {
-    '--mantine-color-body': '#fffdf9',
-    '--mantine-color-default': '#fffdf9',
-    '--mantine-color-default-hover': '#f3eee8',
-    '--mantine-color-text': '#251605',
-    '--mantine-color-default-color': '#251605',
-    '--mantine-color-dimmed': '#75665b',
-    '--mantine-color-default-border': '#e7ded2',
-    '--cv-chord': '#8e3f3b',
-    '--cv-brand': '#8e3f3b',
-    '--cv-surface': '#fffdf9',
-    '--cv-surface-secondary': '#f3eee8',
-    '--cv-border': '#e7ded2',
-  },
-  dark: {
-    '--mantine-color-text': '#fffdf9',
-    '--mantine-color-default-color': '#fffdf9',
-    '--mantine-color-dimmed': '#c6bbae',
-    '--mantine-color-default-border': '#48413a',
-    '--cv-chord': '#dda19b',
-    '--cv-brand': '#dda19b',
-    '--cv-surface': 'var(--mantine-color-default)',
-    '--cv-surface-secondary': 'var(--mantine-color-default-hover)',
-    '--cv-border': '#48413a',
-  },
+  light: schemeVariables(light),
+  dark: schemeVariables(dark),
 });

@@ -11,6 +11,11 @@ updates:
         update-types:
           - minor
           - patch
+      # Majors can break things, so they share one PR of their own
+      # instead of one PR per package per directory.
+      major:
+        update-types:
+          - major
     ignore:
       # Held until typescript-eslint supports TS 7 — ESLint crashes at load.
       # Then bump both together.

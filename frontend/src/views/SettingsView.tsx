@@ -1,4 +1,4 @@
-import { Select, Paper, Button, NativeSelect, PasswordInput, Textarea } from '@mantine/core';
+import { Select, Paper, Pill, Button, NativeSelect, PasswordInput, Stack, Textarea, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
@@ -9,6 +9,7 @@ import { exportSongsBlob } from '../lib/api';
 import { ImportModal } from '../components/ImportModal';
 import { GeminiKeySettings } from '../components/GeminiKeySettings';
 import { MAX_PREFERRED_LANGUAGES, MAX_OCR_PROMPT, DEFAULT_GEMINI_MODEL } from '../lib/constants';
+import { PageTitle } from '../components/PageTitle';
 
 export function SettingsView() {
   const apiCall = useApi();
@@ -146,14 +147,14 @@ export function SettingsView() {
 
   return (
     <>
-      <div className="view-header"><h2 className="view-title">Settings</h2></div>
+      <div className="view-header"><PageTitle className="view-title">Settings</PageTitle></div>
       <div className="settings-grid">
-        <div className="settings-section">
-          <h3 className="admin-section-title">Change Password</h3>
+        <Paper component="section" withBorder radius="lg" p="lg" bg="var(--cv-raise)" className="settings-section">
+          <Title order={3} fz={16} mb={4}>Change Password</Title>
           {demoMode ? (
             <div className="muted-text">Disabled in demo mode</div>
           ) : (
-            <form className="auth-card" onSubmit={passwordForm.onSubmit(changePassword)}>
+            <form onSubmit={passwordForm.onSubmit(changePassword)}>
               <div className="field"><PasswordInput label={<>Current Password</>} type="password" {...passwordForm.getInputProps('currentPw')} autoComplete="current-password" /></div>
               <div className="field"><PasswordInput label={<>New Password</>} type="password" {...passwordForm.getInputProps('newPw')} autoComplete="new-password" /></div>
               <div className="field"><PasswordInput label={<>Confirm New Password</>} type="password" {...passwordForm.getInputProps('confirmPw')} autoComplete="new-password" /></div>
@@ -161,19 +162,19 @@ export function SettingsView() {
               {pwMsg && <div className="field-message" style={{ color: pwMsg.color }}>{pwMsg.text}</div>}
             </form>
           )}
-        </div>
+        </Paper>
 
-        <div className="settings-section">
-          <h3 className="admin-section-title">My Languages</h3>
+        <Paper component="section" withBorder radius="lg" p="lg" bg="var(--cv-raise)" className="settings-section">
+          <Title order={3} fz={16} mb={4}>My Languages</Title>
           <p className="muted-hint">
             Your preferred languages appear at the top of the language picker when creating songs.
           </p>
-          <Paper withBorder className="auth-card">
+          <Stack gap="sm">
             <div className="flex-row" style={{ flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
               {preferredLangs.map(code => (
-                <span key={code} className="badge badge-tag" style={{ cursor: 'pointer' }} onClick={() => removeLang(code)}>
-                  {languageName(code)} ✕
-                </span>
+                <Pill key={code} size="md" withRemoveButton onRemove={() => removeLang(code)} removeButtonProps={{ 'aria-label': `Remove ${languageName(code)}` }}>
+                  {languageName(code)}
+                </Pill>
               ))}
               {preferredLangs.length === 0 && <span className="muted-text">No languages set</span>}
             </div>
@@ -183,16 +184,16 @@ export function SettingsView() {
               </div>
             )}
             {langMsg && <div className="field-message" style={{ color: langMsg.color }}>{langMsg.text}</div>}
-          </Paper>
-        </div>
+          </Stack>
+        </Paper>
 
-        <div className="settings-section">
-          <h3 className="admin-section-title">{isAdmin ? 'Import & Export' : 'Export Songs'}</h3>
+        <Paper component="section" withBorder radius="lg" p="lg" bg="var(--cv-raise)" className="settings-section">
+          <Title order={3} fz={16} mb={4}>{isAdmin ? 'Import & Export' : 'Export Songs'}</Title>
           <p className="muted-hint">
             Download all songs you can access as ChordPro (.cho) files in a zip.
             {isAdmin ? ' As an admin, you can also bulk import ChordPro files into the library.' : ''}
           </p>
-          <Paper withBorder className="auth-card">
+          <Stack gap="sm">
             <div className="flex-row" style={{ flexWrap: 'wrap', gap: 16 }}>
               {isAdmin && (
                 <Button size="xs" className="btn btn-sm" onClick={() => setShowImport(true)}>Import Songs</Button>
@@ -202,31 +203,30 @@ export function SettingsView() {
               </Button>
             </div>
             {exportMsg && <div className="field-message" style={{ color: exportMsg.color }}>{exportMsg.text}</div>}
-          </Paper>
+          </Stack>
           <ImportModal opened={showImport} onClose={() => setShowImport(false)} onDone={() => {}} />
-        </div>
+        </Paper>
 
-        <div className="settings-section">
-          <h3 className="admin-section-title">OCR: API Key</h3>
+        <Paper component="section" withBorder radius="lg" p="lg" bg="var(--cv-raise)" className="settings-section">
+          <Title order={3} fz={16} mb={4}>OCR: API Key</Title>
           <p className="muted-hint">
             Smart OCR uses Google Gemini to extract chords from photos with higher accuracy. Get a free API key at{' '}
             <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style={{ color: 'var(--accent)' }}>aistudio.google.com/apikey</a>
           </p>
           <GeminiKeySettings />
-        </div>
+        </Paper>
 
-        <div className="settings-section">
-          <h3 className="admin-section-title">OCR: Model &amp; Prompt</h3>
+        <Paper component="section" withBorder radius="lg" p="lg" bg="var(--cv-raise)" className="settings-section">
+          <Title order={3} fz={16} mb={4}>OCR: Model &amp; Prompt</Title>
           <p className="muted-hint">
             Choose which Gemini model to use for OCR and customize the extraction prompt. You can also change the model per-extraction in the OCR modal.
           </p>
-          <Paper withBorder className="auth-card">
+          <Stack gap="sm">
             <div className="field">
 
               <NativeSelect label={<>Model</>}
                 value={ocrModel}
                 onChange={(e) => saveOcrModel(e.target.value)}
-                style={{ fontSize: 14, padding: '8px 12px' }}
               >
                 {modelList.map(m => (
                   <option key={m.id} value={m.id}>{m.label} — {m.hint}</option>
@@ -242,7 +242,7 @@ export function SettingsView() {
                 placeholder={defaultPrompt}
                 rows={7}
                 maxLength={MAX_OCR_PROMPT}
-                style={{ fontFamily: 'monospace', fontSize: 12, resize: 'vertical' }}
+                styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: 12, resize: 'vertical' } }}
               />
               <div className="muted-text" style={{ fontSize: 11, textAlign: 'right', marginTop: 4 }}>
                 {ocrPrompt.length} / {MAX_OCR_PROMPT}
@@ -260,8 +260,8 @@ export function SettingsView() {
               )}
             </div>
             {promptMsg && <div className="field-message" style={{ color: promptMsg.color }}>{promptMsg.text}</div>}
-          </Paper>
-        </div>
+          </Stack>
+        </Paper>
       </div>
     </>
   );

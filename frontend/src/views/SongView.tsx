@@ -1,4 +1,5 @@
-import { Paper, Button, NativeSelect } from '@mantine/core';
+import { Badge, Paper, Button, NativeSelect } from '@mantine/core';
+import { IconLock } from '@tabler/icons-react';
 import { modals } from '@mantine/modals';
 import { useState, useEffect, useMemo } from 'react';
 import { useApi } from '../hooks/useApi';
@@ -16,6 +17,7 @@ import { AddToSetlistModal } from '../components/AddToSetlistModal';
 import { renderChordPro, songHasKey, autoFit } from '../lib/chords';
 import { languageName } from '../lib/languages';
 import type { Song, SongVersion, Correction } from '../types';
+import { PageTitle } from '../components/PageTitle';
 
 interface SongViewProps {
   songId: number;
@@ -170,13 +172,13 @@ export function SongView({ songId, navigate }: SongViewProps) {
             </Button>
           </div>
         </div>
-        <h1 className="song-view-title">{song.title}</h1>
+        <PageTitle order={1} className="song-view-title">{song.title}</PageTitle>
         {song.artist && <div className="song-view-artist">{song.artist}</div>}
         <div className="song-view-meta">
           {!isOwner && song.username && <span className="song-view-by">@{song.username}</span>}
-          {song.bpm && <span className="badge badge-bpm">{song.bpm} bpm</span>}
-          {song.language && <span className="badge badge-lang" title={languageName(song.language)}>{song.language.toUpperCase()}</span>}
-          {isOwner && song.visibility === 'private' && <span className="badge badge-private">&#128274; Private</span>}
+          {song.bpm && <Badge>{song.bpm} bpm</Badge>}
+          {song.language && <Badge title={languageName(song.language)}>{song.language.toUpperCase()}</Badge>}
+          {isOwner && song.visibility === 'private' && <Badge leftSection={<IconLock size={14} aria-hidden />}>Private</Badge>}
           {versions.length > 1 && (
             <div className="version-selector-container">
               <span className="version-selector-label">Version</span>
@@ -223,7 +225,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
 
       {(song.tags || song.youtube_url) && (
         <div className="song-view-meta song-view-meta-bottom">
-          {song.tags && song.tags.split(',').map((tag) => <span key={tag} className="badge badge-tag">{tag}</span>)}
+          {song.tags && song.tags.split(',').map((tag) => <Badge key={tag} size="md">{tag}</Badge>)}
           {song.youtube_url && <a href={song.youtube_url} target="_blank" rel="noopener" className="yt-link">&#9654; YouTube</a>}
         </div>
       )}

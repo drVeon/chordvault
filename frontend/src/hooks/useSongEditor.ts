@@ -10,7 +10,7 @@ export interface SongEditorState {
   bpm: string;
   tags: string[];
   language: string;
-  formatBadge: { text: string; cls: string } | null;
+  formatBadge: { text: string; ok: boolean } | null;
 }
 
 export function useSongEditor(initialContent: string = '') {
@@ -21,14 +21,14 @@ export function useSongEditor(initialContent: string = '') {
   const [bpm, setBpm] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [language, setLanguage] = useState('');
-  const [formatBadge, setFormatBadge] = useState<{ text: string; cls: string } | null>(null);
+  const [formatBadge, setFormatBadge] = useState<{ text: string; ok: boolean } | null>(null);
 
   const syncSource = useRef<'editor' | 'field' | null>(null);
 
   const updateBadge = useCallback((text: string) => {
     const fmt = detectFormat(text);
-    if (fmt) setFormatBadge({ text: fmt, cls: 'format-ok' });
-    else if (text?.trim()) setFormatBadge({ text: 'No chords detected — add chords in [brackets] e.g. [G]lyrics', cls: 'format-warn' });
+    if (fmt) setFormatBadge({ text: fmt, ok: true });
+    else if (text?.trim()) setFormatBadge({ text: 'No chords detected — add chords in [brackets] e.g. [G]lyrics', ok: false });
     else setFormatBadge(null);
   }, []);
 

@@ -10,7 +10,11 @@ import { useSetlistPlayer } from '../hooks/useSetlistPlayer';
 import { useFontScale } from '../hooks/useFontScale';
 import { useTwoCol } from '../hooks/useTwoCol';
 import { ChordSheet } from '../components/ChordSheet';
-import { Toolbar } from '../components/Toolbar';
+import type { ToolbarProps } from '../components/Toolbar';
+import { usePlaybackLayout } from '../hooks/usePlaybackLayout';
+import { PlaybackTopBar } from '../components/PlaybackTopBar';
+import { PlaybackDock, type PlaybackNav } from '../components/PlaybackDock';
+import { PlaybackMoreMenu } from '../components/PlaybackMoreMenu';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { Loading } from '../components/Loading';
 import { renderChordPro, getSongKey, clampFontSize, songHasKey, resolveEffectivePreferences, autoFit } from '../lib/chords';
@@ -39,9 +43,9 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   // Global setlist settings
   const [slNashville, setSlNashville] = useState(false);
   const [slHideYt, setSlHideYt] = useState(false);
-  const [slOptionsOpen, setSlOptionsOpen] = useState(false);
   const fontScale = useFontScale();
   const twoColState = useTwoCol();
+  const layout = usePlaybackLayout();
 
   const { setlist, entry, index, total, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } = useSetlistPlayer({
     setlistId,
@@ -215,90 +219,54 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   if (!setlist) return <Loading />;
   if (!entry) return <div className="empty"><div className="empty-text">{t('setlist.noSongsYet')}</div></div>;
 
-  // hideYt resolved in effectivePrefs above
+  const resetEntryLayout = () => { if (entry) updateEntry({ _font: null, _twoCol: null }); };
+  const canReset = entry._font != null || entry._twoCol != null;
+  const toolbar: ToolbarProps = {
+    currentKey: keyDisplay,
+    nashville: !!effNum,
+    nashvilleDisabled: !songHasKey(content, semitones),
+    onNashvilleChange: toggleEntryNum,
+    twoCol: !!effTwoCol,
+    onTwoColToggle: toggleEntryTwoCol,
+    fontSize: effFont || 0,
+    onFontChange: changeEntryFont,
+    onReset: resetEntryLayout,
+    onPickKey: pickKey,
+    onAutoFit: doFit,
+    onSaveOnline: isOwner ? () => saveOnline(false) : undefined,
+    onSaveLocal: () => saveLocal(false),
+    onExportPdf: handleExportAllPdf,
+    settingsPanel: (
+      <SettingsPanel
+        nashville={slNashville}
+        onNashvilleChange={setSlNashville}
+        hideYt={slHideYt}
+        onHideYtChange={setSlHideYt}
+        twoCol={twoColState.twoCol}
+        onTwoColChange={twoColState.setTwoColTo}
+        fontSize={fontScale.fontSize}
+        onFontChange={fontScale.changeFontSize}
+        onFontReset={resetFont}
+      />
+    ),
+    isModified,
+    renderKey: index,
+    overrides: { num: entry._num != null, twoCol: entry._twoCol != null, font: entry._font != null },
+    canReset,
+  };
+  const nav: PlaybackNav = { onPrev: prev, onNext: next, hasPrev: index > 0, hasNext: index < total - 1 };
+  const more = (
+    <PlaybackMoreMenu nashville={!!effNum} nashvilleDisabled={toolbar.nashvilleDisabled} onNashvilleChange={toggleEntryNum}
+      onExportPdf={handleExportAllPdf} onReset={resetEntryLayout} canReset={canReset}
+      bpm={entry.bpm} youtubeUrl={hideYt ? null : entry.youtube_url} />
+  );
 
   return (
-    <div ref={containerRef} className="setlist-play-container">
-      <div className="setlist-play-header">
-        <div className="setlist-play-header-left">
-          <Button className="btn-exit" onClick={exit}>&#8592; {t('setlist.exit').toUpperCase()}</Button>
-        </div>
+    <div ref={containerRef} className={`setlist-play-container${layout === 'desktop' ? '' : ' has-dock'}`}>
+      <PlaybackTopBar layout={layout} title={entry.title} position={`${index + 1} of ${total}, ${setlist.name}`}
+        nav={nav} onExit={exit} toolbar={toolbar} more={more}
+        bpm={entry.bpm} youtubeUrl={hideYt ? null : entry.youtube_url} />
 
-        <div className="setlist-play-center">
-          <Button
-            className={`nav-circle-btn${index === 0 ? ' disabled' : ''}`}
-            onClick={index > 0 ? prev : undefined}
-            disabled={index === 0}
-            aria-label="Previous Song"
-            title="Previous Song"
-          >
-            &lt;
-          </Button>
-
-          <span className="setlist-play-indicator">
-            {entry.title} ({index + 1}/{total})
-          </span>
-
-          <Button
-            className={`nav-circle-btn${index === total - 1 ? ' disabled' : ''}`}
-            onClick={index < total - 1 ? next : undefined}
-            disabled={index === total - 1}
-            aria-label="Next Song"
-            title="Next Song"
-          >
-            &gt;
-          </Button>
-        </div>
-
-        <div className="setlist-play-header-right">
-          {entry.bpm && <span className="badge badge-bpm">{entry.bpm} bpm</span>}
-          {!hideYt && entry.youtube_url && (
-            <a href={entry.youtube_url} target="_blank" rel="noopener" className="yt-link" title="Watch on YouTube">&#9654; YT</a>
-          )}
-        </div>
-      </div>
-
-      <Toolbar
-        currentKey={keyDisplay}
-        nashville={!!effNum}
-        nashvilleDisabled={!songHasKey(content, semitones)}
-        onNashvilleChange={toggleEntryNum}
-        twoCol={!!effTwoCol}
-        onTwoColToggle={toggleEntryTwoCol}
-        fontSize={effFont || 0}
-        onFontChange={changeEntryFont}
-        onReset={() => {
-          if (entry) { updateEntry({ _font: null, _twoCol: null }); }
-        }}
-        onPickKey={pickKey}
-        onAutoFit={doFit}
-        onSaveOnline={isOwner ? () => saveOnline(false) : undefined}
-        onSaveLocal={() => saveLocal(false)}
-        onExportPdf={handleExportAllPdf}
-        onToggleSettings={() => setSlOptionsOpen((v) => !v)}
-        settingsActive={slOptionsOpen}
-        isModified={isModified}
-        renderKey={index}
-        overrides={{
-          num: entry._num != null,
-          twoCol: entry._twoCol != null,
-          font: entry._font != null,
-        }}
-      />
-
-      {slOptionsOpen && (
-        <SettingsPanel
-          nashville={slNashville}
-          onNashvilleChange={setSlNashville}
-          hideYt={slHideYt}
-          onHideYtChange={setSlHideYt}
-          twoCol={twoColState.twoCol}
-          onTwoColChange={twoColState.setTwoColTo}
-          fontSize={fontScale.fontSize}
-          onFontChange={fontScale.changeFontSize}
-          onFontReset={resetFont}
-        />
-      )}
 
       {editing ? (
         <div className="setlist-editor">
@@ -334,6 +302,7 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
           )}
         </>
       )}
+      {layout !== 'desktop' && <PlaybackDock layout={layout} nav={nav} toolbar={toolbar} />}
     </div>
   );
 }

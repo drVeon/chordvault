@@ -21,19 +21,19 @@ const cvTheme = EditorView.theme({
   '.cm-focused': { outline: 'none' },
   '.cm-scroller': { overflow: 'auto' },
   '.cm-gutters': { display: 'none' },
-  '&.cm-focused .cm-cursor': { borderLeftColor: 'var(--accent)' },
+  '&.cm-focused .cm-cursor': { borderLeftColor: 'var(--text)' },
   '&.cm-focused .cm-selectionBackground, .cm-selectionBackground': {
     background: 'var(--accent-bg) !important',
   },
-  '.cm-activeLine': { backgroundColor: 'var(--ghost-bg)' },
+  '.cm-activeLine': { backgroundColor: 'var(--chord-tint)' },
 });
 
 const darkTheme = EditorView.theme({
-  '&': { backgroundColor: 'var(--surface)', color: 'var(--text)' },
+  '&': { backgroundColor: 'var(--raise)', color: 'var(--text)' },
 }, { dark: true });
 
 const lightTheme = EditorView.theme({
-  '&': { backgroundColor: 'var(--surface)', color: 'var(--text)' },
+  '&': { backgroundColor: 'var(--raise)', color: 'var(--text)' },
 }, { dark: false });
 
 export function CodeMirrorEditor({ value, onChange, darkMode, placeholder }: CodeMirrorEditorProps) {
