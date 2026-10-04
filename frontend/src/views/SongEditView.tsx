@@ -13,7 +13,7 @@ import { CodeMirrorEditor } from '../components/CodeMirrorEditor';
 import { EditorPreview } from '../components/EditorPreview';
 import { detectFormat, toChordPro, ensureKeyDirective, extractDirective, updateDirective } from '../lib/chords';
 import type { Song } from '../types';
-import { PageTitle } from '../components/PageTitle';
+import { EditorActionBar } from '../components/EditorActionBar';
 
 interface SongEditViewProps {
   songId?: number;
@@ -26,6 +26,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
   const { t } = useI18n();
   const [song, setSong] = useState<Song | null>(null);
   const [visibility, setVisibility] = useState<'public' | 'private'>('public');
+  const [saved, setSaved] = useState<{ content: string; visibility: 'public' | 'private' }>({ content: '', visibility: 'public' });
   const [preferredLanguages, setPreferredLanguages] = useState<string[]>([]);
   const [ocrOpen, setOcrOpen] = useState(false);
   const [hasGeminiKey, setHasGeminiKey] = useState(false);
@@ -53,6 +54,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
           if (s.language && !extractDirective(c, 'x_language')) c = updateDirective(c, 'x_language', s.language);
 
           setInitialContent(c);
+          setSaved({ content: c, visibility: s.visibility === 'private' ? 'private' : 'public' });
         })
         .catch((e) => { toast(e.message, 'error'); navigate('my-songs'); });
     }
@@ -143,31 +145,21 @@ modals.openConfirmModal({ children: t('songEdit.confirmDelete'), labels: { confi
     } catch (e) { toast((e as Error).message, 'error'); }
   };
 
+  const dirty = state.content !== saved.content || visibility !== saved.visibility;
+  const title = songId ? (isOwner ? t('songEdit.editSong') : t('songEdit.createVersion')) : t('songEdit.newSong');
+
   return (
     <>
-      <div className="song-view-header">
-        <div className="song-view-nav">
-          <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={cancel}>&#8592; {t('songEdit.cancel')}</Button>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {isOwner && (
-              <Button size="xs" className="btn btn-sm" onClick={save}>
-                {t('songEdit.save')}
-              </Button>
-            )}
-            {songId && (
-              <Button size="xs"
-                className="btn btn-sm"
-                onClick={saveAsVersion}
-              >
-                {isOwner ? 'Save as New Version' : 'Save as My Version'}
-              </Button>
-            )}
-          </div>
-        </div>
-        <PageTitle order={1} className="song-view-title">
-          {songId ? (isOwner ? t('songEdit.editSong') : 'Create Version') : t('songEdit.newSong')}
-        </PageTitle>
-      </div>
+      <EditorActionBar
+        title={title}
+        dirty={dirty}
+        onLeave={cancel}
+        saveLabel={isOwner ? t('songEdit.save') : t('songEdit.saveAsMyVersion')}
+        onSave={isOwner ? save : saveAsVersion}
+        onSaveAsVersion={isOwner && songId ? saveAsVersion : undefined}
+        onDelete={song && isOwner ? deleteSong : undefined}
+        t={t}
+      />
       <div className="edit-cols">
         <div className="field">
 
@@ -230,12 +222,6 @@ modals.openConfirmModal({ children: t('songEdit.confirmDelete'), labels: { confi
           </div>
         </div>
       </div>
-      {song && isOwner && (
-        <>
-          <hr className="divider" />
-          <Button color="red" size="xs" className="btn btn-danger btn-sm" onClick={deleteSong}>{t('songEdit.deleteSong')}</Button>
-        </>
-      )}
         <OcrModal
           opened={ocrOpen}
           hasGeminiKey={hasGeminiKey}

@@ -117,7 +117,8 @@ describe('SongEditView two-way sync', () => {
     render(<SongEditView songId={1} navigate={navigate} />);
     await waitFor(() => expect(getEditor().value).toContain('Original'));
     fireEvent.change(getEditor(), { target: { value: '{title: Version latest}\n{x_language: en}\n[C]Version lyrics' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save as New Version' }));
+    fireEvent.click(screen.getByRole('button', { name: 'songEdit.moreActions' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'songEdit.saveAsNewVersion' }));
     await waitFor(() => expect(mockApiCall).toHaveBeenCalledWith('POST', '/api/songs/1/version', expect.objectContaining({ content: expect.stringContaining('{title: Version latest}') })));
   });
 
@@ -128,8 +129,9 @@ describe('SongEditView two-way sync', () => {
       return Promise.resolve({});
     });
     render(<SongEditView songId={1} navigate={navigate} />);
-    await screen.findByRole('button', { name: 'songEdit.deleteSong' });
-    fireEvent.click(screen.getByRole('button', { name: 'songEdit.deleteSong' }));
+    await waitFor(() => expect(getEditor().value).toContain('Original'));
+    fireEvent.click(screen.getByRole('button', { name: 'songEdit.moreActions' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'songEdit.deleteSong' }));
     expect(await screen.findByRole('dialog')).toHaveTextContent('songEdit.confirmDelete');
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(mockApiCall.mock.calls.filter(call => call[0] === 'DELETE')).toHaveLength(0);

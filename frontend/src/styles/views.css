@@ -413,7 +413,7 @@
   /* Hide side navigation zones on mobile and portrait tablets (Swipe handles it) */
   .nav-zone { display: none; }
 
-  #app { padding: 16px 12px 100px 12px; overflow-x: hidden; }
+  #app { padding: 16px 12px 100px 12px; overflow-x: clip; }
   .transpose-bar { margin: 8px 0; padding: 6px 8px; gap: 4px; }
   .admin-stats { grid-template-columns: 1fr; }
 }
@@ -441,7 +441,7 @@
 
 /* Mantine's md controls are 42px; touch screens need 44. */
 @media (pointer: coarse) {
-  .transpose-bar button, .playback-topbar :is(button, a), .playback-dock button, .setlist-defaults-panel button { min-width: 44px; min-height: 44px; }
+  .transpose-bar button, .playback-topbar :is(button, a), .playback-dock button, .setlist-defaults-panel button, .editor-action-bar :is(button, a) { min-width: 44px; min-height: 44px; }
 }
 
 .setlist-drag-handle { touch-action: none; min-width: 44px; min-height: 44px; }

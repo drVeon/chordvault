@@ -203,6 +203,34 @@ if (user && password && songId) {
       await context.close();
     }
   }
+  // Editor action bar: stays under the nav after scrolling, fits, 44px targets on touch.
+  for (const width of [390, 768, 1280]) {
+    const touch = width < 1024;
+    const context = await browser.newContext({ viewport: { width, height: 700 }, isMobile: touch, hasTouch: touch });
+    await context.addInitScript((acc) => localStorage.setItem('cv_user', JSON.stringify(acc)), account);
+    const page = await context.newPage();
+    await page.goto(`${base}/#song/${songId}`);
+    await page.getByRole('button', { name: /Edit$/ }).first().click();
+    await page.locator('.editor-action-bar').waitFor();
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await page.waitForTimeout(200);
+    const problems = await page.evaluate((isTouch) => {
+      const out = [];
+      const bar = document.querySelector('.editor-action-bar');
+      const top = bar.getBoundingClientRect().top;
+      if (top < 0 || top > 80) out.push(`bar scrolled away (top ${Math.round(top)})`);
+      if (bar.scrollWidth > bar.clientWidth + 1) out.push('bar overflows');
+      if (document.documentElement.scrollWidth > innerWidth) out.push('page scrolls sideways');
+      if (isTouch) {
+        const small = [...bar.querySelectorAll('button')].filter((b) => b.offsetParent && Math.min(b.getBoundingClientRect().width, b.getBoundingClientRect().height) < 44);
+        if (small.length) out.push(`small targets: ${small.map((b) => b.getAttribute('aria-label') || b.textContent.trim()).join(', ')}`);
+      }
+      return out;
+    }, touch);
+    console.log(`${problems.length ? 'FAIL' : 'ok  '} editor ${width}${problems.length ? ': ' + problems.join('; ') : ''}`);
+    failures += problems.length ? 1 : 0;
+    await context.close();
+  }
 }
 await browser.close();
 process.exit(failures ? 1 : 0);
