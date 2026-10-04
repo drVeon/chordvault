@@ -1,4 +1,4 @@
-import { Badge, Button, VisuallyHidden } from '@mantine/core';
+import { Badge, Button, VisuallyHidden, CloseButton } from '@mantine/core';
 import { IconGripVertical, IconLock } from '@tabler/icons-react';
 import { getSongKey } from '../lib/chords';
 import { entrySemitones } from '../lib/setlistKeys';
@@ -79,16 +79,15 @@ export function SetlistEntryCard({
         </div>
       )}
       {isEditable && (
-        <Button
-          className="setlist-remove-btn"
+        <CloseButton
+          size="lg"
+          aria-label="Remove"
+          title="Remove"
           onClick={(e) => {
             e.stopPropagation();
             onRemove(entry.entry_id, idx);
           }}
-          title="Remove"
-        >
-          &#10005;
-        </Button>
+        />
       )}
     </div>
   );

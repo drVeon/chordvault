@@ -118,5 +118,50 @@ for (const vp of viewports.filter((v) => v.mobile)) {
   failures += problems.length ? 1 : 0;
   await context.close();
 }
+// Signed-in phone pages: nav labels whole, search on one row, card actions inside
+// their card, sheet padding as designed, setlist titles with room to read.
+const { CV_CHECK_USER: user, CV_CHECK_PASSWORD: password, CV_CHECK_SONG_ID: songId } = process.env;
+if (user && password && songId) {
+  const res = await fetch(`${base}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: user, password }) });
+  const a = await res.json();
+  const account = { token: a.token, id: a.id, username: a.username, role: a.role };
+  const pages = [['songs', '', null], ['setlists', '', 'Setlists'], ['song', `#song/${songId}`, null], ['setlist', `#setlist/${setlistId}`, null]];
+  for (const width of [360, 384, 412]) {
+    for (const [name, route, click] of pages) {
+      const context = await browser.newContext({ viewport: { width, height: 800 }, isMobile: true, hasTouch: true });
+      await context.addInitScript((acc) => localStorage.setItem('cv_user', JSON.stringify(acc)), account);
+      const page = await context.newPage();
+      await page.goto(`${base}/${route}`);
+      if (click) await page.getByRole('button', { name: click, exact: true }).click();
+      await page.locator('.song-card, .setlist-card, .chord-sheet .lyrics:not(:empty)').first().waitFor();
+      await page.evaluate(() => document.fonts.ready);
+      const problems = await page.evaluate(() => {
+        const out = [];
+        const shown = (e) => e.getClientRects().length > 0;
+        if (document.documentElement.scrollWidth > innerWidth) out.push('page scrolls sideways');
+        const cut = [...document.querySelectorAll('#nav button, #nav .mantine-Button-label')].filter((e) => shown(e) && e.scrollWidth > e.clientWidth + 1);
+        if (cut.length) out.push(`nav labels cut: ${[...new Set(cut.map((e) => e.textContent.trim()))].join(', ')}`);
+        const row = document.querySelector('.search-row');
+        const input = row?.querySelector('input');
+        const button = row ? [...row.querySelectorAll('button')].find((b) => /search/i.test(b.textContent)) : null;
+        if (input && button && Math.abs(input.getBoundingClientRect().top - button.getBoundingClientRect().top) > 6) out.push('search button not beside the field');
+        for (const card of document.querySelectorAll('.song-card, .setlist-card')) {
+          const actions = card.querySelector('.song-card-actions');
+          if (!actions) continue;
+          const edge = card.getBoundingClientRect().right - parseFloat(getComputedStyle(card).paddingRight);
+          if (actions.getBoundingClientRect().right > edge + 1) { out.push('card actions run into the border'); break; }
+        }
+        const sheet = document.querySelector('.chord-sheet-wrap');
+        if (sheet && innerWidth <= 900 && parseFloat(getComputedStyle(sheet).paddingLeft) !== 16) out.push(`sheet padding ${getComputedStyle(sheet).paddingLeft}, want 16px`);
+        const narrow = [...document.querySelectorAll('.setlist-song-item .song-card-title')].filter((t) => t.getBoundingClientRect().width < 160);
+        if (narrow.length) out.push(`setlist titles squeezed to ${Math.round(narrow[0].getBoundingClientRect().width)}px`);
+        return out;
+      });
+      console.log(`${problems.length ? 'FAIL' : 'ok  '} signed-in ${name} ${width}${problems.length ? ': ' + problems.join('; ') : ''}`);
+      failures += problems.length ? 1 : 0;
+      await context.close();
+    }
+  }
+}
 await browser.close();
 process.exit(failures ? 1 : 0);

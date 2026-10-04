@@ -80,7 +80,7 @@ export function MySongsView({ navigate }: MySongsViewProps) {
       <div className="search-row">
         <SearchField label={t('songs.searchPlaceholder')} value={query} onChange={setQuery} onSearch={doSearch} onClear={handleClear} />
         <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={doSearch}>{t('songs.search')}</Button>
-        <Button size="xs" className="btn btn-sm" onClick={() => navigate('song-edit')}>{t('songs.newSong')}</Button>
+        <Button size="xs" className="btn btn-sm search-row-wide" onClick={() => navigate('song-edit')}>{t('songs.newSong')}</Button>
       </div>
       <div className="song-grid">
         {loaded && songs.length === 0 ? (

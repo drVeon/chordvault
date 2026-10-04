@@ -112,7 +112,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
               <IconAdjustmentsHorizontal size={18} aria-hidden />
             </ActionIcon>
             {user && (
-              <Button size="sm" leftSection={<IconPlus size={16} aria-hidden />} onClick={() => navigate('song-edit')}>New Song</Button>
+              <Button size="sm" className="search-row-wide" leftSection={<IconPlus size={16} aria-hidden />} onClick={() => navigate('song-edit')}>New Song</Button>
             )}
           </div>
           {showFilters && (

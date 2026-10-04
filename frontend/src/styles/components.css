@@ -36,11 +36,6 @@
   min-height: 72px;
 }
 
-@media (max-width: 600px) {
-  .song-card { padding: 14px 16px; gap: 8px; }
-  .song-card-actions { margin-left: 0; width: 100%; justify-content: flex-end; margin-top: 4px; border-top: 1px solid var(--border); padding-top: 8px; }
-}
-
 @media (hover: hover) {
   .song-card:hover { border-color: var(--line-strong); box-shadow: var(--shadow-lift); }
   .song-card:hover .song-card-meta { color: var(--text); }
@@ -67,6 +62,12 @@
   gap: 8px;
   flex-shrink: 0;
   margin-left: 16px;
+}
+
+/* Phones: actions drop under the title. Declared after the base rules so they win. */
+@media (max-width: 600px) {
+  .song-card { padding: 14px 16px; gap: 8px; }
+  .song-card-actions { margin-left: 0; width: 100%; justify-content: flex-end; margin-top: 4px; border-top: 1px solid var(--border); padding-top: 8px; }
 }
 
 /* -- Song Card Tags & BPM ---------------- */
