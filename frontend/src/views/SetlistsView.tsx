@@ -1,5 +1,6 @@
 import { SearchField } from '../components/SearchField';
 import { Tabs, Button, TextInput } from '@mantine/core';
+import { IconCalendar } from '@tabler/icons-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
@@ -165,18 +166,19 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
 
           }} />
         {activeTab === 'cloud' && (
-          <Button variant="default" size="xs"
-            className="btn btn-ghost btn-sm"
+          <Button variant="default" size="sm"
+            leftSection={<IconCalendar size={16} aria-hidden />}
+            aria-pressed={showDates}
             onClick={() => {
               const next = !showDates;
               setShowDates(next);
               setSessionItem('cv_setlists_show_dates', String(next));
             }}
           >
-            &#128197; Date
+            Date
           </Button>
         )}
-        <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={handleSearch}>{t('songs.search')}</Button>
+        <Button variant="default" size="sm" onClick={handleSearch}>{t('songs.search')}</Button>
       </div>
       {activeTab === 'cloud' && showDates && (
         <div className="search-row" style={{ marginTop: -10 }}>

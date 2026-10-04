@@ -43,6 +43,8 @@
 .song-card:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
 
 .song-card-info { flex: 1; min-width: 0; }
+/* List cards move their badges under the title rather than squeeze it below this width. */
+.song-card:not(.setlist-song-item) > .song-card-info { flex: 1 1 220px; }
 
 .song-card-title {
   font-family: var(--font-sans);
@@ -61,7 +63,7 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
-  margin-left: 16px;
+  margin-left: auto;
 }
 
 /* Phones: actions drop under the title. Declared after the base rules so they win. */

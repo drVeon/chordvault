@@ -1,5 +1,6 @@
 import { SearchField } from '../components/SearchField';
 import { Tabs, Button, TextInput } from '@mantine/core';
+import { IconCalendar } from '@tabler/icons-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../context/I18nContext';
@@ -90,17 +91,18 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
         <>
           <div className="search-row">
             <SearchField label={t('setlist.searchPlaceholder')} value={query} onChange={setQuery} onSearch={handleSearch} onClear={handleClear} />
-            <Button variant="default" size="xs"
-              className="btn btn-ghost btn-sm"
+            <Button variant="default" size="sm"
+              leftSection={<IconCalendar size={16} aria-hidden />}
+              aria-pressed={showDates}
               onClick={() => {
                 const next = !showDates;
                 setShowDates(next);
                 setSessionItem('cv_publicsetlists_show_dates', String(next));
               }}
             >
-              &#128197; Date
+              Date
             </Button>
-            <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={handleSearch}>{t('songs.search')}</Button>
+            <Button variant="default" size="sm" onClick={handleSearch}>{t('songs.search')}</Button>
           </div>
           {showDates && (
             <div className="search-row" style={{ marginTop: -10 }}>

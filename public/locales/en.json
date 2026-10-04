@@ -22,7 +22,7 @@
   "auth.inviteCodePlaceholder": "Enter your invite code",
 
   "songs.mySongs": "My Songs",
-  "songs.newSong": "+ New Song",
+  "songs.newSong": "New Song",
   "songs.noSongs": "No songs yet",
   "songs.addFirst": "Add your first song",
   "songs.search": "Search",

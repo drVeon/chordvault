@@ -126,7 +126,7 @@ if (user && password && songId) {
   const a = await res.json();
   const account = { token: a.token, id: a.id, username: a.username, role: a.role };
   const pages = [['songs', '', null], ['setlists', '', 'Setlists'], ['song', `#song/${songId}`, null], ['setlist', `#setlist/${setlistId}`, null]];
-  for (const width of [360, 384, 412]) {
+  for (const width of [360, 384, 412, 768]) {
     for (const [name, route, click] of pages) {
       const context = await browser.newContext({ viewport: { width, height: 800 }, isMobile: true, hasTouch: true });
       await context.addInitScript((acc) => localStorage.setItem('cv_user', JSON.stringify(acc)), account);
@@ -145,6 +145,11 @@ if (user && password && songId) {
         const input = row?.querySelector('input');
         const button = row ? [...row.querySelectorAll('button')].find((b) => /search/i.test(b.textContent)) : null;
         if (input && button && Math.abs(input.getBoundingClientRect().top - button.getBoundingClientRect().top) > 6) out.push('search button not beside the field');
+        const field = input?.closest('.mantine-Input-wrapper, .mantine-TextInput-wrapper') ?? input;
+        const uneven = row && field ? [...row.querySelectorAll(':scope > button, :scope > .mantine-ActionIcon-root')].filter((b) => Math.abs(b.getBoundingClientRect().height - field.getBoundingClientRect().height) > 1) : [];
+        if (uneven.length) out.push(`search row buttons not the field's height: ${uneven.map((b) => b.textContent.trim() || b.getAttribute('aria-label')).join(', ')}`);
+        const cramped = [...document.querySelectorAll('.song-grid .song-card-title')].filter((t) => t.getBoundingClientRect().width < 180);
+        if (cramped.length) out.push(`card titles squeezed to ${Math.round(cramped[0].getBoundingClientRect().width)}px: ${cramped[0].textContent.trim().slice(0, 20)}`);
         for (const card of document.querySelectorAll('.song-card, .setlist-card')) {
           const actions = card.querySelector('.song-card-actions');
           if (!actions) continue;

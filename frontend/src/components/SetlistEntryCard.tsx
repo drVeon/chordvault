@@ -1,4 +1,4 @@
-import { Badge, Button, VisuallyHidden, CloseButton } from '@mantine/core';
+import { Badge, Button, VisuallyHidden, CloseButton, Group } from '@mantine/core';
 import { IconGripVertical, IconLock } from '@tabler/icons-react';
 import { getSongKey } from '../lib/chords';
 import { entrySemitones } from '../lib/setlistKeys';
@@ -69,14 +69,14 @@ export function SetlistEntryCard({
         </div>
       </div>
       {isEditable && (
-        <div className="setlist-entry-controls" onClick={(e) => e.stopPropagation()}>
+        <Group className="setlist-entry-controls" gap={4} wrap="nowrap" justify="flex-end" w={{ base: '100%', xs: 'auto' }} onClick={(e) => e.stopPropagation()}>
           <Button variant="default" size="xs" className="btn btn-ghost btn-sm" disabled={!canStep} onClick={() => onStepKey(entry.entry_id, idx, -1)}>
             &#9837;
           </Button>
           <Button variant="default" size="xs" className="btn btn-ghost btn-sm" disabled={!canStep} onClick={() => onStepKey(entry.entry_id, idx, 1)}>
             &#9839;
           </Button>
-        </div>
+        </Group>
       )}
       {isEditable && (
         <CloseButton

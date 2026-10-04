@@ -1,5 +1,6 @@
 import { SearchField } from '../components/SearchField';
 import { Button } from '@mantine/core';
+import { IconPlus } from '@tabler/icons-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../context/I18nContext';
@@ -79,8 +80,8 @@ export function MySongsView({ navigate }: MySongsViewProps) {
       </div>
       <div className="search-row">
         <SearchField label={t('songs.searchPlaceholder')} value={query} onChange={setQuery} onSearch={doSearch} onClear={handleClear} />
-        <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={doSearch}>{t('songs.search')}</Button>
-        <Button size="xs" className="btn btn-sm search-row-wide" onClick={() => navigate('song-edit')}>{t('songs.newSong')}</Button>
+        <Button variant="default" size="sm" onClick={doSearch}>{t('songs.search')}</Button>
+        <Button size="sm" w={{ base: '100%', xs: 'auto' }} leftSection={<IconPlus size={16} aria-hidden />} onClick={() => navigate('song-edit')}>{t('songs.newSong')}</Button>
       </div>
       <div className="song-grid">
         {loaded && songs.length === 0 ? (
