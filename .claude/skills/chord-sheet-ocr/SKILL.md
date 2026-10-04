@@ -90,6 +90,7 @@ Header directives in this order, then a blank line, then any `#` notes:
   - `easy`: no barre chord and at most 5 distinct chords.
   - `medium`: one or two barre chords, 6–8 distinct chords, or a key change.
   - `hard`: three or more barre chords, 9 or more distinct chords, or jazz chords (dim, aug, m7b5, and maj7/9/11/13 chords that need a barre). Chords with an open shape count as their plain chord: `Cmaj7`, `Fmaj7`, `G9`, and a slash chord in a bass walk-down (`G/B`, `C/G`).
+- **Artist names**: on these sheets "Don Holc", "Dom Holc" and "D.H." all mean **Dean Holc**; write `{artist: Dean Holc}` (not the better-known Domen Don Holc of Koala Voice).
 - **Settled artists** keep the genre already chosen for them, over a fresh guess: `pop` for Andrej Šifrer, Brendi, Neca Falk, Pepel in kri, Gu Gu, Oliver Dragojević, Magnifico, Novi Fosili, Čudežna polja, Elvis Presley; `rock` for Siddharta, Queen, Creedence Clearwater Revival, Rod Stewart, The Beatles, Guns N' Roses, Status Quo, The Animals, Hazard, Bazar; `singer-songwriter` for Tomaž Domicelj, Adi Smolar, Aleksander Mežek, Cat Stevens; `folk` for Klapa Sufit.
 
 ## Import check
