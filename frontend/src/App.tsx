@@ -3,7 +3,6 @@ import { useAuth } from './context/AuthContext';
 import { useDemo } from './context/DemoContext';
 import { Nav } from './components/Nav';
 import { DemoBanner } from './components/DemoBanner';
-import { Toast } from './components/Toast';
 
 import { BrowseView } from './views/BrowseView';
 import { MySongsView } from './views/MySongsView';
@@ -72,22 +71,6 @@ export function App() {
       if (cfg.demoMode) setDemoMode(true);
     }).catch(() => {});
   }, [setDemoMode]);
-
-  // Auto-scroll to top when any overlay appears
-  useEffect(() => {
-    const observer = new MutationObserver((mutations) => {
-      for (const m of mutations) {
-        for (const node of m.addedNodes) {
-          if (node instanceof HTMLElement && node.hasAttribute('data-overlay')) {
-            window.scrollTo(0, 0);
-            return;
-          }
-        }
-      }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, []);
 
   // Listen for hash changes
   useEffect(() => {
@@ -196,7 +179,6 @@ export function App() {
       <main id="app" className={animClass}>
         {renderView()}
       </main>
-      <Toast />
     </>
   );
 }

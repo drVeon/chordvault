@@ -1,4 +1,6 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { Button, Popover } from '@mantine/core';
+import { useState, useMemo, useEffect } from 'react';
+import { useDebouncedValue } from '@mantine/hooks';
 import { renderChordPro, songHasKey } from '../lib/chords';
 import { ChordSheet } from './ChordSheet';
 import { KeyPicker } from './KeyPicker';
@@ -11,27 +13,14 @@ interface EditorPreviewProps {
 }
 
 export function EditorPreview({ content, debounceMs = 300, forceRender }: EditorPreviewProps) {
-  const [debouncedContent, setDebouncedContent] = useState(content);
+  const [debouncedContent, , { flush }] = useDebouncedValue(content, debounceMs);
   const [targetKey, setTargetKey] = useState<string | null>(null);
   const [nashville, setNashville] = useState(false);
   const [keyPickerVisible, setKeyPickerVisible] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const contentRef = useRef(content);
-  useEffect(() => { contentRef.current = content; }, [content]);
 
   useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setDebouncedContent(content), debounceMs);
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [content, debounceMs]);
-
-  // Force immediate render on mobile tab switch
-  useEffect(() => {
-    if (forceRender !== undefined) {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      setDebouncedContent(contentRef.current);
-    }
-  }, [forceRender]);
+    if (forceRender !== undefined) flush();
+  }, [forceRender, flush]);
 
   // Derive current key from {key:} directive
   const currentKey = useMemo(() => {
@@ -69,27 +58,29 @@ export function EditorPreview({ content, debounceMs = 300, forceRender }: Editor
     <div className="editor-preview">
       <div className="editor-preview-toolbar">
         {currentKey && (
-          <button className="btn btn-ghost btn-sm" onClick={() => setKeyPickerVisible(!keyPickerVisible)}>
+          <Popover opened={keyPickerVisible} onChange={setKeyPickerVisible} trapFocus returnFocus width="min(90vw, 440px)">
+          <Popover.Target><Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => setKeyPickerVisible(!keyPickerVisible)}>
             Key: {currentKey}
-          </button>
+          </Button></Popover.Target>
+          <Popover.Dropdown><KeyPicker currentKey={currentKey} onPickKey={handlePickKey} visible={keyPickerVisible} /></Popover.Dropdown>
+          </Popover>
         )}
-        <button
+        <Button
           className={`btn btn-ghost btn-sm${nashville ? ' active' : ''}`}
           onClick={() => setNashville(!nashville)}
           disabled={nashvilleDisabled}
           title="Nashville numbers"
+          variant={nashville ? 'light' : 'default'}
+          aria-pressed={nashville}
         >
           #
-        </button>
+        </Button>
         {targetKey && (
-          <button className="btn btn-ghost btn-sm" onClick={() => setTargetKey(null)} title="Reset transpose">
+          <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => setTargetKey(null)} title="Reset transpose">
             &#8634;
-          </button>
+          </Button>
         )}
       </div>
-      {currentKey && (
-        <KeyPicker currentKey={currentKey} onPickKey={handlePickKey} visible={keyPickerVisible} />
-      )}
       <ChordSheet html={html} />
     </div>
   );

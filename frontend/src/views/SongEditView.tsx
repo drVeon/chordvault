@@ -1,9 +1,10 @@
+import { Tabs, Switch, Button, TextInput, useComputedColorScheme } from '@mantine/core';
+import { modals } from '@mantine/modals';
 import { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
-import { useToast } from '../context/ToastContext';
-import { useTheme } from '../context/ThemeContext';
+import { showStatusNotification as toast } from '../lib/notifications';
 import { useSongEditor } from '../hooks/useSongEditor';
 import { TagPicker } from '../components/TagPicker';
 import { LanguagePicker } from '../components/LanguagePicker';
@@ -22,13 +23,12 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
   const apiCall = useApi();
   const { user } = useAuth();
   const { t } = useI18n();
-  const toast = useToast();
   const [song, setSong] = useState<Song | null>(null);
   const [visibility, setVisibility] = useState<'public' | 'private'>('public');
   const [preferredLanguages, setPreferredLanguages] = useState<string[]>([]);
   const [ocrOpen, setOcrOpen] = useState(false);
   const [hasGeminiKey, setHasGeminiKey] = useState(false);
-  const { theme } = useTheme();
+  const theme = useComputedColorScheme('dark');
   const [editorTab, setEditorTab] = useState<'edit' | 'preview'>('edit');
   const [forceRender, setForceRender] = useState(0);
 
@@ -41,7 +41,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
         .then((s) => {
           setSong(s);
           setVisibility(s.visibility === 'private' ? 'private' : 'public');
-          
+
           // Inject missing directives from DB columns into content for old songs
           let c = s.content;
           if (s.title && !extractDirective(c, 'title')) c = updateDirective(c, 'title', s.title);
@@ -50,12 +50,12 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
           if (s.youtube_url && !extractDirective(c, 'x_youtube')) c = updateDirective(c, 'x_youtube', s.youtube_url);
           if (s.tags && !extractDirective(c, 'x_tags')) c = updateDirective(c, 'x_tags', s.tags);
           if (s.language && !extractDirective(c, 'x_language')) c = updateDirective(c, 'x_language', s.language);
-          
+
           setInitialContent(c);
         })
         .catch((e) => { toast(e.message, 'error'); navigate('my-songs'); });
     }
-  }, [songId, apiCall, navigate, toast, setInitialContent]);
+  }, [songId, apiCall, navigate, setInitialContent]);
 
   useEffect(() => {
     if (user) {
@@ -102,13 +102,16 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
   };
 
   const deleteSong = async () => {
-    if (!song || !confirm(t('songEdit.confirmDelete'))) return;
+    if (!song) return;
+modals.openConfirmModal({ children: t('songEdit.confirmDelete'), labels: { confirm: 'Confirm', cancel: 'Cancel' }, onConfirm: async () => {
     try {
       await apiCall('DELETE', `/api/songs/${song.id}`);
       toast(t('songEdit.deleted'));
       navigate('my-songs');
     } catch (e) { toast((e as Error).message, 'error'); }
-  };
+
+} });
+};
 
   const cancel = () => {
     if (song) navigate('song-view', { id: String(song.id) });
@@ -143,21 +146,20 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
     <>
       <div className="song-view-header">
         <div className="song-view-nav">
-          <button className="btn btn-ghost btn-sm" onClick={cancel}>&#8592; {t('songEdit.cancel')}</button>
+          <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={cancel}>&#8592; {t('songEdit.cancel')}</Button>
           <div style={{ display: 'flex', gap: 8 }}>
             {isOwner && (
-              <button className="btn btn-sm" onClick={save}>
+              <Button size="xs" className="btn btn-sm" onClick={save}>
                 {t('songEdit.save')}
-              </button>
+              </Button>
             )}
             {songId && (
-              <button 
-                className="btn btn-sm" 
-                style={{ background: 'var(--accent)', color: 'black', border: 'none' }} 
+              <Button size="xs"
+                className="btn btn-sm"
                 onClick={saveAsVersion}
               >
                 {isOwner ? 'Save as New Version' : 'Save as My Version'}
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -167,43 +169,38 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
       </div>
       <div className="edit-cols">
         <div className="field">
-          <label>{t('songEdit.titleLabel')}</label>
-          <input type="text" value={state.title} onChange={(e) => handleFieldChange('title', e.target.value, editor.setTitle)} placeholder={t('songEdit.titlePlaceholder')} />
+
+          <TextInput label={<>{t('songEdit.titleLabel')}</>} type="text" value={state.title} onChange={(e) => handleFieldChange('title', e.target.value, editor.setTitle)} placeholder={t('songEdit.titlePlaceholder')} />
         </div>
         <div className="field">
-          <label>{t('songEdit.artistLabel')}</label>
-          <input type="text" value={state.artist} onChange={(e) => handleFieldChange('artist', e.target.value, editor.setArtist)} placeholder={t('songEdit.artistPlaceholder')} />
+
+          <TextInput label={<>{t('songEdit.artistLabel')}</>} type="text" value={state.artist} onChange={(e) => handleFieldChange('artist', e.target.value, editor.setArtist)} placeholder={t('songEdit.artistPlaceholder')} />
         </div>
         <div className="field">
-          <label>Language</label>
+
           <LanguagePicker value={state.language} onChange={handleLanguageChange} preferredLanguages={preferredLanguages} />
         </div>
         <div className="field">
-          <label>BPM</label>
-          <input type="number" value={state.bpm} onChange={(e) => handleFieldChange('tempo', e.target.value, editor.setBpm)} placeholder="e.g. 120" min="1" max="300" />
+
+          <TextInput label={<>BPM</>} type="number" value={state.bpm} onChange={(e) => handleFieldChange('tempo', e.target.value, editor.setBpm)} placeholder="e.g. 120" min="1" max="300" />
         </div>
       </div>
       <div className="field">
-        <label>YouTube URL</label>
-        <input type="url" value={state.youtubeUrl} onChange={(e) => handleFieldChange('x_youtube', e.target.value, editor.setYoutubeUrl)} placeholder="https://youtube.com/watch?v=..." />
+
+        <TextInput label={<>YouTube URL</>} type="url" value={state.youtubeUrl} onChange={(e) => handleFieldChange('x_youtube', e.target.value, editor.setYoutubeUrl)} placeholder="https://youtube.com/watch?v=..." />
       </div>
       <div className="field">
-        <label>Tags</label>
+        <div className="mantine-InputWrapper-label">Tags</div>
         <TagPicker selected={state.tags} onChange={handleTagsChange} />
       </div>
       <div className="field">
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-          <span className="toggle">
-            <input
+        <Switch label={<>Public {visibility === 'private' && <span style={{ fontSize: 12, color: 'var(--muted)' }}>&#128274; Only you can see this song</span>}</>}
               type="checkbox"
               disabled={!isOwner}
               checked={visibility === 'public'}
               onChange={(e) => setVisibility(e.target.checked ? 'public' : 'private')}
-            />
-            <span className="toggle-slider" />
-          </span>
-          Public {visibility === 'private' && <span style={{ fontSize: 12, color: 'var(--muted)' }}>&#128274; Only you can see this song</span>}
-        </label>
+             />
+
       </div>
       <div className="field">
         <div className="chordpro-hint-row">
@@ -212,23 +209,12 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
         </div>
         {user && (
           <div className="ocr-row">
-            <button className="btn btn-sm btn-ghost" onClick={() => setOcrOpen(true)}>&#128247; Import from image or PDF</button>
+            <Button variant="default" size="xs" className="btn btn-sm btn-ghost" onClick={() => setOcrOpen(true)}>&#128247; Import from image or PDF</Button>
           </div>
         )}
-        <div className="editor-tabs" role="tablist">
-          <button
-            className={`editor-tab${editorTab === 'edit' ? ' active' : ''}`}
-            role="tab"
-            aria-selected={editorTab === 'edit'}
-            onClick={() => setEditorTab('edit')}
-          >Edit</button>
-          <button
-            className={`editor-tab${editorTab === 'preview' ? ' active' : ''}`}
-            role="tab"
-            aria-selected={editorTab === 'preview'}
-            onClick={() => { setEditorTab('preview'); setForceRender((n) => n + 1); }}
-          >Preview</button>
-        </div>
+        <Tabs value={editorTab} onChange={(value) => { if (value === 'preview') { setEditorTab('preview'); setForceRender(n => n + 1); } else setEditorTab('edit'); }} className="editor-tabs">
+          <Tabs.List grow><Tabs.Tab value="edit">Edit</Tabs.Tab><Tabs.Tab value="preview">Preview</Tabs.Tab></Tabs.List>
+        </Tabs>
         <div className="editor-split">
           <div className={`cm-editor-wrap${editorTab === 'preview' ? ' editor-hidden' : ''}`} role="tabpanel">
             <CodeMirrorEditor
@@ -246,11 +232,11 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
       {song && isOwner && (
         <>
           <hr className="divider" />
-          <button className="btn btn-danger btn-sm" onClick={deleteSong}>{t('songEdit.deleteSong')}</button>
+          <Button color="red" size="xs" className="btn btn-danger btn-sm" onClick={deleteSong}>{t('songEdit.deleteSong')}</Button>
         </>
       )}
-      {ocrOpen && (
         <OcrModal
+          opened={ocrOpen}
           hasGeminiKey={hasGeminiKey}
           onResult={(text, lang) => {
             let c = text;
@@ -259,7 +245,6 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
           }}
           onClose={() => setOcrOpen(false)}
         />
-      )}
     </>
   );
 }

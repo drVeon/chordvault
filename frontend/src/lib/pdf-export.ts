@@ -4,7 +4,7 @@ import { prepareSong, resolveEffectivePreferences } from './chords';
 import { entrySemitones } from './setlistKeys';
 import { buildPdfConfig } from './pdf-config';
 import { EMBEDDED_FONT } from './constants';
-import { loadPdfFont, makePdfConstructor, unsupportedChars } from './pdf-fonts';
+import { loadPdfFont, makePdfConstructor, unsupportedChars, type PdfFontData } from './pdf-fonts';
 import type { Setlist } from '../types/setlist';
 
 // The library breaks pages mid-verse, so keep a song on one page where we can.
@@ -20,7 +20,7 @@ function download(bytes: Uint8Array, filename: string): void {
   URL.revokeObjectURL(url);
 }
 
-async function loadFontFor(content: string): Promise<string | null> {
+async function loadFontFor(content: string): Promise<PdfFontData | null> {
   try {
     return await loadPdfFont(content);
   } catch {
@@ -44,10 +44,19 @@ async function renderOne(
   // chordsheetjs and chordsheetjs/pdf each declare their own Song class, so the
   // types don't match across entry points even though it's one object at runtime.
   const forPdf = song as unknown as Parameters<PdfFormatter['format']>[0];
+  const metadata = (name: string) => {
+    const value = song.getMetadataValue(name);
+    return Array.isArray(value) ? value.join(',') : value || '';
+  };
+  const key = metadata('key');
+  const headerText = [metadata('title'), key ? `Key of ${key}` : '', metadata('artist')];
+  const measurement = new PdfFormatter(buildPdfConfig({ fontName, fontSize }));
+  measurement.format(forPdf, Doc);
+  const measureDoc = measurement.getDocumentWrapper().doc;
 
   let requested: Uint8Array | null = null;
   for (let size = fontSize; ; size--) {
-    const formatter = new PdfFormatter(buildPdfConfig({ fontName, fontSize: size }));
+    const formatter = new PdfFormatter(buildPdfConfig({ fontName, fontSize: size, headerText, doc: measureDoc }));
     formatter.format(forPdf, Doc);
     const wrapper = formatter.getDocumentWrapper();
     const bytes = new Uint8Array(wrapper.doc.output('arraybuffer'));

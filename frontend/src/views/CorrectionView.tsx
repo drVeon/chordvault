@@ -1,7 +1,7 @@
+import { Button, useComputedColorScheme } from '@mantine/core';
 import { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
-import { useToast } from '../context/ToastContext';
-import { useTheme } from '../context/ThemeContext';
+import { showStatusNotification as toast } from '../lib/notifications';
 import { CodeMirrorEditor } from '../components/CodeMirrorEditor';
 import { detectFormat, toChordPro, ensureKeyDirective } from '../lib/chords';
 import type { Song } from '../types';
@@ -13,15 +13,14 @@ interface CorrectionViewProps {
 
 export function CorrectionView({ songId, navigate }: CorrectionViewProps) {
   const apiCall = useApi();
-  const toast = useToast();
-  const { theme } = useTheme();
+  const theme = useComputedColorScheme('dark');
   const [content, setContent] = useState('');
 
   useEffect(() => {
     apiCall<Song>('GET', `/api/songs/${songId}`)
       .then((s) => setContent(s.content))
       .catch((e) => { toast(e.message, 'error'); navigate('browse'); });
-  }, [songId, apiCall, navigate, toast]);
+  }, [songId, apiCall, navigate]);
 
   const submit = async () => {
     const trimmed = content.trim();
@@ -40,9 +39,9 @@ export function CorrectionView({ songId, navigate }: CorrectionViewProps) {
   return (
     <>
       <div className="edit-header">
-        <button className="btn btn-ghost btn-sm" onClick={() => navigate('song-view', { id: String(songId) })}>&#8592; Cancel</button>
+        <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate('song-view', { id: String(songId) })}>&#8592; Cancel</Button>
         <h2>Submit Correction</h2>
-        <button className="btn btn-sm" onClick={submit}>Submit</button>
+        <Button size="xs" className="btn btn-sm" onClick={submit}>Submit</Button>
       </div>
       <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 12 }}>
         Edit the chords below. Your correction will be reviewed by the song owner before being applied.

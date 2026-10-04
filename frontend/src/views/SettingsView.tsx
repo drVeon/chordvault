@@ -1,3 +1,5 @@
+import { Select, Paper, Button, NativeSelect, PasswordInput, Textarea } from '@mantine/core';
+import { useForm } from '@mantine/form';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { LANGUAGES, languageName } from '../lib/languages';
@@ -12,12 +14,11 @@ export function SettingsView() {
   const apiCall = useApi();
   const { demoMode } = useDemo();
   const { user, isAdmin } = useAuth();
-  const [currentPw, setCurrentPw] = useState('');
-  const [newPw, setNewPw] = useState('');
-  const [confirmPw, setConfirmPw] = useState('');
+  const passwordForm = useForm({ initialValues: { currentPw: '', newPw: '', confirmPw: '' }, validate: { currentPw: value => value ? null : 'All fields are required', newPw: value => value.length >= 6 ? null : 'New password must be at least 6 characters', confirmPw: (value, values) => value === values.newPw ? null : 'New passwords do not match' } });
+  const { currentPw, newPw, confirmPw } = passwordForm.values;
+  const [changingPassword, setChangingPassword] = useState(false);
   const [pwMsg, setPwMsg] = useState<{ text: string; color: string } | null>(null);
   const [preferredLangs, setPreferredLangs] = useState<string[]>([]);
-  const [langSearch, setLangSearch] = useState('');
   const [langMsg, setLangMsg] = useState<{ text: string; color: string } | null>(null);
   const [ocrPrompt, setOcrPrompt] = useState('');
   const [defaultPrompt, setDefaultPrompt] = useState('');
@@ -60,15 +61,18 @@ export function SettingsView() {
   useEffect(() => { loadPreferredLangs(); }, [loadPreferredLangs]);
 
   const changePassword = async () => {
+    if (changingPassword) return;
     setPwMsg(null);
     if (!currentPw || !newPw || !confirmPw) { setPwMsg({ text: 'All fields are required', color: 'var(--danger)' }); return; }
     if (newPw.length < 6) { setPwMsg({ text: 'New password must be at least 6 characters', color: 'var(--danger)' }); return; }
     if (newPw !== confirmPw) { setPwMsg({ text: 'New passwords do not match', color: 'var(--danger)' }); return; }
+    setChangingPassword(true);
     try {
       await apiCall('PUT', '/api/auth/password', { current_password: currentPw, new_password: newPw });
       setPwMsg({ text: 'Password changed successfully', color: 'var(--success)' });
-      setCurrentPw(''); setNewPw(''); setConfirmPw('');
+      passwordForm.reset();
     } catch (e) { setPwMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
+    finally { setChangingPassword(false); }
   };
 
   const saveOcrModel = async (model: string) => {
@@ -106,7 +110,6 @@ export function SettingsView() {
     try {
       await apiCall('PUT', '/api/settings/languages', { languages: updated });
       setPreferredLangs(updated);
-      setLangSearch('');
       setLangMsg({ text: 'Saved', color: 'var(--success)' });
     } catch (e) { setLangMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
   };
@@ -150,13 +153,13 @@ export function SettingsView() {
           {demoMode ? (
             <div className="muted-text">Disabled in demo mode</div>
           ) : (
-            <div className="auth-card">
-              <div className="field"><label>Current Password</label><input type="password" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} autoComplete="current-password" /></div>
-              <div className="field"><label>New Password</label><input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} autoComplete="new-password" /></div>
-              <div className="field"><label>Confirm New Password</label><input type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} autoComplete="new-password" /></div>
-              <button className="btn" onClick={changePassword}>Change Password</button>
+            <form className="auth-card" onSubmit={passwordForm.onSubmit(changePassword)}>
+              <div className="field"><PasswordInput label={<>Current Password</>} type="password" {...passwordForm.getInputProps('currentPw')} autoComplete="current-password" /></div>
+              <div className="field"><PasswordInput label={<>New Password</>} type="password" {...passwordForm.getInputProps('newPw')} autoComplete="new-password" /></div>
+              <div className="field"><PasswordInput label={<>Confirm New Password</>} type="password" {...passwordForm.getInputProps('confirmPw')} autoComplete="new-password" /></div>
+              <Button className="btn" type="submit" loading={changingPassword} disabled={changingPassword}>Change Password</Button>
               {pwMsg && <div className="field-message" style={{ color: pwMsg.color }}>{pwMsg.text}</div>}
-            </div>
+            </form>
           )}
         </div>
 
@@ -165,7 +168,7 @@ export function SettingsView() {
           <p className="muted-hint">
             Your preferred languages appear at the top of the language picker when creating songs.
           </p>
-          <div className="auth-card">
+          <Paper withBorder className="auth-card">
             <div className="flex-row" style={{ flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
               {preferredLangs.map(code => (
                 <span key={code} className="badge badge-tag" style={{ cursor: 'pointer' }} onClick={() => removeLang(code)}>
@@ -176,29 +179,11 @@ export function SettingsView() {
             </div>
             {preferredLangs.length < MAX_PREFERRED_LANGUAGES && (
               <div className="field">
-                <input
-                  type="text"
-                  placeholder="Search to add a language..."
-                  value={langSearch}
-                  onChange={(e) => setLangSearch(e.target.value)}
-                />
-                {langSearch && (
-                  <div className="language-picker-dropdown" style={{ position: 'relative', marginTop: 4 }}>
-                    {LANGUAGES
-                      .filter(l => !preferredLangs.includes(l.code) &&
-                        (l.name.toLowerCase().includes(langSearch.toLowerCase()) || l.code.includes(langSearch.toLowerCase())))
-                      .slice(0, 8)
-                      .map(l => (
-                        <button key={l.code} type="button" className="language-picker-option" onClick={() => addLang(l.code)}>
-                          {l.name} <span className="language-picker-code">{l.code}</span>
-                        </button>
-                      ))}
-                  </div>
-                )}
+                <Select searchable label="Add a language" placeholder="Search languages" value={null} data={LANGUAGES.filter(language => !preferredLangs.includes(language.code)).map(language => ({ value: language.code, label: `${language.name} (${language.code})` }))} onChange={(value) => { if (value) void addLang(value); }} />
               </div>
             )}
             {langMsg && <div className="field-message" style={{ color: langMsg.color }}>{langMsg.text}</div>}
-          </div>
+          </Paper>
         </div>
 
         <div className="settings-section">
@@ -207,20 +192,18 @@ export function SettingsView() {
             Download all songs you can access as ChordPro (.cho) files in a zip.
             {isAdmin ? ' As an admin, you can also bulk import ChordPro files into the library.' : ''}
           </p>
-          <div className="auth-card">
+          <Paper withBorder className="auth-card">
             <div className="flex-row" style={{ flexWrap: 'wrap', gap: 16 }}>
               {isAdmin && (
-                <button className="btn btn-sm" onClick={() => setShowImport(true)}>Import Songs</button>
+                <Button size="xs" className="btn btn-sm" onClick={() => setShowImport(true)}>Import Songs</Button>
               )}
-              <button className="btn btn-sm" onClick={handleExport} disabled={exporting}>
+              <Button size="xs" className="btn btn-sm" onClick={handleExport} disabled={exporting}>
                 {exporting ? 'Exporting…' : 'Export Songs'}
-              </button>
+              </Button>
             </div>
             {exportMsg && <div className="field-message" style={{ color: exportMsg.color }}>{exportMsg.text}</div>}
-          </div>
-          {showImport && (
-            <ImportModal onClose={() => setShowImport(false)} onDone={() => {}} />
-          )}
+          </Paper>
+          <ImportModal opened={showImport} onClose={() => setShowImport(false)} onDone={() => {}} />
         </div>
 
         <div className="settings-section">
@@ -237,10 +220,10 @@ export function SettingsView() {
           <p className="muted-hint">
             Choose which Gemini model to use for OCR and customize the extraction prompt. You can also change the model per-extraction in the OCR modal.
           </p>
-          <div className="auth-card">
+          <Paper withBorder className="auth-card">
             <div className="field">
-              <label>Model</label>
-              <select
+
+              <NativeSelect label={<>Model</>}
                 value={ocrModel}
                 onChange={(e) => saveOcrModel(e.target.value)}
                 style={{ fontSize: 14, padding: '8px 12px' }}
@@ -248,12 +231,12 @@ export function SettingsView() {
                 {modelList.map(m => (
                   <option key={m.id} value={m.id}>{m.label} — {m.hint}</option>
                 ))}
-              </select>
+              </NativeSelect>
               {modelMsg && <div className="field-message" style={{ marginTop: 4, color: modelMsg.color }}>{modelMsg.text}</div>}
             </div>
             <div className="field">
-              <label>Prompt</label>
-              <textarea
+
+              <Textarea label={<>Prompt</>}
                 value={ocrPrompt}
                 onChange={(e) => setOcrPrompt(e.target.value)}
                 placeholder={defaultPrompt}
@@ -266,18 +249,18 @@ export function SettingsView() {
               </div>
             </div>
             <div className="flex-row" style={{ flexWrap: 'wrap' }}>
-              <button className="btn btn-sm" onClick={saveOcrPrompt}>Save Prompt</button>
+              <Button size="xs" className="btn btn-sm" onClick={saveOcrPrompt}>Save Prompt</Button>
               {!ocrPrompt && (
-                <button className="btn btn-sm" style={{ background: 'var(--surface-alt, var(--surface))' }} onClick={() => setOcrPrompt(defaultPrompt)}>
+                <Button size="xs" className="btn btn-sm" style={{ background: 'var(--surface-alt, var(--surface))' }} onClick={() => setOcrPrompt(defaultPrompt)}>
                   Copy Default
-                </button>
+                </Button>
               )}
               {hasCustomPrompt && (
-                <button className="btn btn-danger btn-sm" onClick={resetOcrPrompt}>Reset to Default</button>
+                <Button color="red" size="xs" className="btn btn-danger btn-sm" onClick={resetOcrPrompt}>Reset to Default</Button>
               )}
             </div>
             {promptMsg && <div className="field-message" style={{ color: promptMsg.color }}>{promptMsg.text}</div>}
-          </div>
+          </Paper>
         </div>
       </div>
     </>

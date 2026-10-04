@@ -1,3 +1,4 @@
+import { Chip } from '@mantine/core';
 import { PRESET_TAGS } from '../lib/constants';
 
 interface TagPickerProps {
@@ -6,26 +7,7 @@ interface TagPickerProps {
 }
 
 export function TagPicker({ selected, onChange }: TagPickerProps) {
-  const toggle = (tag: string) => {
-    if (selected.includes(tag)) {
-      onChange(selected.filter((t) => t !== tag));
-    } else {
-      onChange([...selected, tag]);
-    }
-  };
-
-  return (
-    <div className="tag-picker" id="tag-picker">
-      {PRESET_TAGS.map((tag) => (
-        <button
-          key={tag}
-          type="button"
-          className={`tag-pill${selected.includes(tag) ? ' active' : ''}`}
-          onClick={() => toggle(tag)}
-        >
-          {tag}
-        </button>
-      ))}
-    </div>
-  );
+  return <Chip.Group multiple value={selected} onChange={onChange}>
+    <div className="tag-picker">{PRESET_TAGS.map((tag) => <Chip key={tag} value={tag} size="sm">{tag}</Chip>)}</div>
+  </Chip.Group>;
 }

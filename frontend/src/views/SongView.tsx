@@ -1,8 +1,10 @@
+import { Paper, Button, NativeSelect } from '@mantine/core';
+import { modals } from '@mantine/modals';
 import { useState, useEffect, useMemo } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
-import { useToast } from '../context/ToastContext';
+import { showStatusNotification as toast } from '../lib/notifications';
 import { useChordRenderer } from '../hooks/useChordRenderer';
 import { useFontScale } from '../hooks/useFontScale';
 import { useTwoCol } from '../hooks/useTwoCol';
@@ -24,7 +26,6 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const apiCall = useApi();
   const { user } = useAuth();
   const { t } = useI18n();
-  const toast = useToast();
   const [song, setSong] = useState<Song | null>(null);
   const [versions, setVersions] = useState<SongVersion[]>([]);
   const [corrections, setCorrections] = useState<Correction[]>([]);
@@ -39,7 +40,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
         location.hash = `#song/${songId}`;
       })
       .catch((e) => { toast(e.message, 'error'); navigate(user ? 'my-songs' : 'browse'); });
-  }, [songId, apiCall, navigate, toast, user]);
+  }, [songId, apiCall, navigate, user]);
 
   useEffect(() => {
     if (!song) return;
@@ -116,7 +117,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
 
 
   const approveCorrection = async (id: number) => {
-    if (!confirm('Apply this correction? The original song content will be updated.')) return;
+    modals.openConfirmModal({ children: 'Apply this correction? The original song content will be updated.', labels: { confirm: 'Confirm', cancel: 'Cancel' }, onConfirm: async () => {
     try {
       await apiCall('PUT', `/api/corrections/${id}/approve`);
       toast('Correction approved', 'success');
@@ -124,16 +125,20 @@ export function SongView({ songId, navigate }: SongViewProps) {
       const data = await apiCall<Song>('GET', `/api/songs/${songId}`);
       setSong(data);
     } catch (e) { toast((e as Error).message, 'error'); }
-  };
+
+} });
+};
 
   const rejectCorrection = async (id: number) => {
-    if (!confirm('Reject and delete this correction?')) return;
+    modals.openConfirmModal({ children: 'Reject and delete this correction?', labels: { confirm: 'Confirm', cancel: 'Cancel' }, onConfirm: async () => {
     try {
       await apiCall('DELETE', `/api/corrections/${id}`);
       toast('Correction rejected', 'success');
       setCorrections((prev) => prev.filter((c) => c.id !== id));
     } catch (e) { toast((e as Error).message, 'error'); }
-  };
+
+} });
+};
 
   if (!song) return <Loading />;
 
@@ -141,28 +146,28 @@ export function SongView({ songId, navigate }: SongViewProps) {
     <div lang={song.language || undefined}>
       <div className="song-view-header">
         <div className="song-view-nav">
-          <button className="btn btn-ghost btn-sm" onClick={() => { location.hash = ''; navigate(user ? 'my-songs' : 'browse'); }}>
+          <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => { location.hash = ''; navigate(user ? 'my-songs' : 'browse'); }}>
             &#8592; {t('songView.back')}
-          </button>
+          </Button>
           <div style={{ display: 'flex', gap: 8 }}>
             {isOwner && (
-              <button className="btn btn-ghost btn-sm" onClick={() => navigate('song-edit', { id: String(song.id) })}>
+              <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate('song-edit', { id: String(song.id) })}>
                 &#9998; {t('songView.edit')}
-              </button>
+              </Button>
             )}
             {user && !isOwner && song.visibility !== 'private' && (
               <>
-                <button className="btn btn-ghost btn-sm" onClick={() => navigate('song-edit', { id: String(song.id) })}>
+                <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate('song-edit', { id: String(song.id) })}>
                   &#43; Create Version
-                </button>
-                <button className="btn btn-ghost btn-sm" onClick={() => navigate('correction', { id: String(song.id) })}>
+                </Button>
+                <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate('correction', { id: String(song.id) })}>
                   &#9998; Correction
-                </button>
+                </Button>
               </>
             )}
-            <button className="btn btn-ghost btn-sm" onClick={() => setAddToSetlistOpen(true)}>
+            <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => setAddToSetlistOpen(true)}>
               &#43; {t('songView.addToSetlist')}
-            </button>
+            </Button>
           </div>
         </div>
         <h1 className="song-view-title">{song.title}</h1>
@@ -175,7 +180,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
           {versions.length > 1 && (
             <div className="version-selector-container">
               <span className="version-selector-label">Version</span>
-              <select
+              <NativeSelect
                 className="version-select-compact"
                 value={songId}
                 onChange={(e) => navigate('song-view', { id: e.target.value })}
@@ -185,7 +190,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
                     {idx + 1} (@{v.username}) {v.youtube_url ? '▶' : ''}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </div>
           )}
         </div>
@@ -200,8 +205,8 @@ export function SongView({ songId, navigate }: SongViewProps) {
         onTwoColToggle={twoColState.toggleTwoCol}
         fontSize={fontScale.fontSize}
         onFontChange={fontScale.changeFontSize}
-        onReset={() => { 
-          fontScale.resetFontSize(); 
+        onReset={() => {
+          fontScale.resetFontSize();
           twoColState.setTwoColTo(false);
         }}
         onPickKey={chord.pickKey}
@@ -210,10 +215,10 @@ export function SongView({ songId, navigate }: SongViewProps) {
         renderKey={songId}
       />
 
-      <ChordSheet 
-        html={renderedHtml} 
-        twoCol={twoColState.twoCol} 
-        fontSize={fontScale.fontSize} 
+      <ChordSheet
+        html={renderedHtml}
+        twoCol={twoColState.twoCol}
+        fontSize={fontScale.fontSize}
       />
 
       {(song.tags || song.youtube_url) && (
@@ -228,16 +233,16 @@ export function SongView({ songId, navigate }: SongViewProps) {
         <div className="corrections-section">
           <h3 className="admin-section-title">Pending Corrections ({corrections.length})</h3>
           {corrections.map((c) => (
-            <div key={c.id} className="correction-card">
+            <Paper withBorder key={c.id} className="correction-card">
               <div className="correction-card-header">
                 <span>@{c.username} &middot; {new Date(c.created_at).toLocaleDateString()}</span>
                 <div className="correction-actions">
-                  <button className="btn btn-sm" onClick={() => approveCorrection(c.id)}>Approve</button>
-                  <button className="btn btn-danger btn-sm" onClick={() => rejectCorrection(c.id)}>Reject</button>
+                  <Button size="xs" className="btn btn-sm" onClick={() => approveCorrection(c.id)}>Approve</Button>
+                  <Button color="red" size="xs" className="btn btn-danger btn-sm" onClick={() => rejectCorrection(c.id)}>Reject</Button>
                 </div>
               </div>
               <div className="correction-preview" dangerouslySetInnerHTML={{ __html: renderChordPro(c.content, 0, false) }} />
-            </div>
+            </Paper>
           ))}
         </div>
       )}

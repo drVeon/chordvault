@@ -1,10 +1,12 @@
+import { Progress, Modal, Button, Input, NativeSelect, TextInput, Textarea } from '@mantine/core';
+import { useModals } from '@mantine/modals';
 import { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { useApi } from '../hooks/useApi';
-import { useToast } from '../context/ToastContext';
+import { showStatusNotification as toast } from '../lib/notifications';
 import { DEFAULT_GEMINI_MODEL } from '../lib/constants';
 
 interface OcrModalProps {
+  opened: boolean;
   hasGeminiKey: boolean;
   onResult: (text: string, language?: string | null) => void;
   onClose: () => void;
@@ -24,9 +26,19 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
+export function OcrModal({ opened, hasGeminiKey, onResult, onClose }: OcrModalProps) {
+  const modalManager = useModals();
+  return (
+    <Modal opened={opened} onClose={onClose} title="Import from image or PDF" trapFocus={modalManager.modals.length === 0} closeOnEscape={modalManager.modals.length === 0} closeOnClickOutside={modalManager.modals.length === 0}>
+      {opened && <OcrContent hasGeminiKey={hasGeminiKey} onResult={onResult} onClose={onClose} />}
+    </Modal>
+  );
+}
+
+function OcrContent({ hasGeminiKey, onResult, onClose }: Omit<OcrModalProps, 'opened'>) {
+  const active = useRef(true);
+  useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
   const api = useApi();
-  const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -43,7 +55,7 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
 
   useEffect(() => {
     api<{ model: string; models: { id: string; label: string; hint: string }[] }>('GET', '/api/settings/ocr-model')
-      .then(data => { setSelectedModel(data.model); setModels(data.models); })
+      .then(data => { if (active.current) { setSelectedModel(data.model); setModels(data.models); } })
       .catch(() => {});
   }, [api]);
 
@@ -61,7 +73,7 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
       setPreview(file.name);
     } else {
       const reader = new FileReader();
-      reader.onload = (ev) => setPreview(ev.target?.result as string);
+      reader.onload = (ev) => { if (active.current) setPreview(ev.target?.result as string); };
       reader.readAsDataURL(file);
     }
     // Reset state on new file
@@ -81,18 +93,20 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
     try {
       setProgress(10);
       const base64 = await fileToBase64(file);
+      if (!active.current) return;
       setImageBase64(base64);
       setProgress(30);
       const result = await api<{ text: string; language: string | null }>('POST', '/api/ocr/gemini', { image: base64, model: selectedModel });
+      if (!active.current) return;
       setProgress(100);
       setResultText(result.text);
       setDetectedLang(result.language);
       // Seed chat history with the initial model response
       setChatHistory([{ role: 'model', text: result.text }]);
     } catch (e) {
-      toast(`OCR failed: ${(e as Error).message}`, 'error');
+      if (active.current) toast(`OCR failed: ${(e as Error).message}`, 'error');
     }
-    setProcessing(false);
+    if (active.current) setProcessing(false);
   };
 
   const sendFix = async () => {
@@ -111,15 +125,17 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
         message: msg,
         model: selectedModel,
       });
+      if (!active.current) return;
       setResultText(result.text);
       setChatHistory([...newHistory, { role: 'model', text: result.text }]);
-      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      setTimeout(() => { if (active.current) chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, 100);
     } catch (e) {
+      if (!active.current) return;
       toast(`Fix failed: ${(e as Error).message}`, 'error');
       // Remove the user message on failure
       setChatHistory(chatHistory);
     }
-    setRefining(false);
+    if (active.current) setRefining(false);
   };
 
   const useResult = () => {
@@ -130,20 +146,18 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
 
   const hasCorrections = chatHistory.filter(m => m.role === 'user').length > 0;
 
-  return createPortal(
-    <div className="modal-backdrop" data-overlay onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="ocr-card">
-        <div className="view-header" style={{ marginBottom: 16 }}>
-          <h3 className="view-title">Import from image or PDF</h3>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>&#10005;</button>
-        </div>
+  return (<>
+
+
 
         {/* File picker — hide after extraction to save space */}
         {!resultText && (
           <>
             <div className="field">
-              <label>Select image or PDF</label>
-              <input type="file" ref={fileRef} accept="image/*,application/pdf" onChange={handleFile} style={{ fontSize: 14, padding: 8 }} />
+
+              <Input.Wrapper label="Select image or PDF" id="ocr-file">
+                <Input id="ocr-file" type="file" ref={fileRef} accept="image/*,application/pdf" onChange={handleFile} style={{ fontSize: 14, padding: 8 }} />
+              </Input.Wrapper>
             </div>
             {preview && (
               <div style={{ marginBottom: 14 }}>
@@ -163,8 +177,8 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
             )}
             {models.length > 0 && (
               <div className="field" style={{ marginBottom: 12 }}>
-                <label>Model</label>
-                <select
+
+                <NativeSelect label={<>Model</>}
                   value={selectedModel}
                   onChange={(e) => setSelectedModel(e.target.value)}
                   style={{ fontSize: 14, padding: '8px 12px' }}
@@ -172,17 +186,15 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
                   {models.map(m => (
                     <option key={m.id} value={m.id}>{m.label} — {m.hint}</option>
                   ))}
-                </select>
+                </NativeSelect>
               </div>
             )}
-            <button className="btn" onClick={process} disabled={processing} style={{ width: '100%', padding: '12px 22px', fontSize: 15 }}>
+            <Button className="btn" onClick={process} disabled={processing} style={{ width: '100%', padding: '12px 22px', fontSize: 15 }}>
               {processing ? 'Processing...' : '\u2728 Extract text'}
-            </button>
+            </Button>
             {(processing || progress > 0) && (
               <div style={{ marginTop: 12 }}>
-                <div className="ocr-progress-bar">
-                  <div className="ocr-progress-fill" style={{ width: `${progress}%` }} />
-                </div>
+                <Progress value={progress} aria-label="OCR progress" />
               </div>
             )}
           </>
@@ -203,11 +215,11 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
               </div>
             )}
 
-            <label className="muted-text flex-align-center" style={{ fontSize: 12, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>
+
+            <Textarea label={<>
               {hasCorrections ? 'Corrected result' : 'Extracted text'}
               {hasCorrections && <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 400, textTransform: 'none' }}>({chatHistory.filter(m => m.role === 'user').length} fix{chatHistory.filter(m => m.role === 'user').length > 1 ? 'es' : ''} applied)</span>}
-            </label>
-            <textarea className="ocr-result" readOnly value={resultText} />
+            </>} className="ocr-result" readOnly value={resultText} />
             {detectedLang && (
               <div className="muted-text" style={{ marginTop: 6 }}>
                 Detected language: <strong>{detectedLang}</strong>
@@ -217,7 +229,7 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
             {/* Chat input for corrections */}
             {models.length > 0 && (
               <div style={{ marginBottom: 8 }}>
-                <select
+                <NativeSelect
                   value={selectedModel}
                   onChange={(e) => setSelectedModel(e.target.value)}
                   style={{ fontSize: 12, padding: '4px 8px', color: 'var(--muted)' }}
@@ -225,11 +237,11 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
                   {models.map(m => (
                     <option key={m.id} value={m.id}>{m.label} — {m.hint}</option>
                   ))}
-                </select>
+                </NativeSelect>
               </div>
             )}
             <div className="ocr-fix-row">
-              <input
+              <TextInput aria-label="Describe what to fix..."
                 type="text"
                 className="ocr-fix-input"
                 placeholder="Describe what to fix..."
@@ -238,13 +250,13 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendFix(); } }}
                 disabled={refining}
               />
-              <button
+              <Button size="xs"
                 className="btn btn-sm"
                 onClick={sendFix}
                 disabled={refining || !fixInput.trim()}
               >
                 {refining ? '...' : 'Fix'}
-              </button>
+              </Button>
             </div>
             <div className="muted-text" style={{ fontSize: 12, marginTop: 4 }}>
               e.g. "move the G chord to the next word" or "verse 2 should be Am not Em"
@@ -252,13 +264,11 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
 
             {/* Action buttons */}
             <div className="flex-row" style={{ marginTop: 12 }}>
-              <button className="btn" onClick={useResult}>Use this</button>
-              <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+              <Button className="btn" onClick={useResult}>Use this</Button>
+              <Button variant="default" className="btn btn-ghost" onClick={onClose}>Cancel</Button>
             </div>
           </div>
         )}
-      </div>
-    </div>,
-    document.body
-  );
+
+    </>);
 }

@@ -1,3 +1,4 @@
+import { Button, Paper, SimpleGrid } from '@mantine/core';
 import { normalizeKey, ALL_KEYS, ALL_KEYS_MINOR } from '../lib/keys';
 
 interface KeyPickerProps {
@@ -9,13 +10,13 @@ interface KeyPickerProps {
   onSaveLocal?: () => void;
 }
 
-export function KeyPicker({ 
-  currentKey, 
-  onPickKey, 
-  visible, 
-  isModified, 
-  onSaveOnline, 
-  onSaveLocal 
+export function KeyPicker({
+  currentKey,
+  onPickKey,
+  visible,
+  isModified,
+  onSaveOnline,
+  onSaveLocal
 }: KeyPickerProps) {
   if (!visible) return null;
 
@@ -24,35 +25,37 @@ export function KeyPicker({
   const keys = isMinor ? ALL_KEYS_MINOR : ALL_KEYS;
 
   return (
-    <div className="key-picker" id="key-picker">
-      <div className="key-grid">
+    <Paper withBorder p="md" className="key-picker" id="key-picker" role="group" aria-label="Transpose key">
+      <SimpleGrid cols={{ base: 4, sm: 6 }} spacing="xs">
         {keys.map((k) => (
-          <button
+          <Button
             key={k}
             className={`key-pill${k === norm ? ' active' : ''}`}
+            variant={k === norm ? 'light' : 'default'}
+            aria-pressed={k === norm}
             onClick={() => onPickKey(k)}
           >
             {k}
-          </button>
+          </Button>
         ))}
-      </div>
+      </SimpleGrid>
       {isModified && (
         <div className="key-picker-actions">
           <div className="key-picker-save-hint">Save this key?</div>
           <div className="key-picker-btns">
             {onSaveOnline && (
-              <button className="btn btn-sm btn-save-online" onClick={onSaveOnline}>
+              <Button size="xs" className="btn btn-sm btn-save-online" onClick={onSaveOnline}>
                 SAVE (Online)
-              </button>
+              </Button>
             )}
             {onSaveLocal && (
-              <button className="btn btn-sm btn-ghost" onClick={onSaveLocal}>
+              <Button variant="default" size="xs" className="btn btn-sm btn-ghost" onClick={onSaveLocal}>
                 Save (Local)
-              </button>
+              </Button>
             )}
           </div>
         </div>
       )}
-    </div>
+    </Paper>
   );
 }

@@ -15,8 +15,8 @@ vi.mock('../../context/AuthContext', () => ({
   useAuth: () => ({ user: mockUser }),
 }));
 
-vi.mock('../../context/ToastContext', () => ({
-  useToast: () => mockToast,
+vi.mock('../../lib/notifications', () => ({
+  showStatusNotification: (...args: unknown[]) => mockToast(...args),
 }));
 
 vi.mock('../../lib/storage', async () => {

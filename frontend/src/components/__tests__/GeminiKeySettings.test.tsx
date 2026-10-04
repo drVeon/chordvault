@@ -40,3 +40,13 @@ describe('GeminiKeySettings', () => {
     expect(mockApiCall).toHaveBeenCalledWith('DELETE', '/api/settings/gemini-key');
   });
 });
+
+it('does not submit or remove another key while a replacement is pending', async () => {
+  mockApiCall.mockImplementation((method: string) => method === 'GET' ? Promise.resolve({ hasKey: true }) : new Promise(() => {}));
+  render(<GeminiKeySettings />); await screen.findByText('✓ Key configured');
+  fireEvent.change(screen.getByLabelText('Replace Gemini API Key'), { target: { value: 'sample-key' } });
+  const replace = screen.getByRole('button', { name: 'Replace Key' });
+  fireEvent.click(replace); fireEvent.click(replace);
+  fireEvent.click(screen.getByRole('button', { name: 'Remove Key' }));
+  expect(mockApiCall.mock.calls.filter(call => call[0] !== 'GET')).toHaveLength(1);
+});

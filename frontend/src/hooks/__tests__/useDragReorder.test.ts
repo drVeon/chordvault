@@ -70,7 +70,7 @@ describe('useDragReorder Hook', () => {
 
     // Touch Start on index 0
     act(() => {
-      result.current.handleProps(0).onTouchStart();
+      result.current.handleProps(0).onTouchStart({ touches: [{}] } as unknown as React.TouchEvent);
     });
     expect(result.current.draggedIdx).toBe(0);
 
@@ -78,7 +78,7 @@ describe('useDragReorder Hook', () => {
     const mockClosest = vi.fn().mockReturnValue({
       getAttribute: (attr: string) => (attr === 'data-index' ? '2' : null),
     });
-    
+
     document.elementFromPoint = vi.fn().mockReturnValue({
       closest: mockClosest,
     } as unknown as Element);
@@ -106,5 +106,27 @@ describe('useDragReorder Hook', () => {
     expect(onSave).toHaveBeenCalledWith(['B', 'C', 'A']);
 
     delete (document as unknown as Record<string, unknown>).elementFromPoint;
+  });
+});
+
+describe('canceled touch reordering', () => {
+  it('restores the original order and performs no save after cancellation', () => {
+    const initial = ['A', 'B']; const save = vi.fn();
+    const { result } = renderHook(() => useDragReorder(initial, save));
+    act(() => result.current.handleProps(0).onTouchStart({ touches: [{}] } as unknown as React.TouchEvent));
+    document.elementFromPoint = vi.fn().mockReturnValue({ closest: () => ({ getAttribute: () => '1' }) });
+    act(() => result.current.handleProps(0).onTouchMove({ touches: [{ clientX: 0, clientY: 10 }], cancelable: true, preventDefault: vi.fn() } as unknown as React.TouchEvent));
+    act(() => (result.current.handleProps(0) as { onTouchCancel?: () => void }).onTouchCancel?.());
+    act(() => result.current.handleProps(0).onTouchEnd());
+    expect(save).not.toHaveBeenCalled(); expect(result.current.items).toEqual(initial);
+  });
+  it('aborts a drag when a second finger is added', () => {
+    const initial = ['A', 'B']; const save = vi.fn();
+    const { result } = renderHook(() => useDragReorder(initial, save));
+    act(() => result.current.handleProps(0).onTouchStart({ touches: [{}] } as unknown as React.TouchEvent));
+    document.elementFromPoint = vi.fn().mockReturnValue({ closest: () => ({ getAttribute: () => '1' }) });
+    act(() => result.current.handleProps(0).onTouchMove({ touches: [{ clientX: 0, clientY: 10 }, { clientX: 30, clientY: 10 }], cancelable: true, preventDefault: vi.fn() } as unknown as React.TouchEvent));
+    act(() => result.current.handleProps(0).onTouchEnd());
+    expect(save).not.toHaveBeenCalled(); expect(result.current.items).toEqual(initial);
   });
 });

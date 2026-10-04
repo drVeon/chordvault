@@ -200,7 +200,7 @@ class ResponsiveHtmlFormatter {
   }
 
   private renderParagraph(p: ChordSheetJS.Paragraph): string {
-    
+
     let content = p.lines.map(l => this.renderLine(l)).join('');
     let detectedType = p.type;
 
@@ -223,11 +223,11 @@ class ResponsiveHtmlFormatter {
     // 1. Type is known (not none/indeterminate)
     // 2. We haven't already rendered a label badge in this paragraph
     // 3. The paragraph actually has content (prevents empty "Indeterminate" badges for metadata)
-    const hasRenderableContent = p.lines.some(l => 
+    const hasRenderableContent = p.lines.some(l =>
       l.items.some(it => ('lyrics' in it && it.lyrics?.trim()) || ('chords' in it && it.chords?.trim()))
     );
 
-    if (detectedType !== 'none' && detectedType !== 'indeterminate' && 
+    if (detectedType !== 'none' && detectedType !== 'indeterminate' &&
         !content.includes('class="label"') && hasRenderableContent) {
       const typeLabel = detectedType.charAt(0).toUpperCase() + detectedType.slice(1);
       content = `<div class="row"><h3 class="label">${escHtml(typeLabel)}</h3></div>` + content;
@@ -240,10 +240,10 @@ class ResponsiveHtmlFormatter {
 
     if (l.type === 'comment') {
       const firstItem = l.items[0];
-      const content = (firstItem && 'content' in firstItem ? (firstItem as ChordSheetJS.Comment).content : 
+      const content = (firstItem && 'content' in firstItem ? (firstItem as ChordSheetJS.Comment).content :
                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                      (firstItem && 'lyrics' in firstItem ? (firstItem as any).lyrics : '')) || '';
-      
+
       if (SECTION_LABEL_RE.test(content.trim())) {
         const cleanLabel = content.trim().replace(/[[\]:]/g, '');
         return `<div class="row"><h3 class="label">${escHtml(cleanLabel)}</h3></div>`;
@@ -287,7 +287,7 @@ class ResponsiveHtmlFormatter {
 
     return chunks.map((chunk: string) => {
       const isSpace = /\s+/.test(chunk);
-      
+
       // If we've already placed the chord for this item, and this is a space,
       // output it as raw text. To prevent ugly wrapping between multiple spaces,
       // we ensure this raw text chunk is an unbreakable unit.
@@ -300,7 +300,7 @@ class ResponsiveHtmlFormatter {
       const rawChord = chordPlaced ? '' : (it.chords || '');
       const currentChord = normalizeChord(rawChord);
       chordPlaced = true;
-      
+
       const chords = `<span class="chord">${escHtml(currentChord)}</span>`;
       const lyricText = escHtml(chunk);
       return `<span class="column">${chords}<span class="lyrics">${lyricText}</span></span>`;
@@ -491,6 +491,7 @@ function fitsHorizontally(wrap: Element): boolean {
  */
 function wrapsChordLines(output: Element): boolean {
   for (const row of output.querySelectorAll('.row')) {
+    if (row.querySelector('.section-label, h3.label')) continue;
     const pairs = [...row.children];
     if (!pairs.length) continue;
     const tallestPair = Math.max(...pairs.map((pair) => pair.getBoundingClientRect().height));

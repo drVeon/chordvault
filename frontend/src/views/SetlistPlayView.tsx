@@ -1,8 +1,9 @@
+import { Button, Textarea } from '@mantine/core';
 import { useState, useCallback, useMemo, useRef } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
-import { useToast } from '../context/ToastContext';
+import { showStatusNotification as toast } from '../lib/notifications';
 import { useSwipe } from '../hooks/useSwipe';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useSetlistPlayer } from '../hooks/useSetlistPlayer';
@@ -29,7 +30,6 @@ interface SetlistPlayViewProps {
 export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, initialIndex, navigate }: SetlistPlayViewProps) {
   const apiCall = useApi();
   const { t } = useI18n();
-  const toast = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [editing, setEditing] = useState(false);
@@ -49,8 +49,8 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
     initialSetlist,
     initialIndex,
     navigate,
-    onNavigate: () => { 
-      setEditing(false); 
+    onNavigate: () => {
+      setEditing(false);
     },
   });
 
@@ -165,12 +165,12 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
     'ArrowRight': (e: KeyboardEvent) => { e.preventDefault(); next(); },
     'ArrowUp': (e: KeyboardEvent) => { e.preventDefault(); stepEntryKey(1); },
     'ArrowDown': (e: KeyboardEvent) => { e.preventDefault(); stepEntryKey(-1); },
-    'n': () => { if (entry) toggleEntryNum(!entry.nashville); },
-    'N': () => { if (entry) toggleEntryNum(!entry.nashville); },
+    'n': () => { if (entry) toggleEntryNum(!effNum); },
+    'N': () => { if (entry) toggleEntryNum(!effNum); },
     'e': () => openEditor(),
     'E': () => openEditor(),
     'Escape': () => { if (editing) setEditing(false); else exit(); },
-  }), [prev, next, stepEntryKey, entry, toggleEntryNum, openEditor, editing, exit]);
+  }), [prev, next, stepEntryKey, entry, effNum, toggleEntryNum, openEditor, editing, exit]);
 
   useKeyboardShortcuts(shortcuts, !!setlist);
 
@@ -205,7 +205,7 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
 
   const doFit = () => {
     const result = autoFit();
-    updateEntry({ 
+    updateEntry({
       _font: result.fontSize === fontScale.fontSize ? null : result.fontSize,
       _twoCol: result.twoCol === !!twoColState.twoCol ? null : result.twoCol
     });
@@ -221,29 +221,33 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
     <div ref={containerRef} className="setlist-play-container">
       <div className="setlist-play-header">
         <div className="setlist-play-header-left">
-          <button className="btn-exit" onClick={exit}>&#8592; {t('setlist.exit').toUpperCase()}</button>
+          <Button className="btn-exit" onClick={exit}>&#8592; {t('setlist.exit').toUpperCase()}</Button>
         </div>
 
         <div className="setlist-play-center">
-          <button 
-            className={`nav-circle-btn${index === 0 ? ' disabled' : ''}`} 
-            onClick={index > 0 ? prev : undefined} 
+          <Button
+            className={`nav-circle-btn${index === 0 ? ' disabled' : ''}`}
+            onClick={index > 0 ? prev : undefined}
+            disabled={index === 0}
+            aria-label="Previous Song"
             title="Previous Song"
           >
             &lt;
-          </button>
-          
+          </Button>
+
           <span className="setlist-play-indicator">
             {entry.title} ({index + 1}/{total})
           </span>
 
-          <button 
-            className={`nav-circle-btn${index === total - 1 ? ' disabled' : ''}`} 
-            onClick={index < total - 1 ? next : undefined} 
+          <Button
+            className={`nav-circle-btn${index === total - 1 ? ' disabled' : ''}`}
+            onClick={index < total - 1 ? next : undefined}
+            disabled={index === total - 1}
+            aria-label="Next Song"
             title="Next Song"
           >
             &gt;
-          </button>
+          </Button>
         </div>
 
         <div className="setlist-play-header-right">
@@ -298,16 +302,19 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
 
       {editing ? (
         <div className="setlist-editor">
-          <textarea
+          <Textarea
             className="setlist-edit-textarea"
+            aria-label="Setlist chord sheet"
+            rows={12}
+            styles={{ input: { minHeight: 300, fontFamily: 'var(--font-mono)', lineHeight: 1.7 } }}
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
             autoFocus
           />
           <div className="setlist-editor-actions">
-            <button className="btn btn-sm" onClick={saveEditorToSetlist}>{t('setlist.saveToSetlist')}</button>
-            <button className="btn btn-ghost btn-sm" onClick={saveEditorAsVersion}>{t('setlist.saveAsVersion')}</button>
-            <button className="btn btn-ghost btn-sm" onClick={() => setEditing(false)}>{t('songEdit.cancel')}</button>
+            <Button size="xs" className="btn btn-sm" onClick={saveEditorToSetlist}>{t('setlist.saveToSetlist')}</Button>
+            <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={saveEditorAsVersion}>{t('setlist.saveAsVersion')}</Button>
+            <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => setEditing(false)}>{t('songEdit.cancel')}</Button>
           </div>
         </div>
       ) : (
@@ -319,10 +326,10 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
               <div style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>The song owner has marked it as private.</div>
             </div>
           ) : (
-            <ChordSheet 
-              html={renderedHtml} 
-              twoCol={!!effTwoCol} 
-              fontSize={effFont || 0} 
+            <ChordSheet
+              html={renderedHtml}
+              twoCol={!!effTwoCol}
+              fontSize={effFont || 0}
             />
           )}
         </>

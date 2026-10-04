@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useApi } from './useApi';
 import { ApiError } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
+import { showStatusNotification as toast } from '../lib/notifications';
 import { getSetlistOverrides, saveSetlistOverride, migrateOverride } from '../lib/storage';
 import { enrichLocalSetlistSongs } from '../lib/setlists';
 import type { Setlist, SetlistEntry } from '../types';
@@ -52,11 +52,10 @@ export function useSetlistPlayer({
 }: UseSetlistPlayerOptions) {
   const apiCall = useApi();
   const { user } = useAuth();
-  const toast = useToast();
 
   const [setlist, setSetlist] = useState<Setlist | null>(initialSetlist || null);
   const [index, setIndex] = useState(initialIndex || 0);
-  
+
   const [savedTargetKeys, setSavedTargetKeys] = useState<Record<string, string | null>>({});
 
   useEffect(() => {
@@ -135,7 +134,7 @@ export function useSetlistPlayer({
     };
 
     loadSetlist();
-  }, [setlistId, apiCall, isLocal, initialSetlist, navigate, toast, user]);
+  }, [setlistId, apiCall, isLocal, initialSetlist, navigate, user]);
 
   const entry: SetlistEntry | null = setlist?.entries[index] || null;
   const total = setlist?.entries.length || 0;
@@ -162,7 +161,7 @@ export function useSetlistPlayer({
     } catch (e) {
       if (!silent) toast((e as Error).message, 'error');
     }
-  }, [setlist, entry, apiCall, user, toast]);
+  }, [setlist, entry, apiCall, user]);
 
   /**
    * Saves the current key setting locally in the browser.
@@ -177,7 +176,7 @@ export function useSetlistPlayer({
       [String(entry.entry_id)]: entry.target_key
     }));
     if (!silent) toast('Key saved locally', 'success');
-  }, [setlist, entry, toast]);
+  }, [setlist, entry]);
 
   const goTo = useCallback((newIdx: number) => {
     if (!setlist) return;

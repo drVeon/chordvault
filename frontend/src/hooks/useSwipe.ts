@@ -21,8 +21,9 @@ export function useSwipe({ onNext, onPrev, enabled, containerRef }: SwipeOptions
     if (!container) return;
 
     const onStart = (e: TouchEvent) => {
-      const tag = (e.target as HTMLElement).tagName;
-      if (tag === 'BUTTON' || tag === 'A' || tag === 'INPUT' || tag === 'LABEL' || tag === 'TEXTAREA') return;
+      stateRef.current = null;
+      if (e.touches.length !== 1) return;
+      if (e.target instanceof Element && e.target.closest('button, a, input, label, textarea, select, [role="button"], [data-no-swipe]')) return;
       const touch = e.touches[0];
       stateRef.current = {
         startX: touch.clientX,
@@ -33,6 +34,10 @@ export function useSwipe({ onNext, onPrev, enabled, containerRef }: SwipeOptions
     };
 
     const onMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1) {
+        stateRef.current = null;
+        return;
+      }
       const s = stateRef.current;
       if (!s) return;
       const touch = e.touches[0];
@@ -45,26 +50,30 @@ export function useSwipe({ onNext, onPrev, enabled, containerRef }: SwipeOptions
 
     const onEnd = (e: TouchEvent) => {
       const s = stateRef.current;
-      if (!s) return;
+      stateRef.current = null;
+      if (!s || e.touches.length !== 0 || !e.changedTouches[0]) return;
       const touch = e.changedTouches[0];
       const dx = touch.clientX - s.startX;
-      const dt = Date.now() - s.startTime;
+      const dt = Math.max(1, Date.now() - s.startTime);
       const velocity = Math.abs(dx) / dt;
       if (s.horizontal && (Math.abs(dx) > 50 || velocity > 0.3)) {
         if (dx < 0) onNext();
         else onPrev();
       }
-      stateRef.current = null;
     };
+    const onCancel = () => { stateRef.current = null; };
 
     container.addEventListener('touchstart', onStart, { passive: true });
     container.addEventListener('touchmove', onMove, { passive: true });
     container.addEventListener('touchend', onEnd, { passive: true });
+    container.addEventListener('touchcancel', onCancel, { passive: true });
 
     return () => {
+      stateRef.current = null;
       container.removeEventListener('touchstart', onStart);
       container.removeEventListener('touchmove', onMove);
       container.removeEventListener('touchend', onEnd);
+      container.removeEventListener('touchcancel', onCancel);
     };
   }, [enabled, containerRef, onNext, onPrev]);
 }

@@ -1,3 +1,4 @@
+import { Button } from '@mantine/core';
 import { getSongKey } from '../lib/chords';
 import { entrySemitones } from '../lib/setlistKeys';
 import type { SetlistEntry } from '../types';
@@ -70,16 +71,16 @@ export function SetlistEntryCard({
       </div>
       {isEditable && (
         <div className="setlist-entry-controls" onClick={(e) => e.stopPropagation()}>
-          <button className="btn btn-ghost btn-sm" disabled={!canStep} onClick={() => onStepKey(entry.entry_id, idx, -1)}>
+          <Button variant="default" size="xs" className="btn btn-ghost btn-sm" disabled={!canStep} onClick={() => onStepKey(entry.entry_id, idx, -1)}>
             &#9837;
-          </button>
-          <button className="btn btn-ghost btn-sm" disabled={!canStep} onClick={() => onStepKey(entry.entry_id, idx, 1)}>
+          </Button>
+          <Button variant="default" size="xs" className="btn btn-ghost btn-sm" disabled={!canStep} onClick={() => onStepKey(entry.entry_id, idx, 1)}>
             &#9839;
-          </button>
+          </Button>
         </div>
       )}
       {isEditable && (
-        <button
+        <Button
           className="setlist-remove-btn"
           onClick={(e) => {
             e.stopPropagation();
@@ -88,7 +89,7 @@ export function SetlistEntryCard({
           title="Remove"
         >
           &#10005;
-        </button>
+        </Button>
       )}
     </div>
   );

@@ -1,8 +1,9 @@
+import { Button, NativeSelect, TextInput } from '@mantine/core';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
-import { useToast } from '../context/ToastContext';
+import { showStatusNotification as toast } from '../lib/notifications';
 import { SongCard } from '../components/SongCard';
 import { EmptyState } from '../components/EmptyState';
 import { Pagination } from '../components/Pagination';
@@ -18,7 +19,6 @@ export function BrowseView({ navigate }: BrowseViewProps) {
   const api = useApi();
   const { user } = useAuth();
   const { t } = useI18n();
-  const toast = useToast();
   const [songs, setSongs] = useState<SongListItem[]>([]);
   const [query, setQuery] = useState(() => getSessionItem('cv_browse_query') || '');
   const [langFilter, setLangFilter] = useState(() => getSessionItem('cv_browse_lang') || '');
@@ -39,7 +39,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
       params.push(`page=${targetPage}`);
       params.push(`limit=20`);
       url += '?' + params.join('&');
-      
+
       interface PaginatedSongsResponse {
         songs: SongListItem[];
         total: number;
@@ -52,12 +52,12 @@ export function BrowseView({ navigate }: BrowseViewProps) {
       setPage(data.page);
       setTotalPages(data.totalPages);
       setLoaded(true);
-      
+
       setSessionItem('cv_browse_query', q);
       setSessionItem('cv_browse_lang', lang);
       setSessionItem('cv_browse_page', String(data.page));
     } catch (e) { toast((e as Error).message, 'error'); }
-  }, [api, toast]);
+  }, [api]);
 
   useEffect(() => {
     load(query, langFilter, page);
@@ -86,15 +86,15 @@ export function BrowseView({ navigate }: BrowseViewProps) {
           <div className="hero-tagline">{t('hero.tagline')}</div>
           <div className="hero-cta">{t('hero.cta')}</div>
           <div style={{ marginTop: 16, display: 'flex', gap: 12, justifyContent: 'center' }}>
-            <button className="btn" onClick={() => navigate('auth')}>{t('auth.signIn')}</button>
-            <button className="btn btn-ghost" onClick={() => navigate('about')}>Learn more</button>
+            <Button className="btn" onClick={() => navigate('auth')}>{t('auth.signIn')}</Button>
+            <Button variant="default" className="btn btn-ghost" onClick={() => navigate('about')}>Learn more</Button>
           </div>
         </div>
       ) : (
         <>
           <div className="search-row">
             <div className="search-input-wrapper">
-              <input
+              <TextInput aria-label={t('songs.searchPlaceholder')}
                 type="search"
                 placeholder={t('songs.searchPlaceholder')}
                 value={query}
@@ -102,17 +102,17 @@ export function BrowseView({ navigate }: BrowseViewProps) {
                 onKeyDown={(e) => { if (e.key === 'Enter') doSearch(); }}
               />
               {query && (
-                <button
+                <Button
                   className="search-clear-btn"
                   onClick={handleClear}
                   title="Clear search"
                 >
                   &times;
-                </button>
+                </Button>
               )}
             </div>
-            <button className="btn btn-ghost btn-sm" onClick={doSearch}>{t('songs.search')}</button>
-            <button
+            <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={doSearch}>{t('songs.search')}</Button>
+            <Button
               className={`btn btn-ghost btn-sm${showFilters || langFilter ? ' active' : ''}`}
               onClick={() => {
                 const next = !showFilters;
@@ -122,14 +122,14 @@ export function BrowseView({ navigate }: BrowseViewProps) {
               title="Filters"
             >
               &#9776;
-            </button>
+            </Button>
             {user && (
-              <button className="btn btn-sm" onClick={() => navigate('song-edit')}>&#43; New Song</button>
+              <Button size="xs" className="btn btn-sm" onClick={() => navigate('song-edit')}>&#43; New Song</Button>
             )}
           </div>
           {showFilters && (
             <div className="search-filters">
-              <select
+              <NativeSelect
                 className="language-filter"
                 value={langFilter}
                 onChange={(e) => { setLangFilter(e.target.value); load(query, e.target.value, 1); }}
@@ -138,7 +138,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
                 {LANGUAGES.map(l => (
                   <option key={l.code} value={l.code}>{l.name}</option>
                 ))}
-              </select>
+              </NativeSelect>
             </div>
           )}
           <div className="song-grid">

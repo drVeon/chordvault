@@ -1,8 +1,9 @@
+import { Tabs, Button, TextInput } from '@mantine/core';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
-import { useToast } from '../context/ToastContext';
+import { showStatusNotification as toast } from '../lib/notifications';
 import { useLocalSetlists } from '../hooks/useLocalSetlists';
 import { SetlistCard } from '../components/SetlistCard';
 import { EmptyState } from '../components/EmptyState';
@@ -19,7 +20,6 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
   const apiCall = useApi();
   const { user } = useAuth();
   const { t } = useI18n();
-  const toast = useToast();
   const ls = useLocalSetlists();
 
   const activeTab = user ? 'cloud' : 'local';
@@ -61,13 +61,13 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
       setPage(data.page);
       setTotalPages(data.totalPages);
       setLoaded(true);
-      
+
       setSessionItem('cv_setlists_query', q);
       setSessionItem('cv_setlists_date_from', from);
       setSessionItem('cv_setlists_date_to', to);
       setSessionItem('cv_setlists_page', String(data.page));
     } catch (e) { toast((e as Error).message, 'error'); }
-  }, [apiCall, toast, user]);
+  }, [apiCall, user]);
 
   useEffect(() => {
     if (activeTab === 'cloud') {
@@ -128,12 +128,11 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
     <>
       <div className="view-header">
         <h2 className="view-title">{t('setlist.title')}</h2>
-        <button className="btn btn-sm" onClick={() => setShowNew(true)}>{t('setlist.newSetlist')}</button>
+        <Button size="xs" className="btn btn-sm" onClick={() => setShowNew(true)}>{t('setlist.newSetlist')}</Button>
       </div>
-      <div className="setlist-tabs">
-        <button className="setlist-tab active">My Setlists</button>
-        <button className="setlist-tab" onClick={() => navigate('public-setlists')}>Public Setlists</button>
-      </div>
+      <Tabs value="mine" onChange={(tab) => navigate(tab === 'public' ? 'public-setlists' : 'setlists')} className="setlist-tabs">
+        <Tabs.List grow><Tabs.Tab value="mine">My Setlists</Tabs.Tab><Tabs.Tab value="public">Public Setlists</Tabs.Tab></Tabs.List>
+      </Tabs>
       {!user && (
         <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 16 }}>
           These setlists are saved in your browser. Sign in to create server-synced setlists.
@@ -141,7 +140,7 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
       )}
       {showNew && (
         <div className="search-row" style={{ marginBottom: 16 }}>
-          <input
+          <TextInput aria-label={t('setlist.namePlaceholder')}
             ref={nameRef}
             type="text"
             placeholder={t('setlist.namePlaceholder')}
@@ -149,13 +148,13 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') create(); }}
           />
-          <button className="btn btn-sm" onClick={create}>{t('setlist.create')}</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setShowNew(false)}>{t('songEdit.cancel')}</button>
+          <Button size="xs" className="btn btn-sm" onClick={create}>{t('setlist.create')}</Button>
+          <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => setShowNew(false)}>{t('songEdit.cancel')}</Button>
         </div>
       )}
       <div className="search-row">
         <div className="search-input-wrapper">
-          <input
+          <TextInput aria-label={t('setlist.searchPlaceholder')}
             type="search"
             placeholder={t('setlist.searchPlaceholder')}
             value={query}
@@ -169,17 +168,17 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
             onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
           />
           {query && (
-            <button
+            <Button
               className="search-clear-btn"
               onClick={handleClear}
               title="Clear search"
             >
               &times;
-            </button>
+            </Button>
           )}
         </div>
         {activeTab === 'cloud' && (
-          <button
+          <Button variant="default" size="xs"
             className="btn btn-ghost btn-sm"
             onClick={() => {
               const next = !showDates;
@@ -188,16 +187,16 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
             }}
           >
             &#128197; Date
-          </button>
+          </Button>
         )}
-        <button className="btn btn-ghost btn-sm" onClick={handleSearch}>{t('songs.search')}</button>
+        <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={handleSearch}>{t('songs.search')}</Button>
       </div>
       {activeTab === 'cloud' && showDates && (
         <div className="search-row" style={{ marginTop: -10 }}>
-          <label style={{ color: 'var(--muted)', fontSize: 13, whiteSpace: 'nowrap' }}>From</label>
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-          <label style={{ color: 'var(--muted)', fontSize: 13, whiteSpace: 'nowrap' }}>To</label>
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+
+          <TextInput label={<>From</>} type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+
+          <TextInput label={<>To</>} type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
         </div>
       )}
       <div className="song-grid">

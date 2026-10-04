@@ -1,7 +1,8 @@
+import { Tabs, Button, TextInput } from '@mantine/core';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../context/I18nContext';
-import { useToast } from '../context/ToastContext';
+import { showStatusNotification as toast } from '../lib/notifications';
 import { SetlistCard } from '../components/SetlistCard';
 import { EmptyState } from '../components/EmptyState';
 import { Pagination } from '../components/Pagination';
@@ -15,7 +16,6 @@ interface PublicSetlistsViewProps {
 export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
   const apiCall = useApi();
   const { t } = useI18n();
-  const toast = useToast();
   const [setlists, setSetlists] = useState<SetlistListItem[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [query, setQuery] = useState(() => getSessionItem('cv_publicsetlists_query') || '');
@@ -49,13 +49,13 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
       setPage(data.page);
       setTotalPages(data.totalPages);
       setLoaded(true);
-      
+
       setSessionItem('cv_publicsetlists_query', q);
       setSessionItem('cv_publicsetlists_date_from', from);
       setSessionItem('cv_publicsetlists_date_to', to);
       setSessionItem('cv_publicsetlists_page', String(data.page));
     } catch (e) { toast((e as Error).message, 'error'); }
-  }, [apiCall, toast]);
+  }, [apiCall]);
 
   useEffect(() => {
     load(query, dateFrom, dateTo, page);
@@ -81,15 +81,14 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
       <div className="view-header">
         <h2 className="view-title">{t('setlist.browseSetlists')}</h2>
       </div>
-      <div className="setlist-tabs">
-        <button className="setlist-tab" onClick={() => navigate('setlists')}>My Setlists</button>
-        <button className="setlist-tab active">Public Setlists</button>
-      </div>
+      <Tabs value="public" onChange={(tab) => navigate(tab === 'public' ? 'public-setlists' : 'setlists')} className="setlist-tabs">
+        <Tabs.List grow><Tabs.Tab value="mine">My Setlists</Tabs.Tab><Tabs.Tab value="public">Public Setlists</Tabs.Tab></Tabs.List>
+      </Tabs>
       {showSearch && (
         <>
           <div className="search-row">
             <div className="search-input-wrapper">
-              <input
+              <TextInput aria-label={t('setlist.searchPlaceholder')}
                 type="search"
                 placeholder={t('setlist.searchPlaceholder')}
                 value={query}
@@ -97,16 +96,16 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
                 onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
               />
               {query && (
-                <button
+                <Button
                   className="search-clear-btn"
                   onClick={handleClear}
                   title="Clear search"
                 >
                   &times;
-                </button>
+                </Button>
               )}
             </div>
-            <button
+            <Button variant="default" size="xs"
               className="btn btn-ghost btn-sm"
               onClick={() => {
                 const next = !showDates;
@@ -115,15 +114,15 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
               }}
             >
               &#128197; Date
-            </button>
-            <button className="btn btn-ghost btn-sm" onClick={handleSearch}>{t('songs.search')}</button>
+            </Button>
+            <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={handleSearch}>{t('songs.search')}</Button>
           </div>
           {showDates && (
             <div className="search-row" style={{ marginTop: -10 }}>
-              <label style={{ color: 'var(--muted)', fontSize: 13, whiteSpace: 'nowrap' }}>From</label>
-              <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); load(query, e.target.value, dateTo, 1); }} />
-              <label style={{ color: 'var(--muted)', fontSize: 13, whiteSpace: 'nowrap' }}>To</label>
-              <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); load(query, dateFrom, e.target.value, 1); }} />
+
+              <TextInput label={<>From</>} type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); load(query, e.target.value, dateTo, 1); }} />
+
+              <TextInput label={<>To</>} type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); load(query, dateFrom, e.target.value, 1); }} />
             </div>
           )}
         </>

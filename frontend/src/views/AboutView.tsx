@@ -1,3 +1,4 @@
+import { Button } from '@mantine/core';
 interface AboutViewProps {
   navigate: (view: string) => void;
 }
@@ -5,7 +6,7 @@ interface AboutViewProps {
 export function AboutView({ navigate }: AboutViewProps) {
   return (
     <div className="about-page">
-      <button className="btn btn-ghost btn-sm" onClick={() => navigate('browse')} style={{ marginBottom: 20 }}>&#8592; Back</button>
+      <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate('browse')} style={{ marginBottom: 20 }}>&#8592; Back</Button>
       <h1 className="about-title">&#9833; ChordVault</h1>
       <p className="about-subtitle">Your chord sheet library</p>
 
@@ -40,7 +41,7 @@ export function AboutView({ navigate }: AboutViewProps) {
       </div>
 
       <div style={{ textAlign: 'center', marginTop: 32 }}>
-        <button className="btn" onClick={() => navigate('auth')}>Sign in</button>
+        <Button className="btn" onClick={() => navigate('auth')}>Sign in</Button>
       </div>
     </div>
   );
