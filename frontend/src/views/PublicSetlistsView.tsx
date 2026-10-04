@@ -81,7 +81,7 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
       <div className="view-header">
         <h2 className="view-title">{t('setlist.browseSetlists')}</h2>
       </div>
-      <Tabs value="public" onChange={(tab) => navigate(tab === 'public' ? 'public-setlists' : 'setlists')} className="setlist-tabs">
+      <Tabs variant="pills" value="public" onChange={(tab) => navigate(tab === 'public' ? 'public-setlists' : 'setlists')} className="setlist-tabs">
         <Tabs.List grow><Tabs.Tab value="mine">My Setlists</Tabs.Tab><Tabs.Tab value="public">Public Setlists</Tabs.Tab></Tabs.List>
       </Tabs>
       {showSearch && (

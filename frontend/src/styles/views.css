@@ -111,6 +111,24 @@
 
 /* -- Setlist Tabs -------------------------- */
 .setlist-tabs { margin-bottom: 16px; }
+.setlist-tabs .mantine-Tabs-list {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 3px;
+}
+.setlist-tabs .mantine-Tabs-tab { border: 1px solid transparent; font-weight: 500; }
+.setlist-tabs .mantine-Tabs-tab[data-active] {
+  background: var(--mantine-primary-color-light);
+  border-color: var(--mantine-primary-color-filled);
+  color: var(--text);
+}
+@media (hover: hover) {
+  .setlist-tabs .mantine-Tabs-tab:not([data-disabled]):hover {
+    background: var(--mantine-primary-color-light-hover);
+    color: var(--text);
+  }
+}
 
 /* -- Settings ------------------------------ */
 .settings-section { margin-bottom: 32px; break-inside: avoid; }

@@ -44,7 +44,13 @@
   .song-card-actions { margin-left: 0; width: 100%; justify-content: flex-end; margin-top: 4px; border-top: 1px solid var(--border); padding-top: 8px; }
 }
 
-.song-card:hover { border-color: var(--mantine-primary-color-filled); }
+@media (hover: hover) {
+  .song-card:hover {
+    background: var(--mantine-primary-color-light-hover);
+    border-color: var(--mantine-primary-color-filled);
+  }
+  .song-card:hover .song-card-meta { color: var(--text); }
+}
 .song-card:active { transform: translateY(0); transition-duration: 0.08s; }
 
 .song-card-info { flex: 1; min-width: 0; }

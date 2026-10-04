@@ -130,7 +130,7 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
         <h2 className="view-title">{t('setlist.title')}</h2>
         <Button size="xs" className="btn btn-sm" onClick={() => setShowNew(true)}>{t('setlist.newSetlist')}</Button>
       </div>
-      <Tabs value="mine" onChange={(tab) => navigate(tab === 'public' ? 'public-setlists' : 'setlists')} className="setlist-tabs">
+      <Tabs variant="pills" value="mine" onChange={(tab) => navigate(tab === 'public' ? 'public-setlists' : 'setlists')} className="setlist-tabs">
         <Tabs.List grow><Tabs.Tab value="mine">My Setlists</Tabs.Tab><Tabs.Tab value="public">Public Setlists</Tabs.Tab></Tabs.List>
       </Tabs>
       {!user && (
