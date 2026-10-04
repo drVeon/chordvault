@@ -1,5 +1,5 @@
 export const PRESET_TAGS = [
-  'easy', 'medium', 'hard', 'instrumental', 'pop', 'rock', 'christmas',
+  'easy', 'medium', 'hard', 'instrumental', 'pop', 'rock', 'folk', 'singer-songwriter', 'christmas',
 ];
 
 export const MAX_LOCAL_SETLISTS = 50;

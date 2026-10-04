@@ -53,7 +53,7 @@
 - **Number notation:** toggle to convert chords to numbers (1, 4, 5) — key-agnostic
 - **Song versioning:** multiple arrangements per song, each optionally linked to a YouTube video
 - **YouTube link:** attach a YouTube URL to any song or version, opens in a new tab
-- **BPM & tags:** track tempo and categorize with preset tags (easy, medium, hard, instrumental, pop, rock, christmas). Filter song lists by tag, or click a tag on a song card.
+- **BPM & tags:** track tempo and categorize with preset tags (easy, medium, hard, instrumental, pop, rock, folk, singer-songwriter, christmas). Filter song lists by tag, or click a tag on a song card.
 - **Song language:** required on every song, searchable ISO 639-1 dropdown with preferred languages pinned at top. Filter songs by language on the browse page.
 - **Public/private songs:** toggle visibility per song — private songs are only visible to you and admins
 - **Browse without an account:** all public songs and public setlists are readable by anyone
