@@ -1,4 +1,4 @@
-import { Badge, Button } from '@mantine/core';
+import { Badge, Button, VisuallyHidden } from '@mantine/core';
 import { IconGripVertical, IconLock } from '@tabler/icons-react';
 import { getSongKey } from '../lib/chords';
 import { entrySemitones } from '../lib/setlistKeys';
@@ -57,7 +57,7 @@ export function SetlistEntryCard({
         <div className="song-card-title">
           {entry.title}
           {entry.visibility === 'private' && (
-            <Badge ml={8} px={8} title="Private" aria-label="Private"><IconLock size={14} aria-hidden /></Badge>
+            <Badge ml={8} px={8} title="Private"><IconLock size={14} aria-hidden /><VisuallyHidden>Private</VisuallyHidden></Badge>
           )}
           {!isLocal && isEditable && entry.content_override && (
             <Badge ml={8}>{t('setlist.edited')}</Badge>

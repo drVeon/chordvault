@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { Mock } from 'vitest';
 import { SetlistPlayView } from '../SetlistPlayView';
 import { useSetlistPlayer } from '../../hooks/useSetlistPlayer';
@@ -6,6 +6,8 @@ import { useSetlistPlayer } from '../../hooks/useSetlistPlayer';
 const layout = vi.hoisted(() => ({ current: 'phone' as 'desktop' | 'tablet' | 'phone' }));
 vi.mock('../../hooks/usePlaybackLayout', () => ({ usePlaybackLayout: () => layout.current }));
 vi.mock('../../hooks/useSetlistPlayer', () => ({ useSetlistPlayer: vi.fn() }));
+const columns = vi.hoisted(() => ({ twoCol: false }));
+vi.mock('../../hooks/useTwoCol', () => ({ useTwoCol: () => ({ twoCol: columns.twoCol, toggleTwoCol: vi.fn(), setTwoColTo: vi.fn() }) }));
 vi.mock('../../hooks/useApi', () => ({ useApi: () => vi.fn() }));
 vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: { id: 1 } }) }));
 vi.mock('../../context/I18nContext', () => ({ useI18n: () => ({ t: (k: string) => k }) }));
@@ -16,6 +18,7 @@ vi.mock('../../hooks/useKeyboardShortcuts', () => ({ useKeyboardShortcuts: vi.fn
 const LONG = '奇異恩典 Amazing Grace (中英雙語版 bilingual arrangement)';
 
 beforeEach(() => {
+  columns.twoCol = false;
   (useSetlistPlayer as Mock).mockReturnValue({
     setlist: { id: 1, name: 'Sunday worship', entries: [] },
     entry: { entry_id: 1, title: LONG, content: '{key: G}\n[G]Amazing grace' },
@@ -47,7 +50,7 @@ describe('playback layouts', () => {
     layout.current = 'desktop';
     const { container } = render(<SetlistPlayView setlistId={1} navigate={vi.fn()} />);
     expect(container.querySelector('.playback-dock')).toBeNull();
-    expect(container.querySelector('.playback-topbar [role="toolbar"]')).not.toBeNull();
+    expect(container.querySelector('.playback-topbar [role="group"][aria-label="Display"]')).not.toBeNull();
     expect(screen.getByRole('button', { name: 'Export PDF' })).toBeInTheDocument();
   });
 
@@ -68,6 +71,24 @@ describe('playback layouts', () => {
     layout.current = l;
     const { container } = render(<SetlistPlayView setlistId={1} navigate={vi.fn()} />);
     expect(container.querySelector('.playback-topbar')).toHaveAttribute('data-no-swipe');
+  });
+
+  it('phone: a per-song number notation override shows on the dock and in the More menu', async () => {
+    layout.current = 'phone';
+    const player = (useSetlistPlayer as Mock)();
+    (useSetlistPlayer as Mock).mockReturnValue({ ...player, entry: { ...player.entry, _num: 1 } });
+    render(<SetlistPlayView setlistId={1} navigate={vi.fn()} />);
+    expect(screen.getByRole('group', { name: 'Key and notation' })).toHaveAttribute('data-overridden', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'More display options' }));
+    expect(await screen.findByRole('menuitem', { name: 'Number notation, on' })).toBeInTheDocument();
+  });
+
+  it('tablet: Reset stays off until this song has its own text size or columns', async () => {
+    layout.current = 'tablet';
+    columns.twoCol = true;
+    render(<SetlistPlayView setlistId={1} navigate={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'More display options' }));
+    expect(await screen.findByRole('menuitem', { name: 'Reset text size and columns' })).toHaveAttribute('data-disabled', 'true');
   });
 
   it('shows the full title and position without truncating', () => {

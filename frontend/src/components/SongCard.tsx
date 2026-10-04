@@ -1,4 +1,4 @@
-import { Badge, Paper, Button } from '@mantine/core';
+import { Badge, Paper, Button, VisuallyHidden } from '@mantine/core';
 import { IconLock } from '@tabler/icons-react';
 import { KeyBadge } from './KeyBadge';
 import type { SongListItem } from '../types';
@@ -30,7 +30,7 @@ export function SongCard({ song, isOwner, onClick, onEdit }: SongCardProps) {
           <Badge variant="filled">{song.version_count} Versions</Badge>
         )}
         {song.language && <Badge title={languageName(song.language)}>{song.language.toUpperCase()}</Badge>}
-        {song.visibility === 'private' && <Badge px={8} title="Private" aria-label="Private"><IconLock size={14} aria-hidden /></Badge>}
+        {song.visibility === 'private' && <Badge px={8} title="Private"><IconLock size={14} aria-hidden /><VisuallyHidden>Private</VisuallyHidden></Badge>}
         {song.key && <KeyBadge songKey={song.key} />}
         {song.bpm && <Badge>{song.bpm}</Badge>}
         {isOwner && onEdit && (

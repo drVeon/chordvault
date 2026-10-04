@@ -15,7 +15,7 @@ export function Nav({ view, navigate }: NavProps) {
   const setlistsActive = ['setlists', 'setlist-edit', 'setlist-play', 'public-setlists'].includes(view);
   return (
     <Group component="nav" id="nav" justify="space-between" wrap="nowrap" gap="xs" pos="sticky" top={0} mih={64} px={{ base: 12, sm: 24 }} py={6} bg="var(--cv-band)" style={{ zIndex: 100 }}>
-      <UnstyledButton className="nav-brand" onClick={() => navigate('browse')}>
+      <UnstyledButton className="nav-brand" aria-label="ChordVault home" onClick={() => navigate('browse')}>
         <span className="nav-logo" dangerouslySetInnerHTML={{ __html: logoSvg }} />
         <Text span inherit className="nav-brand-text" visibleFrom="xs">ChordVault</Text>
       </UnstyledButton>

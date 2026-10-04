@@ -4,6 +4,11 @@ import { createTheme, mergeMantineTheme, DEFAULT_THEME } from '@mantine/core';
 const resolved = chordVaultVariables(mergeMantineTheme(DEFAULT_THEME, createTheme(chordVaultTheme)));
 
 describe('Rubric palette', () => {
+  it('fills selected controls in dark mode with the dark text colour', () => {
+    expect(chordVaultTheme.primaryShade).toEqual({ light: 9, dark: 0 });
+    expect(chordVaultTheme.colors!.ink![0]).toBe(resolved.dark['--mantine-color-text']);
+  });
+
   it('uses the neutral paper and ink in light mode', () => {
     expect(resolved.light['--mantine-color-body']).toBe('#faf8f4');
     expect(resolved.light['--mantine-color-text']).toBe('#1d1b19');

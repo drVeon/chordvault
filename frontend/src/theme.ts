@@ -7,7 +7,7 @@ export const chordVaultTheme = createTheme({
   headings: { fontFamily, fontWeight: '700' },
   primaryColor: 'ink',
   colors: {
-    ink: ['#f5f3ef', '#e8e4dd', '#d6d1c8', '#bdb7ad', '#a39c92', '#8a847a', '#6c6761', '#4a4642', '#2b2825', '#1d1b19'],
+    ink: ['#eeeae4', '#e8e4dd', '#d6d1c8', '#bdb7ad', '#a39c92', '#8a847a', '#6c6761', '#4a4642', '#2b2825', '#1d1b19'],
     dark: ['#eeeae4', '#c9c4bd', '#a8a29b', '#7d7872', '#433f3b', '#363331', '#2c2a28', '#171615', '#121110', '#0d0c0c'],
   },
   primaryShade: { light: 9, dark: 0 },

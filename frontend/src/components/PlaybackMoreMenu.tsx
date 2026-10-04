@@ -1,4 +1,4 @@
-import { ActionIcon, Menu } from '@mantine/core';
+import { ActionIcon, Menu, VisuallyHidden } from '@mantine/core';
 import { IconBrandYoutube, IconCheck, IconDots, IconDownload, IconRestore } from '@tabler/icons-react';
 
 interface PlaybackMoreMenuProps {
@@ -21,7 +21,7 @@ export function PlaybackMoreMenu({ nashville, nashvilleDisabled, onNashvilleChan
       <Menu.Dropdown>
         {bpm ? <Menu.Label>{bpm} bpm</Menu.Label> : null}
         <Menu.Item disabled={nashvilleDisabled} onClick={() => onNashvilleChange(!nashville)} rightSection={nashville ? <IconCheck size={16} aria-hidden /> : null}>
-          Number notation
+          Number notation<VisuallyHidden>{nashville ? ', on' : ', off'}</VisuallyHidden>
         </Menu.Item>
         {onExportPdf && <Menu.Item leftSection={<IconDownload size={16} aria-hidden />} onClick={onExportPdf}>Export PDF</Menu.Item>}
         <Menu.Item leftSection={<IconRestore size={16} aria-hidden />} disabled={!canReset} onClick={onReset}>Reset text size and columns</Menu.Item>

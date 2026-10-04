@@ -34,7 +34,7 @@ export function PlaybackDock({ layout, nav, toolbar }: PlaybackDockProps) {
         <NavButton labeled={labeled} label="Previous Song" text="Prev" icon="prev" disabled={!nav.hasPrev} onClick={nav.onPrev} />
         <Group gap={labeled ? 'xs' : 6} wrap="nowrap" justify="center" flex={1} miw={0}>
           <KeyGroup size="lg" dense currentKey={toolbar.currentKey} onPickKey={toolbar.onPickKey} isModified={toolbar.isModified}
-            onSaveOnline={toolbar.onSaveOnline} onSaveLocal={toolbar.onSaveLocal} renderKey={toolbar.renderKey} nashville={toolbar.nashville} />
+            onSaveOnline={toolbar.onSaveOnline} onSaveLocal={toolbar.onSaveLocal} renderKey={toolbar.renderKey} nashville={toolbar.nashville} numOverridden={overrides.num} />
           <TextSizeGroup size="lg" dense onFontChange={toolbar.onFontChange} overridden={overrides.font} />
           {toolbar.onAutoFit && <FitButton size="lg" dense onAutoFit={toolbar.onAutoFit} />}
           {labeled && <ColumnsToggle size="lg" twoCol={toolbar.twoCol} onTwoColToggle={toolbar.onTwoColToggle} overridden={overrides.twoCol} />}

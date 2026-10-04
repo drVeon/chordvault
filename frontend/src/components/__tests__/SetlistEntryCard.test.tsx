@@ -49,3 +49,13 @@ describe('SetlistEntryCard key display', () => {
     expect(meta({ ...ENTRY, content_override: '{key: E}\n[E]a', target_key: 'G' })).toBe('Artist · G');
   });
 });
+
+describe('SetlistEntryCard private badge', () => {
+  it('announces private entries as text', () => {
+    const { getByText } = render(
+      <SetlistEntryCard entry={{ ...ENTRY, visibility: 'private' } as SetlistEntry} idx={0} isEditable isLocal={false}
+        onRemove={vi.fn()} onStepKey={vi.fn()} onClick={vi.fn()} t={(k) => k} />
+    );
+    expect(getByText('Private')).toBeInTheDocument();
+  });
+});

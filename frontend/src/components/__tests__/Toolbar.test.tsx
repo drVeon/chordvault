@@ -15,6 +15,17 @@ const base: ToolbarProps = {
 };
 
 describe('Toolbar', () => {
+  it('is a labelled group, not a toolbar without arrow-key navigation', () => {
+    render(<Toolbar {...base} />);
+    expect(screen.getByRole('group', { name: 'Display' })).toBeInTheDocument();
+    expect(screen.queryByRole('toolbar')).toBeNull();
+  });
+
+  it('disables Reset when the caller says there is nothing to reset', () => {
+    render(<Toolbar {...base} twoCol fontSize={0} canReset={false} />);
+    expect(screen.getByRole('button', { name: 'Reset font and columns' })).toBeDisabled();
+  });
+
   it('labels controls in sentence case', () => {
     render(<Toolbar {...base} />);
     expect(screen.getByTestId('key-display')).toHaveTextContent('Key G');

@@ -220,6 +220,7 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   if (!entry) return <div className="empty"><div className="empty-text">{t('setlist.noSongsYet')}</div></div>;
 
   const resetEntryLayout = () => { if (entry) updateEntry({ _font: null, _twoCol: null }); };
+  const canReset = entry._font != null || entry._twoCol != null;
   const toolbar: ToolbarProps = {
     currentKey: keyDisplay,
     nashville: !!effNum,
@@ -251,11 +252,12 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
     isModified,
     renderKey: index,
     overrides: { num: entry._num != null, twoCol: entry._twoCol != null, font: entry._font != null },
+    canReset,
   };
   const nav: PlaybackNav = { onPrev: prev, onNext: next, hasPrev: index > 0, hasNext: index < total - 1 };
   const more = (
     <PlaybackMoreMenu nashville={!!effNum} nashvilleDisabled={toolbar.nashvilleDisabled} onNashvilleChange={toggleEntryNum}
-      onExportPdf={handleExportAllPdf} onReset={resetEntryLayout} canReset={!!effFont || !!effTwoCol}
+      onExportPdf={handleExportAllPdf} onReset={resetEntryLayout} canReset={canReset}
       bpm={entry.bpm} youtubeUrl={hideYt ? null : entry.youtube_url} />
   );
 

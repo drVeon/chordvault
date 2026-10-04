@@ -23,12 +23,13 @@ export interface ToolbarProps {
   overrides?: { num?: boolean; twoCol?: boolean; font?: boolean };
   settingsPanel?: ReactNode;
   renderKey?: number | string;
+  canReset?: boolean;
 }
 
 export function Toolbar({ dense, ...props }: ToolbarProps & { dense?: boolean }) {
-  const { twoCol, fontSize, onReset, onAutoFit, onExportPdf, settingsPanel, overrides = {} } = props;
+  const { twoCol, fontSize, onReset, onAutoFit, onExportPdf, settingsPanel, canReset = fontSize !== 0 || twoCol, overrides = {} } = props;
   return (
-    <Group className="transpose-bar" role="toolbar" aria-label="Display" gap="xs">
+    <Group className="transpose-bar" role="group" aria-label="Display" gap="xs">
       <KeyGroup {...props} dense={dense} numOverridden={overrides.num} />
       <TextSizeGroup dense={dense} onFontChange={props.onFontChange} overridden={overrides.font} />
       {onAutoFit && <FitButton dense={dense} onAutoFit={onAutoFit} />}
@@ -40,7 +41,7 @@ export function Toolbar({ dense, ...props }: ToolbarProps & { dense?: boolean })
         </ActionIcon>
       )}
       {settingsPanel && <SetlistDefaultsButton panel={settingsPanel} />}
-      <ActionIcon variant="subtle" size="input-md" aria-label="Reset font and columns" title="Reset font and columns" onClick={onReset} disabled={fontSize === 0 && !twoCol}>
+      <ActionIcon variant="subtle" size="input-md" aria-label="Reset font and columns" title="Reset font and columns" onClick={onReset} disabled={!canReset}>
         <IconRestore size={20} aria-hidden />
       </ActionIcon>
     </Group>
