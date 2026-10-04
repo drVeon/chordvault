@@ -247,15 +247,6 @@
 }
 .setlist-name-input:focus { border-bottom-color: var(--text); }
 
-.setlist-meta-row {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  flex-wrap: wrap;
-  margin-top: 12px;
-  padding: 8px 0;
-}
-
 /* -- Admin -------------------------------- */
 .admin-stats {
   display: grid;

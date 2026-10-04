@@ -160,6 +160,13 @@ if (user && password && songId) {
         if (sheet && innerWidth <= 900 && parseFloat(getComputedStyle(sheet).paddingLeft) !== 16) out.push(`sheet padding ${getComputedStyle(sheet).paddingLeft}, want 16px`);
         const narrow = [...document.querySelectorAll('.setlist-song-item .song-card-title')].filter((t) => t.getBoundingClientRect().width < 160);
         if (narrow.length) out.push(`setlist titles squeezed to ${Math.round(narrow[0].getBoundingClientRect().width)}px`);
+        const toggle = document.querySelector('#setlist-visibility')?.closest('.mantine-Switch-root');
+        const dateField = document.querySelector('#setlist-date')?.closest('.mantine-TextInput-root');
+        if (toggle && dateField) {
+          const mid = (e) => { const r = e.getBoundingClientRect(); return r.top + r.height / 2; };
+          if (dateField.getBoundingClientRect().height > 48) out.push(`date field ${Math.round(dateField.getBoundingClientRect().height)}px tall, label not inline`);
+          if (Math.abs(mid(toggle) - mid(dateField)) > 4) out.push('public toggle not level with the date field');
+        }
         return out;
       });
       console.log(`${problems.length ? 'FAIL' : 'ok  '} signed-in ${name} ${width}${problems.length ? ': ' + problems.join('; ') : ''}`);
