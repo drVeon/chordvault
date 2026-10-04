@@ -314,11 +314,7 @@
   margin-top: 24px;
 }
 
-.setlist-song-item {
-  padding: 12px 20px;
-  min-height: 72px;
-  transition: all 0.2s ease;
-}
+.setlist-song-item { transition: all 0.2s ease; }
 
 .setlist-song-pos {
   font-family: var(--font-sans);
@@ -326,8 +322,6 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--muted);
-  margin-right: 16px;
-  width: 24px;
   text-align: center;
 }
 
@@ -340,7 +334,6 @@
   height: 32px;
   cursor: grab;
   font-size: 18px;
-  margin-right: 16px;
   user-select: none;
   touch-action: none;
   transition: color 0.15s;
@@ -363,9 +356,6 @@
 /* Phones (below Mantine's xs): key buttons drop to their own line so the title keeps the row.
    Mantine only exposes responsive `order` on Grid.Col, so the reorder stays here. */
 @media (max-width: 35.99375em) {
-  .setlist-song-item { padding: 10px 12px; gap: 4px 6px; }
-  .setlist-song-item .setlist-drag-handle { margin-right: 0; }
-  .setlist-song-item .setlist-song-pos { margin-right: 4px; width: 20px; }
   .setlist-song-item .setlist-entry-controls { order: 1; }
 }
 

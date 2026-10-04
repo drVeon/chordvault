@@ -1,4 +1,5 @@
 import { SearchField } from '../components/SearchField';
+import { SearchRow } from '../components/SearchRow';
 import { ActionIcon, Button, NativeSelect } from '@mantine/core';
 import { IconAdjustmentsHorizontal, IconPlus } from '@tabler/icons-react';
 import { useState, useEffect, useCallback } from 'react';
@@ -94,7 +95,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
         </div>
       ) : (
         <>
-          <div className="search-row">
+          <SearchRow>
             <SearchField label={t('songs.searchPlaceholder')} value={query} onChange={setQuery} onSearch={doSearch} onClear={handleClear} />
             <Button variant="default" size="sm" onClick={doSearch}>{t('songs.search')}</Button>
             <ActionIcon
@@ -114,7 +115,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
             {user && (
               <Button size="sm" w={{ base: '100%', xs: 'auto' }} leftSection={<IconPlus size={16} aria-hidden />} onClick={() => navigate('song-edit')}>New Song</Button>
             )}
-          </div>
+          </SearchRow>
           {showFilters && (
             <div className="search-filters">
               <NativeSelect

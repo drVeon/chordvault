@@ -1,5 +1,6 @@
 import { SearchField } from '../components/SearchField';
-import { Tabs, Button, TextInput } from '@mantine/core';
+import { SearchRow } from '../components/SearchRow';
+import { Tabs, Button, TextInput, ActionIcon } from '@mantine/core';
 import { IconCalendar } from '@tabler/icons-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
@@ -89,28 +90,29 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
       </Tabs>
       {showSearch && (
         <>
-          <div className="search-row">
+          <SearchRow>
             <SearchField label={t('setlist.searchPlaceholder')} value={query} onChange={setQuery} onSearch={handleSearch} onClear={handleClear} />
-            <Button variant="default" size="sm"
-              leftSection={<IconCalendar size={16} aria-hidden />}
+            <Button variant="default" size="sm" onClick={handleSearch}>{t('songs.search')}</Button>
+            <ActionIcon
+              size="input-sm"
+              variant={showDates ? 'filled' : 'default'}
+              aria-label="Filter by date"
               aria-pressed={showDates}
+              title="Filter by date"
               onClick={() => {
                 const next = !showDates;
                 setShowDates(next);
                 setSessionItem('cv_publicsetlists_show_dates', String(next));
               }}
             >
-              Date
-            </Button>
-            <Button variant="default" size="sm" onClick={handleSearch}>{t('songs.search')}</Button>
-          </div>
+              <IconCalendar size={18} aria-hidden />
+            </ActionIcon>
+          </SearchRow>
           {showDates && (
-            <div className="search-row" style={{ marginTop: -10 }}>
-
-              <TextInput label={<>From</>} type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); load(query, e.target.value, dateTo, 1); }} />
-
-              <TextInput label={<>To</>} type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); load(query, dateFrom, e.target.value, 1); }} />
-            </div>
+            <SearchRow mt={-10}>
+              <TextInput label={<>From</>} type="date" flex={1} miw={0} value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); load(query, e.target.value, dateTo, 1); }} />
+              <TextInput label={<>To</>} type="date" flex={1} miw={0} value={dateTo} onChange={(e) => { setDateTo(e.target.value); load(query, dateFrom, e.target.value, 1); }} />
+            </SearchRow>
           )}
         </>
       )}

@@ -1,6 +1,7 @@
 import { SearchField } from '../components/SearchField';
-import { Tabs, Button, TextInput } from '@mantine/core';
-import { IconCalendar } from '@tabler/icons-react';
+import { SearchRow } from '../components/SearchRow';
+import { Tabs, Button, TextInput, ActionIcon } from '@mantine/core';
+import { IconCalendar, IconPlus } from '@tabler/icons-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
@@ -131,7 +132,7 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
     <>
       <div className="view-header">
         <PageTitle className="view-title">{t('setlist.title')}</PageTitle>
-        <Button size="xs" className="btn btn-sm" onClick={() => setShowNew(true)}>{t('setlist.newSetlist')}</Button>
+        <Button size="xs" className="btn btn-sm" leftSection={<IconPlus size={14} aria-hidden />} onClick={() => setShowNew(true)}>{t('setlist.newSetlist')}</Button>
       </div>
       <Tabs variant="pills" value="mine" onChange={(tab) => navigate(tab === 'public' ? 'public-setlists' : 'setlists')} className="setlist-tabs">
         <Tabs.List grow><Tabs.Tab value="mine">My Setlists</Tabs.Tab><Tabs.Tab value="public">Public Setlists</Tabs.Tab></Tabs.List>
@@ -142,8 +143,10 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
         </p>
       )}
       {showNew && (
-        <div className="search-row" style={{ marginBottom: 16 }}>
+        <SearchRow mb={16}>
           <TextInput aria-label={t('setlist.namePlaceholder')}
+            flex={3}
+            miw={0}
             ref={nameRef}
             type="text"
             placeholder={t('setlist.namePlaceholder')}
@@ -153,9 +156,9 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
           />
           <Button size="xs" className="btn btn-sm" onClick={create}>{t('setlist.create')}</Button>
           <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => setShowNew(false)}>{t('songEdit.cancel')}</Button>
-        </div>
+        </SearchRow>
       )}
-      <div className="search-row">
+      <SearchRow>
         <SearchField label={t('setlist.searchPlaceholder')} value={query} onSearch={handleSearch} onClear={handleClear}
 
           onChange={(val) => {
@@ -165,28 +168,29 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
             if (activeTab === 'local') setSessionItem('cv_setlists_query', val);
 
           }} />
+        <Button variant="default" size="sm" onClick={handleSearch}>{t('songs.search')}</Button>
         {activeTab === 'cloud' && (
-          <Button variant="default" size="sm"
-            leftSection={<IconCalendar size={16} aria-hidden />}
+          <ActionIcon
+            size="input-sm"
+            variant={showDates ? 'filled' : 'default'}
+            aria-label="Filter by date"
             aria-pressed={showDates}
+            title="Filter by date"
             onClick={() => {
               const next = !showDates;
               setShowDates(next);
               setSessionItem('cv_setlists_show_dates', String(next));
             }}
           >
-            Date
-          </Button>
+            <IconCalendar size={18} aria-hidden />
+          </ActionIcon>
         )}
-        <Button variant="default" size="sm" onClick={handleSearch}>{t('songs.search')}</Button>
-      </div>
+      </SearchRow>
       {activeTab === 'cloud' && showDates && (
-        <div className="search-row" style={{ marginTop: -10 }}>
-
-          <TextInput label={<>From</>} type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-
-          <TextInput label={<>To</>} type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
-        </div>
+        <SearchRow mt={-10}>
+          <TextInput label={<>From</>} type="date" flex={1} miw={0} value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          <TextInput label={<>To</>} type="date" flex={1} miw={0} value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+        </SearchRow>
       )}
       <div className="song-grid">
         {loaded && (

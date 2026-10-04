@@ -1,4 +1,5 @@
 import { Badge, Paper, Switch, Button } from '@mantine/core';
+import { ListCard } from '../components/ListCard';
 import { useCopyNotification } from '../hooks/useCopyNotification';
 import { modals } from '@mantine/modals';
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -240,15 +241,14 @@ export function AdminView({ navigate }: AdminViewProps) {
           <h3 className="admin-section-title">{t('admin.recentSongs')}</h3>
           <div className="song-grid">
             {stats.recentSongs.map((s) => (
-              <Paper withBorder key={s.id} className="song-card mantine-focus-auto" role="button" tabIndex={0} onClick={() => navigate('song-view', { id: String(s.id) })} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); navigate('song-view', { id: String(s.id) }); } }}>
-                <div className="song-card-info">
-                  <div className="song-card-title">{s.title}</div>
-                  <div className="song-card-meta">{s.artist ? `${s.artist} · ` : ''}@{s.username} &middot; {new Date(s.created_at).toLocaleDateString()}</div>
-                </div>
-                <div className="song-card-actions">
-                  <Button color="red" size="xs" className="btn btn-danger btn-sm" disabled={busy} onClick={(e) => { e.stopPropagation(); deleteSong(s.id, s.title); }}>{t('admin.delete')}</Button>
-                </div>
-              </Paper>
+              <ListCard
+                key={s.id}
+                className="mantine-focus-auto"
+                title={s.title}
+                meta={<>{s.artist ? `${s.artist} · ` : ''}@{s.username} &middot; {new Date(s.created_at).toLocaleDateString()}</>}
+                onClick={() => navigate('song-view', { id: String(s.id) })}
+                actions={<Button color="red" size="xs" className="btn btn-danger btn-sm" disabled={busy} onClick={(e) => { e.stopPropagation(); deleteSong(s.id, s.title); }}>{t('admin.delete')}</Button>}
+              />
             ))}
           </div>
         </>
@@ -259,13 +259,14 @@ export function AdminView({ navigate }: AdminViewProps) {
           <h3 className="admin-section-title">Pending Corrections ({corrections.length})</h3>
           <div className="song-grid">
             {corrections.map((c) => (
-              <Paper withBorder key={c.id} className="song-card mantine-focus-auto" role="button" tabIndex={0} onClick={() => navigate('song-view', { id: String(c.parent_id) })} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); navigate('song-view', { id: String(c.parent_id) }); } }}>
-                <div className="song-card-info">
-                  <div className="song-card-title">{c.title}</div>
-                  <div className="song-card-meta">by @{c.submitter} &middot; {new Date(c.created_at).toLocaleDateString()}</div>
-                </div>
-                <div className="song-card-actions"><Badge color="yellow">pending</Badge></div>
-              </Paper>
+              <ListCard
+                key={c.id}
+                className="mantine-focus-auto"
+                title={c.title}
+                meta={<>by @{c.submitter} &middot; {new Date(c.created_at).toLocaleDateString()}</>}
+                onClick={() => navigate('song-view', { id: String(c.parent_id) })}
+                actions={<Badge color="yellow">pending</Badge>}
+              />
             ))}
           </div>
         </>
