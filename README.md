@@ -31,18 +31,28 @@
 - Swipe through setlists during rehearsal with one hand. Side taps, swipe gestures, or arrow keys.
 - Adjust font size, hide distractions, go fullscreen. Whatever helps you focus on the music.
 
-![ChordVault: Browse songs](docs/screenshots/browse.png)
+![ChordVault: setlist playback](docs/screenshots/setlist-play.png)
 
 <details>
 <summary>More screenshots</summary>
 
-| Song view (dark) | Song view (light) | Mobile |
-|---|---|---|
+#### Playing a setlist
+
+| Desktop (light) | Tablet |
+| --- | --- |
+| ![Setlist playback on desktop in light mode](docs/screenshots/setlist-play-light.png) | ![Setlist playback on a portrait tablet with the bottom dock](docs/screenshots/tablet-setlist-play.png) |
+
+#### Reading a song
+
+| Dark | Light | Phone |
+| --- | --- | --- |
 | ![Song view in dark mode](docs/screenshots/song-view.png) | ![Song view in light mode](docs/screenshots/song-view-light.png) | ![Song view at phone width](docs/screenshots/mobile-song-view.png) |
 
-| Setlist playback (dark) | Setlist playback (light) |
-| --- | --- |
-| ![Setlist playback with brick chords in dark mode](docs/screenshots/setlist-play.png) | ![Setlist playback with brick chords on cream](docs/screenshots/setlist-play-light.png) |
+#### Building the library
+
+| Songs | Setlists | Editor |
+| --- | --- | --- |
+| ![Browse songs](docs/screenshots/browse.png) | ![Setlists page](docs/screenshots/setlists.png) | ![Song editor with live preview](docs/screenshots/song-editor.png) |
 
 </details>
 
@@ -65,7 +75,7 @@
 ### Setlists & Display
 - **Build setlists:** ordered song lists with per-song key transpositions and session-level display overrides.
 - **Local browser setlists:** no account needed, stored in your browser
-- **Swipe playback:** swipe, tap side buttons, or use keyboard to navigate between songs. Key transpositions can be saved online or locally.
+- **Swipe playback:** swipe, tap side buttons, or use keyboard to navigate between songs. Desktop keeps every control in one top bar; tablets and phones move key, text size, Fit and Prev/Next into a thumb-reach dock at the bottom. Key transpositions can be saved online or locally.
 - **PDF export:** export a single song or an entire setlist with selectable text on a white page, black lyrics, and larger brick-red chords. Embedded regular and semibold fonts preserve Chinese text, and long titles wrap above the metadata. Shrinks long songs toward one page when possible; keeps the requested size if they still need multiple pages.
 - **Settings panel:** global defaults (number notation, hide YouTube, multi-column, font size) with session-level per-song overrides
 - **Multi-column layout:** split long chord sheets into columns for landscape or wide screens
@@ -79,7 +89,7 @@
 - **Admin panel:** manage users, review corrections, bulk import (up to 500 songs)
 
 ## Technical
-- **React + TypeScript frontend:** built with Vite, using Mantine core, hooks, form, modals and notifications for shared controls and UI behavior
+- **React + TypeScript frontend:** built with Vite, using Mantine core, hooks, form, modals and notifications for shared controls and UI behavior, with Tabler icons
 - **Light and dark themes:** shared Mantine controls, cream reading surfaces in light mode, brick-red branding and chords, and muted taupe actions
 - **Node.js + Express backend:** modular API with robust validation and rate limiting
 - **CodeMirror 6 editor:** ChordPro syntax highlighting, bracket matching, dark/light theme, live preview pane

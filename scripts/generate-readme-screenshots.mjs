@@ -12,36 +12,68 @@ const output = fileURLToPath(new URL('../docs/screenshots/', import.meta.url));
 mkdirSync(output, { recursive: true });
 const browser = await chromium.launch({ channel: process.env.CV_SCREENSHOT_BROWSER_CHANNEL });
 
-async function capture(filename, route, scheme, mobile = false) {
-  // Fresh anonymous contexts share the server's five-second burst window.
-  await setTimeout(5100);
-  const context = await browser.newContext({
-    viewport: mobile ? { width: 390, height: 844 } : { width: 1280, height: 900 },
-    isMobile: mobile, hasTouch: mobile, reducedMotion: 'reduce',
+const DESKTOP = { width: 1280, height: 900 };
+const PHONE = { width: 390, height: 844 };
+const TABLET = { width: 768, height: 1024 };
+
+/** Signs in as the seeded demo account so pages behind the account can be shown. */
+async function signIn() {
+  const res = await fetch(`${base}/api/auth/login`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: 'demo', password: 'demopass123' }),
   });
-  await context.addInitScript((theme) => { localStorage.setItem('cv_theme', theme); localStorage.setItem('cv_fontsize', '0'); }, scheme);
+  if (!res.ok) throw new Error(`Sign-in failed: ${res.status}`);
+  const { token, id, username, role } = await res.json();
+  return { token, id, username, role };
+}
+
+async function capture(filename, route, scheme, { viewport = DESKTOP, user = null, open = null } = {}) {
+  // Fresh contexts share the server's five-second burst window.
+  await setTimeout(5100);
+  const touch = viewport.width < 1024;
+  const context = await browser.newContext({ viewport, isMobile: touch, hasTouch: touch, reducedMotion: 'reduce' });
+  await context.addInitScript(([theme, account]) => {
+    localStorage.setItem('cv_theme', theme);
+    localStorage.setItem('cv_fontsize', '0');
+    if (account) localStorage.setItem('cv_user', JSON.stringify(account));
+  }, [scheme, user]);
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(`${base}/${route}`);
   await page.locator(`html[data-mantine-color-scheme="${scheme}"]`).waitFor();
   await page.locator(route ? '.chord-sheet .lyrics:not(:empty)' : '.song-card').first().waitFor();
+  if (open) await open(page);
   await page.evaluate(() => document.fonts.ready);
   if (route.includes('/play/')) await page.getByRole('button', { name: 'Fit', exact: true }).click();
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   if (errors.length) throw new Error(errors.join('\n'));
-  await page.screenshot({ path: `${output}${filename}`, fullPage: true });
-  console.log(`Captured ${filename} (${scheme}, ${mobile ? '390x844 Chromium mobile layout' : '1280x900'})`);
+  await page.screenshot({ path: `${output}${filename}`, fullPage: !route.includes('/play/') });
+  console.log(`Captured ${filename} (${scheme}, ${viewport.width}x${viewport.height})`);
   await context.close();
 }
 
+const openSetlists = async (page) => {
+  await page.getByRole('button', { name: 'Setlists', exact: true }).click();
+  await page.locator('.setlist-card').first().waitFor();
+};
+const singleColumn = page => page.getByRole('button', { name: 'Multi-column layout' }).click();
+const openEditor = async (page) => {
+  await page.getByRole('button', { name: /Edit$/ }).first().click();
+  await page.locator('.editor-preview-wrap .lyrics:not(:empty)').first().waitFor();
+};
+
 try {
+  const user = await signIn();
   await capture('browse.png', '', 'dark');
-  await capture('song-view.png', `#song/${songId}`, 'dark');
-  await capture('song-view-light.png', `#song/${songId}`, 'light');
-  await capture('mobile-song-view.png', `#song/${songId}`, 'light', true);
+  await capture('song-view.png', `#song/${songId}`, 'dark', { open: singleColumn });
+  await capture('song-view-light.png', `#song/${songId}`, 'light', { open: singleColumn });
+  await capture('mobile-song-view.png', `#song/${songId}`, 'light', { viewport: PHONE });
   await capture('setlist-play.png', `#setlist/${setlistId}/play/0`, 'dark');
   await capture('setlist-play-light.png', `#setlist/${setlistId}/play/0`, 'light');
+  await capture('tablet-setlist-play.png', `#setlist/${setlistId}/play/0`, 'light', { viewport: TABLET });
+  await capture('setlists.png', '', 'light', { user, open: openSetlists });
+  await capture('song-editor.png', `#song/${songId}`, 'dark', { user, open: openEditor });
 } finally {
   await browser.close();
 }
