@@ -1,4 +1,4 @@
-import { Select, Paper, Button, NativeSelect, PasswordInput, Textarea } from '@mantine/core';
+import { Select, Paper, Pill, Button, NativeSelect, PasswordInput, Textarea } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
@@ -9,6 +9,7 @@ import { exportSongsBlob } from '../lib/api';
 import { ImportModal } from '../components/ImportModal';
 import { GeminiKeySettings } from '../components/GeminiKeySettings';
 import { MAX_PREFERRED_LANGUAGES, MAX_OCR_PROMPT, DEFAULT_GEMINI_MODEL } from '../lib/constants';
+import { PageTitle } from '../components/PageTitle';
 
 export function SettingsView() {
   const apiCall = useApi();
@@ -146,7 +147,7 @@ export function SettingsView() {
 
   return (
     <>
-      <div className="view-header"><h2 className="view-title">Settings</h2></div>
+      <div className="view-header"><PageTitle className="view-title">Settings</PageTitle></div>
       <div className="settings-grid">
         <div className="settings-section">
           <h3 className="admin-section-title">Change Password</h3>
@@ -171,9 +172,9 @@ export function SettingsView() {
           <Paper withBorder className="auth-card">
             <div className="flex-row" style={{ flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
               {preferredLangs.map(code => (
-                <span key={code} className="badge badge-tag" style={{ cursor: 'pointer' }} onClick={() => removeLang(code)}>
-                  {languageName(code)} ✕
-                </span>
+                <Pill key={code} size="md" withRemoveButton onRemove={() => removeLang(code)} removeButtonProps={{ 'aria-label': `Remove ${languageName(code)}` }}>
+                  {languageName(code)}
+                </Pill>
               ))}
               {preferredLangs.length === 0 && <span className="muted-text">No languages set</span>}
             </div>

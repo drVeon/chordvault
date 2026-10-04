@@ -10,6 +10,7 @@ import { EmptyState } from '../components/EmptyState';
 import { Pagination } from '../components/Pagination';
 import type { SetlistListItem } from '../types';
 import { getSessionItem, setSessionItem } from '../lib/storage';
+import { PageTitle } from '../components/PageTitle';
 
 interface SetlistsViewProps {
   navigate: (view: string, params?: Record<string, string>) => void;
@@ -127,7 +128,7 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
   return (
     <>
       <div className="view-header">
-        <h2 className="view-title">{t('setlist.title')}</h2>
+        <PageTitle className="view-title">{t('setlist.title')}</PageTitle>
         <Button size="xs" className="btn btn-sm" onClick={() => setShowNew(true)}>{t('setlist.newSetlist')}</Button>
       </div>
       <Tabs variant="pills" value="mine" onChange={(tab) => navigate(tab === 'public' ? 'public-setlists' : 'setlists')} className="setlist-tabs">

@@ -8,6 +8,7 @@ import { EmptyState } from '../components/EmptyState';
 import { Pagination } from '../components/Pagination';
 import type { SongListItem } from '../types';
 import { getSessionItem, setSessionItem } from '../lib/storage';
+import { PageTitle } from '../components/PageTitle';
 
 interface MySongsViewProps {
   navigate: (view: string, params?: Record<string, string>) => void;
@@ -73,7 +74,7 @@ export function MySongsView({ navigate }: MySongsViewProps) {
   return (
     <>
       <div className="view-header">
-        <h2 className="view-title">{t('songs.mySongs')}</h2>
+        <PageTitle className="view-title">{t('songs.mySongs')}</PageTitle>
       </div>
       <div className="search-row">
         <div className="search-input-wrapper">

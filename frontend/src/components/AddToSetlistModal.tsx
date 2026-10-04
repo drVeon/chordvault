@@ -1,4 +1,4 @@
-import { Paper, Modal } from '@mantine/core';
+import { Badge, Paper, Modal } from '@mantine/core';
 import { modals, useModals } from '@mantine/modals';
 import { useFocusReturn } from '@mantine/hooks';
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -162,9 +162,7 @@ export function AddToSetlistModal({
                   {sl.song_count} {sl.song_count !== 1 ? t('admin.songPlural') : t('admin.song')}
                 </div>
                 {sl.visibility === 'public' && (
-                  <span className="badge badge-tag" style={{ fontSize: 10 }}>
-                    Public
-                  </span>
+                  <Badge size="sm">Public</Badge>
                 )}
               </div>
             </Paper>

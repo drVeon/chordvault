@@ -1,4 +1,6 @@
-import { Paper, Button } from '@mantine/core';
+import { Badge, Paper, Button } from '@mantine/core';
+import { IconLock } from '@tabler/icons-react';
+import { KeyBadge } from './KeyBadge';
 import type { SongListItem } from '../types';
 import { languageName } from '../lib/languages';
 
@@ -18,21 +20,19 @@ export function SongCard({ song, isOwner, onClick, onEdit }: SongCardProps) {
         {song.tags && (
           <div className="song-card-tags">
             {song.tags.split(',').map((tag) => (
-              <span key={tag} className="badge badge-tag">{tag}</span>
+              <Badge key={tag} size="md">{tag}</Badge>
             ))}
           </div>
         )}
       </div>
       <div className="song-card-actions">
         {song.version_count && song.version_count > 1 && (
-          <span className="badge badge-tag" style={{ background: 'var(--accent-alt)', color: 'white' }}>
-            {song.version_count} Versions
-          </span>
+          <Badge variant="filled">{song.version_count} Versions</Badge>
         )}
-        {song.language && <span className="badge badge-lang" title={languageName(song.language)}>{song.language.toUpperCase()}</span>}
-        {song.visibility === 'private' && <span className="badge badge-private" title="Private">&#128274;</span>}
-        {song.key && <span className="badge badge-key">{song.key}</span>}
-        {song.bpm && <span className="badge badge-bpm">{song.bpm}</span>}
+        {song.language && <Badge title={languageName(song.language)}>{song.language.toUpperCase()}</Badge>}
+        {song.visibility === 'private' && <Badge px={8} title="Private" aria-label="Private"><IconLock size={14} aria-hidden /></Badge>}
+        {song.key && <KeyBadge songKey={song.key} />}
+        {song.bpm && <Badge>{song.bpm}</Badge>}
         {isOwner && onEdit && (
           <Button variant="default" size="xs"
             className="btn btn-ghost btn-sm"

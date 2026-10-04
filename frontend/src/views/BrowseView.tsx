@@ -1,4 +1,5 @@
-import { Button, NativeSelect, TextInput } from '@mantine/core';
+import { ActionIcon, Button, CloseButton, NativeSelect, TextInput } from '@mantine/core';
+import { IconAdjustmentsHorizontal, IconPlus } from '@tabler/icons-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
@@ -93,38 +94,33 @@ export function BrowseView({ navigate }: BrowseViewProps) {
       ) : (
         <>
           <div className="search-row">
-            <div className="search-input-wrapper">
-              <TextInput aria-label={t('songs.searchPlaceholder')}
-                type="search"
-                placeholder={t('songs.searchPlaceholder')}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') doSearch(); }}
-              />
-              {query && (
-                <Button
-                  className="search-clear-btn"
-                  onClick={handleClear}
-                  title="Clear search"
-                >
-                  &times;
-                </Button>
-              )}
-            </div>
-            <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={doSearch}>{t('songs.search')}</Button>
-            <Button
-              className={`btn btn-ghost btn-sm${showFilters || langFilter ? ' active' : ''}`}
+            <TextInput aria-label={t('songs.searchPlaceholder')}
+              type="search"
+              flex={3}
+              miw={0}
+              placeholder={t('songs.searchPlaceholder')}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') doSearch(); }}
+              rightSection={query ? <CloseButton aria-label="Clear search" title="Clear search" onClick={handleClear} /> : null}
+            />
+            <Button variant="default" size="sm" onClick={doSearch}>{t('songs.search')}</Button>
+            <ActionIcon
+              size="input-sm"
+              variant={showFilters || langFilter ? 'filled' : 'default'}
+              aria-label="Filters"
+              aria-pressed={showFilters}
+              title="Filters"
               onClick={() => {
                 const next = !showFilters;
                 setShowFilters(next);
                 setSessionItem('cv_browse_show_filters', String(next));
               }}
-              title="Filters"
             >
-              &#9776;
-            </Button>
+              <IconAdjustmentsHorizontal size={18} aria-hidden />
+            </ActionIcon>
             {user && (
-              <Button size="xs" className="btn btn-sm" onClick={() => navigate('song-edit')}>&#43; New Song</Button>
+              <Button size="sm" leftSection={<IconPlus size={16} aria-hidden />} onClick={() => navigate('song-edit')}>New Song</Button>
             )}
           </div>
           {showFilters && (

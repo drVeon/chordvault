@@ -1,4 +1,4 @@
-import { Paper, Switch, Button } from '@mantine/core';
+import { Badge, Paper, Switch, Button } from '@mantine/core';
 import { useCopyNotification } from '../hooks/useCopyNotification';
 import { modals } from '@mantine/modals';
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -10,6 +10,7 @@ import { Loading } from '../components/Loading';
 import type { AdminStats, AdminUser, InviteCode, AdminConfig, Correction } from '../types';
 import { useDemo } from '../context/DemoContext';
 import { languageName } from '../lib/languages';
+import { PageTitle } from '../components/PageTitle';
 
 interface AdminViewProps {
   navigate: (view: string, params?: Record<string, string>) => void;
@@ -139,7 +140,7 @@ export function AdminView({ navigate }: AdminViewProps) {
 
   return (
     <>
-      <div className="view-header"><h2 className="view-title">{t('admin.title')}</h2></div>
+      <div className="view-header"><PageTitle className="view-title">{t('admin.title')}</PageTitle></div>
       <div className="admin-stats">
         <Paper withBorder className="stat-card"><div className="stat-value">{stats.userCount}</div><div className="stat-label">{t('admin.users')}</div></Paper>
         <Paper withBorder className="stat-card"><div className="stat-value">{stats.songCount}</div><div className="stat-label">{t('admin.songs')}</div></Paper>
@@ -213,9 +214,9 @@ export function AdminView({ navigate }: AdminViewProps) {
                   <div className="song-card-meta">{u.song_count} {u.song_count !== 1 ? t('admin.songPlural') : t('admin.song')} &middot; {t('admin.joined')} {new Date(u.created_at).toLocaleDateString()}</div>
                 </div>
                 <div className="user-card-badges">
-                  {u.role === 'owner' && <span className="badge badge-owner">owner</span>}
-                  {u.role === 'admin' && <span className="badge badge-admin">admin</span>}
-                  {u.disabled && <span className="badge badge-disabled">disabled</span>}
+                  {u.role === 'owner' && <Badge>owner</Badge>}
+                  {u.role === 'admin' && <Badge>admin</Badge>}
+                  {u.disabled && <Badge color="red">disabled</Badge>}
                 </div>
               </div>
               {canManage && !demoMode && (
@@ -263,7 +264,7 @@ export function AdminView({ navigate }: AdminViewProps) {
                   <div className="song-card-title">{c.title}</div>
                   <div className="song-card-meta">by @{c.submitter} &middot; {new Date(c.created_at).toLocaleDateString()}</div>
                 </div>
-                <div className="song-card-actions"><span className="badge badge-pending">pending</span></div>
+                <div className="song-card-actions"><Badge color="yellow">pending</Badge></div>
               </Paper>
             ))}
           </div>

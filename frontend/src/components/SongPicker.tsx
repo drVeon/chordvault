@@ -1,4 +1,4 @@
-import { Paper, Modal, Button, NativeSelect, TextInput } from '@mantine/core';
+import { Badge, Paper, Modal, Button, NativeSelect, TextInput } from '@mantine/core';
 import { useModals } from '@mantine/modals';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
@@ -85,9 +85,7 @@ function SongPickerContent({ onPick }: Pick<SongPickerProps, 'onPick'>) {
                   <div className="song-card-meta">
                     {s.artist || ''}
                     {s.version_count && s.version_count > 1 && (
-                      <span className="badge badge-tag" style={{ marginLeft: 8, background: 'var(--accent-alt)', color: 'white', fontSize: 10 }}>
-                        {s.version_count} Versions
-                      </span>
+                      <Badge variant="filled" size="sm" ml={8}>{s.version_count} Versions</Badge>
                     )}
                   </div>
                 </div>

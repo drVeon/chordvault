@@ -39,3 +39,9 @@ describe('control variants', () => {
     expect(resolve('filled').color).toBe('var(--mantine-primary-color-contrast)');
   });
 });
+
+describe('badges', () => {
+  it('default to sentence case on the control tray', () => {
+    expect(chordVaultTheme.components?.Badge?.defaultProps).toMatchObject({ variant: 'light', tt: 'none' });
+  });
+});

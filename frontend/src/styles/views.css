@@ -5,9 +5,9 @@
   margin-bottom: 8px;
 }
 .hero-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 42px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--cv-brand);
   letter-spacing: 0.01em;
   margin-bottom: 8px;
@@ -29,9 +29,9 @@
 /* -- About Page -------------------------- */
 .about-page { max-width: 600px; margin: 0 auto; }
 .about-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 36px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--cv-brand);
   text-align: center;
 }
@@ -92,9 +92,9 @@
 }
 
 .auth-logo {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 36px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--cv-brand);
   text-align: center;
   margin-bottom: 6px;
@@ -112,20 +112,21 @@
 /* -- Setlist Tabs -------------------------- */
 .setlist-tabs { margin-bottom: 16px; }
 .setlist-tabs .mantine-Tabs-list {
-  background: var(--surface2);
+  background: var(--ctrl);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 3px;
+  border-radius: 12px;
+  padding: 4px;
 }
 .setlist-tabs .mantine-Tabs-tab { border: 1px solid transparent; font-weight: 500; }
 .setlist-tabs .mantine-Tabs-tab[data-active] {
-  background: var(--mantine-primary-color-light);
-  border-color: var(--mantine-primary-color-filled);
+  background: var(--bg);
+  border-color: var(--border);
   color: var(--text);
+  box-shadow: 0 1px 2px rgba(29, 27, 25, 0.12);
 }
 @media (hover: hover) {
   .setlist-tabs .mantine-Tabs-tab:not([data-disabled]):hover {
-    background: var(--mantine-primary-color-light-hover);
+    background: var(--ctrl-hover);
     color: var(--text);
   }
 }
@@ -153,23 +154,13 @@
   -ms-overflow-style: none;
 }
 .correction-preview::-webkit-scrollbar { display: none; }
-.badge-pending { background: rgba(240,160,48,0.15); color: #f0a030; }
 
 /* -- Song View ---------------------------- */
 .song-view-header { margin-bottom: 24px; }
 .song-view-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 
-.song-view-title {
-  font-family: var(--font-serif);
-  font-size: 38px;
-  font-weight: 500;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
-  color: var(--text);
-}
-
 .song-view-artist {
-  font-size: 20px;
+  font-size: 17px;
   color: var(--muted);
   margin-top: 4px;
 }
@@ -198,9 +189,7 @@
 }
 
 .version-selector-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 12px;
   color: var(--muted);
   font-weight: 600;
 }
@@ -241,7 +230,7 @@
 
 /* -- Edit Form ---------------------------- */
 .edit-header { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
-.edit-header h2 { font-family: var(--font-serif); font-size: 24px; flex: 1; }
+.edit-header h2 { font-family: var(--font-sans); font-weight: 700; font-size: 24px; flex: 1; }
 .edit-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
 
 .chordpro-hint-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
@@ -250,11 +239,11 @@
 
 .setlist-name-row { margin-bottom: 12px; }
 .setlist-name-input {
-  font-family: var(--font-serif); font-size: 32px; font-weight: 600;
+  font-family: var(--font-sans); font-size: 32px; font-weight: 700; font-stretch: 92%; letter-spacing: -0.015em;
   color: var(--text); border: none; background: none; width: 100%; outline: none;
   padding: 4px 0; border-bottom: 1px solid transparent; transition: all 0.2s;
 }
-.setlist-name-input:focus { border-bottom-color: var(--accent); }
+.setlist-name-input:focus { border-bottom-color: var(--text); }
 
 .setlist-meta-row {
   display: flex;
@@ -276,7 +265,6 @@
 .stat-card {
   background: var(--ui-card-bg);
   border: 1px solid var(--border);
-  border-top: 2px solid var(--accent);
   border-radius: var(--radius);
   padding: 22px 20px;
   text-align: center;
@@ -284,25 +272,23 @@
 }
 
 .stat-value {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 36px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--accent);
   line-height: 1.2;
 }
 
 .stat-label {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   margin-top: 4px;
 }
 
 .admin-section-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 20px;
-  font-weight: 600;
+  font-weight: 700;
   margin-top: 28px;
   margin-bottom: 12px;
 }
@@ -333,14 +319,14 @@
 }
 
 .setlist-song-pos {
-  font-family: var(--font-serif);
-  font-size: 20px;
-  font-weight: 600;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
   color: var(--muted);
   margin-right: 16px;
   width: 24px;
   text-align: center;
-  opacity: 0.6;
 }
 
 .setlist-drag-handle {
@@ -359,7 +345,7 @@
 }
 
 .setlist-drag-handle:hover {
-  color: var(--accent);
+  color: var(--text);
 }
 
 .setlist-drag-handle:active {
@@ -367,10 +353,9 @@
 }
 
 .song-card.setlist-song-item.dragging {
-  opacity: 0.4;
-  border-style: dashed;
-  border-color: var(--accent);
-  transform: scale(0.99);
+  border-color: var(--line-strong);
+  box-shadow: 0 12px 28px rgba(29, 27, 25, 0.16);
+  transform: translateY(-4px);
 }
 
 .setlist-remove-btn {
@@ -472,9 +457,7 @@
 }
 
 .sl-options-title {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-size: 13px;
   color: var(--muted);
   margin-bottom: 16px;
   font-weight: 600;
@@ -499,7 +482,6 @@
   .nav-zone { display: none; }
 
   #app { padding: 16px 12px 100px 12px; overflow-x: hidden; }
-  .song-view-title { font-size: 28px; }
   .chord-sheet-wrap { padding: 20px 16px; }
   .transpose-bar { margin: 8px 0; padding: 6px 8px; gap: 4px; }
   .admin-stats { grid-template-columns: 1fr; }

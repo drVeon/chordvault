@@ -25,6 +25,7 @@ export const chordVaultTheme = createTheme({
   components: {
     Button: { defaultProps: { variant: 'light' } },
     ActionIcon: { defaultProps: { variant: 'subtle', size: 'lg' } },
+    Badge: { defaultProps: { variant: 'light', size: 'lg', radius: 'xl', tt: 'none', fw: 600 } },
     Modal: { defaultProps: { centered: true, size: 'lg', overlayProps: { backgroundOpacity: 0.5, blur: 0 } } },
   },
 });

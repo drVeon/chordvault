@@ -35,13 +35,6 @@ body {
   margin-bottom: 24px;
 }
 
-.view-title {
-  font-family: var(--font-serif);
-  font-size: 28px;
-  font-weight: 600;
-  color: var(--text);
-}
-
 /* -- Divider ------------------------------ */
 .divider {
   border: none;

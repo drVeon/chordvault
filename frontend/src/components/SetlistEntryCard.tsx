@@ -1,4 +1,5 @@
-import { Button } from '@mantine/core';
+import { Badge, Button } from '@mantine/core';
+import { IconGripVertical, IconLock } from '@tabler/icons-react';
 import { getSongKey } from '../lib/chords';
 import { entrySemitones } from '../lib/setlistKeys';
 import type { SetlistEntry } from '../types';
@@ -48,7 +49,7 @@ export function SetlistEntryCard({
           {...handleProps}
           title="Drag to reorder"
         >
-          &#9776;
+          <IconGripVertical size={20} aria-hidden />
         </div>
       )}
       <div className="setlist-song-pos">{idx + 1}</div>
@@ -56,12 +57,10 @@ export function SetlistEntryCard({
         <div className="song-card-title">
           {entry.title}
           {entry.visibility === 'private' && (
-            <span className="badge badge-private" title="Private">
-              &#128274;
-            </span>
+            <Badge ml={8} px={8} title="Private" aria-label="Private"><IconLock size={14} aria-hidden /></Badge>
           )}
           {!isLocal && isEditable && entry.content_override && (
-            <span className="badge badge-edited">{t('setlist.edited')}</span>
+            <Badge ml={8}>{t('setlist.edited')}</Badge>
           )}
         </div>
         <div className="song-card-meta">
