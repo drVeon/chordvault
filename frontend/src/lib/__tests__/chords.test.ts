@@ -229,7 +229,7 @@ describe('renderChordPro sections', () => {
   it('recognizes Pre-Chorus with or without hyphen', () => {
     const html1 = renderChordPro('Pre-Chorus\n[G]Lyrics');
     expect(html1).toContain('class="paragraph prechorus"');
-    
+
     const html2 = renderChordPro('PreChorus\n[G]Lyrics');
     expect(html2).toContain('class="paragraph prechorus"');
   });

@@ -6,7 +6,7 @@ const mockApiCall = vi.fn();
 vi.mock('../../hooks/useApi', () => ({ useApi: () => mockApiCall }));
 vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: { id: 1 } }) }));
 vi.mock('../../context/I18nContext', () => ({ useI18n: () => ({ t: (k: string) => k }) }));
-vi.mock('../../context/ToastContext', () => ({ useToast: () => vi.fn() }));
+vi.mock('../../lib/notifications', () => ({ showStatusNotification: vi.fn() }));
 vi.mock('../../hooks/useLocalSetlists', () => ({
   useLocalSetlists: () => ({
     getOne: vi.fn(), addEntry: vi.fn(), updateEntry: vi.fn(), removeEntry: vi.fn(),
@@ -31,7 +31,7 @@ describe('SetlistEditView key buttons', () => {
     await waitFor(() => expect(screen.getByText('S')).toBeTruthy());
 
     // Entry is pinned to B. One sharp step should assign C directly.
-    fireEvent.click(screen.getByText('♯'));
+    fireEvent.click(screen.getByRole('button', { name: '♯' }));
 
     await waitFor(() => {
       const puts = mockApiCall.mock.calls.filter(c => c[0] === 'PUT');
@@ -49,7 +49,7 @@ describe('SetlistEditView key buttons', () => {
     });
     render(<SetlistEditView setlistId={1} navigate={vi.fn()} />);
     await waitFor(() => expect(screen.getByText('S')).toBeTruthy());
-    expect(screen.getByText('♭')).toBeDisabled();
-    expect(screen.getByText('♯')).toBeDisabled();
+    expect(screen.getByRole('button', { name: '♭' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '♯' })).toBeDisabled();
   });
 });

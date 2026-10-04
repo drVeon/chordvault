@@ -1,3 +1,5 @@
+import { Tabs, Button, PasswordInput, TextInput } from '@mantine/core';
+import { useForm } from '@mantine/form';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
@@ -12,9 +14,11 @@ export function AuthView({ navigate }: AuthViewProps) {
   const { login } = useAuth();
   const { t } = useI18n();
   const [tab, setTab] = useState<'login' | 'register' | 'invite'>('login');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [inviteCode, setInviteCode] = useState('');
+  const form = useForm({ initialValues: { username: '', password: '', inviteCode: '' }, validate: { username: value => value ? null : t('auth.fillAllFields'), password: value => value ? null : t('auth.fillAllFields') } });
+  const { username, password, inviteCode } = form.values;
+  const { setValues } = form;
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const [error, setError] = useState('');
   const [config, setConfig] = useState<AuthConfig>({ allowRegistration: true, invitesEnabled: false, turnstileSiteKey: null, demoMode: false });
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -26,11 +30,10 @@ export function AuthView({ navigate }: AuthViewProps) {
     api<AuthConfig>('GET', '/api/auth/config').then((cfg) => {
       setConfig(cfg);
       if (cfg.demoMode) {
-        setUsername('demo');
-        setPassword('demopass123');
+        setValues({ username: 'demo', password: 'demopass123' });
       }
     }).catch(() => {});
-  }, []);
+  }, [setValues]);
 
   useEffect(() => {
     if (tab === 'invite' && inviteRef.current) inviteRef.current.focus();
@@ -67,62 +70,56 @@ export function AuthView({ navigate }: AuthViewProps) {
   }, [config.turnstileSiteKey, tab]);
 
   const submit = async () => {
+    if (submittingRef.current) return;
     setError('');
-    if (tab === 'invite') {
-      if (!inviteCode || !username || !password) { setError(t('auth.fillAllFields')); return; }
-      try {
-        const data = await api<AuthResponse>('POST', '/api/auth/redeem-invite', { code: inviteCode, username, password, turnstile_token: turnstileToken });
-        login(data);
-        navigate('browse');
-      } catch (e) { setError((e as Error).message); }
-      return;
-    }
-    if (!username || !password) { setError(t('auth.fillAllFields')); return; }
+    if (tab === 'invite' && !inviteCode) { setError(t('auth.fillAllFields')); return; }
+    submittingRef.current = true;
+    setSubmitting(true);
     try {
       const effectiveTab = !config.allowRegistration ? 'login' : tab;
-      const endpoint = effectiveTab === 'login' ? '/api/auth/login' : '/api/auth/register';
-      const body = effectiveTab === 'login' ? { username, password } : { username, password, turnstile_token: turnstileToken };
+      const endpoint = tab === 'invite' ? '/api/auth/redeem-invite' : effectiveTab === 'login' ? '/api/auth/login' : '/api/auth/register';
+      const body = tab === 'invite' ? { code: inviteCode, username, password, turnstile_token: turnstileToken }
+        : effectiveTab === 'login' ? { username, password } : { username, password, turnstile_token: turnstileToken };
       const data = await api<AuthResponse>('POST', endpoint, body);
       login(data);
       navigate('browse');
     } catch (e) { setError((e as Error).message); }
+    finally { submittingRef.current = false; setSubmitting(false); }
   };
 
-  const onKeyDown = (e: React.KeyboardEvent) => { if (e.key === 'Enter') submit(); };
   const showTabs = config.allowRegistration;
   const showInviteLink = !config.allowRegistration && config.invitesEnabled && tab !== 'invite';
 
   return (
     <div className="auth-wrap">
-      <div className="auth-card">
+      <form className="auth-card" onSubmit={(event) => form.onSubmit(submit)(event)}>
         <div className="auth-logo">{t('auth.logo')}</div>
         <div className="auth-tagline">{t('auth.tagline')}</div>
         {showTabs && (
-          <div className="auth-tabs">
-            <button className={`auth-tab${tab === 'login' ? ' active' : ''}`} onClick={() => setTab('login')}>{t('auth.signIn')}</button>
-            <button className={`auth-tab${tab !== 'login' ? ' active' : ''}`} onClick={() => setTab('register')}>{t('auth.register')}</button>
-          </div>
+          <Tabs value={tab === 'login' ? 'login' : 'register'} onChange={(value) => setTab(value === 'login' ? 'login' : 'register')} className="auth-tabs">
+            <Tabs.List grow><Tabs.Tab value="login">{t('auth.signIn')}</Tabs.Tab><Tabs.Tab value="register">{t('auth.register')}</Tabs.Tab></Tabs.List>
+          </Tabs>
         )}
         {tab === 'invite' && (
           <div className="field">
-            <label>{t('auth.inviteCode')}</label>
-            <input type="text" ref={inviteRef} value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} placeholder={t('auth.inviteCodePlaceholder')} autoComplete="off" onKeyDown={onKeyDown} />
+
+            <TextInput label={<>{t('auth.inviteCode')}</>} type="text" ref={inviteRef} {...form.getInputProps('inviteCode')} placeholder={t('auth.inviteCodePlaceholder')} autoComplete="off" />
           </div>
         )}
         <div className="field">
-          <label>{t('auth.username')}</label>
-          <input type="text" ref={userRef} id="auth-user" value={username} onChange={(e) => setUsername(e.target.value)} placeholder={t('auth.usernamePlaceholder')} autoComplete="username" onKeyDown={onKeyDown} />
+
+          <TextInput label={<>{t('auth.username')}</>} type="text" ref={userRef} id="auth-user" {...form.getInputProps('username')} placeholder={t('auth.usernamePlaceholder')} autoComplete="username" />
         </div>
         <div className="field">
-          <label>{t('auth.password')}</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" autoComplete={tab === 'login' ? 'current-password' : 'new-password'} onKeyDown={onKeyDown} />
+
+          <PasswordInput label={<>{t('auth.password')}</>} type="password" {...form.getInputProps('password')} placeholder="••••••••" autoComplete={tab === 'login' ? 'current-password' : 'new-password'} />
         </div>
         {config.turnstileSiteKey && tab !== 'login' && <div ref={turnstileRef} style={{ marginTop: 8 }} />}
-        <button className="btn btn-full" id="auth-submit" style={{ marginTop: 8 }} onClick={submit}>
+        <Button fullWidth className="btn btn-full" id="auth-submit" style={{ marginTop: 8 }} type="submit" loading={submitting} disabled={submitting}>
           {tab === 'invite' ? t('auth.createAccount') : (tab === 'login' || !showTabs ? t('auth.signIn') : t('auth.createAccount'))}
-        </button>
+        </Button>
         {showInviteLink && (
-          <button className="btn btn-ghost btn-full" style={{ marginTop: 10 }} onClick={() => setTab('invite')}>{t('auth.haveInvite')}</button>
+          <Button variant="default" fullWidth className="btn btn-ghost btn-full" style={{ marginTop: 10 }} onClick={() => setTab('invite')}>{t('auth.haveInvite')}</Button>
         )}
         {tab === 'invite' && (
           <div style={{ textAlign: 'center', marginTop: 12 }}>
@@ -130,7 +127,7 @@ export function AuthView({ navigate }: AuthViewProps) {
           </div>
         )}
         {error && <div style={{ color: 'var(--danger)', fontSize: 13, marginTop: 12, textAlign: 'center' }}>{error}</div>}
-      </div>
+      </form>
     </div>
   );
 }

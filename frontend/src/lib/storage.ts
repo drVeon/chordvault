@@ -3,7 +3,6 @@ import { legacyTransposeToTargetKey } from './setlistKeys';
 
 const KEYS = {
   user: 'cv_user',
-  theme: 'cv_theme',
   fontsize: 'cv_fontsize',
   localSetlists: 'cv_local_setlists',
   setlistOverrides: 'cv_setlist_overrides',
@@ -22,14 +21,6 @@ export function setStoredUser(user: User): void {
 
 export function removeStoredUser(): void {
   localStorage.removeItem(KEYS.user);
-}
-
-export function getStoredTheme(): 'dark' | 'light' {
-  return localStorage.getItem(KEYS.theme) === 'light' ? 'light' : 'dark';
-}
-
-export function setStoredTheme(theme: 'dark' | 'light'): void {
-  localStorage.setItem(KEYS.theme, theme);
 }
 
 export function getStoredFontSize(): number {

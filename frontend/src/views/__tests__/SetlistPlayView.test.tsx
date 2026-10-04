@@ -30,8 +30,8 @@ vi.mock('../../context/I18nContext', () => ({
   useI18n: () => ({ t: (k: string) => k }),
 }));
 
-vi.mock('../../context/ToastContext', () => ({
-  useToast: () => vi.fn(),
+vi.mock('../../lib/notifications', () => ({
+  showStatusNotification: vi.fn(),
 }));
 
 vi.mock('../../hooks/useSwipe', () => ({

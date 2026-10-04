@@ -1,3 +1,4 @@
+import { Paper, Button } from '@mantine/core';
 import type { SongListItem } from '../types';
 import { languageName } from '../lib/languages';
 
@@ -10,7 +11,7 @@ interface SongCardProps {
 
 export function SongCard({ song, isOwner, onClick, onEdit }: SongCardProps) {
   return (
-    <div className="song-card" onClick={onClick}>
+    <Paper withBorder className="song-card" onClick={onClick} role="button" tabIndex={0} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); onClick(); } }}>
       <div className="song-card-info">
         <div className="song-card-title">{song.title}</div>
         {song.artist && <div className="song-card-meta">{song.artist}</div>}
@@ -33,14 +34,14 @@ export function SongCard({ song, isOwner, onClick, onEdit }: SongCardProps) {
         {song.key && <span className="badge badge-key">{song.key}</span>}
         {song.bpm && <span className="badge badge-bpm">{song.bpm}</span>}
         {isOwner && onEdit && (
-          <button
+          <Button variant="default" size="xs"
             className="btn btn-ghost btn-sm"
             onClick={(e) => { e.stopPropagation(); onEdit(); }}
           >
             Edit
-          </button>
+          </Button>
         )}
       </div>
-    </div>
+    </Paper>
   );
 }

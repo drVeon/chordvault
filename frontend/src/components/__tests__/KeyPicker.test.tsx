@@ -17,16 +17,16 @@ describe('KeyPicker', () => {
 
   it('highlights the active key', () => {
     render(<KeyPicker currentKey="G" onPickKey={onPickKey} visible={true} />);
-    const activeBtn = screen.getByText('G');
-    expect(activeBtn.className).toContain('active');
+    const activeBtn = screen.getByRole('button', { name: 'G' });
+    expect(activeBtn).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('shows save buttons when isModified is true', () => {
     render(
-      <KeyPicker 
-        currentKey="A" 
-        onPickKey={onPickKey} 
-        visible={true} 
+      <KeyPicker
+        currentKey="A"
+        onPickKey={onPickKey}
+        visible={true}
         isModified={true}
         onSaveOnline={onSaveOnline}
         onSaveLocal={onSaveLocal}
@@ -39,10 +39,10 @@ describe('KeyPicker', () => {
 
   it('calls onSaveOnline when online save button is clicked', () => {
     render(
-      <KeyPicker 
-        currentKey="A" 
-        onPickKey={onPickKey} 
-        visible={true} 
+      <KeyPicker
+        currentKey="A"
+        onPickKey={onPickKey}
+        visible={true}
         isModified={true}
         onSaveOnline={onSaveOnline}
       />
@@ -53,10 +53,10 @@ describe('KeyPicker', () => {
 
   it('calls onSaveLocal when local save button is clicked', () => {
     render(
-      <KeyPicker 
-        currentKey="A" 
-        onPickKey={onPickKey} 
-        visible={true} 
+      <KeyPicker
+        currentKey="A"
+        onPickKey={onPickKey}
+        visible={true}
         isModified={true}
         onSaveLocal={onSaveLocal}
       />
@@ -67,10 +67,10 @@ describe('KeyPicker', () => {
 
   it('does not show save buttons when isModified is false', () => {
     render(
-      <KeyPicker 
-        currentKey="A" 
-        onPickKey={onPickKey} 
-        visible={true} 
+      <KeyPicker
+        currentKey="A"
+        onPickKey={onPickKey}
+        visible={true}
         isModified={false}
       />
     );

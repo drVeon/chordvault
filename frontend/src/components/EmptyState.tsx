@@ -1,3 +1,4 @@
+import { Button } from '@mantine/core';
 interface EmptyStateProps {
   icon: string;
   text: string;
@@ -10,9 +11,9 @@ export function EmptyState({ icon, text, action }: EmptyStateProps) {
       <div className="empty-icon" dangerouslySetInnerHTML={{ __html: icon }} />
       <div className="empty-text">{text}</div>
       {action && (
-        <button className="btn" onClick={action.onClick}>
+        <Button className="btn" onClick={action.onClick}>
           {action.label}
-        </button>
+        </Button>
       )}
     </div>
   );

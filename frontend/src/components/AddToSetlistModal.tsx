@@ -1,8 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { Paper, Modal } from '@mantine/core';
+import { modals, useModals } from '@mantine/modals';
+import { useFocusReturn } from '@mantine/hooks';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
-import { useToast } from '../context/ToastContext';
+import { showStatusNotification as toast } from '../lib/notifications';
 import { useLocalSetlists } from '../hooks/useLocalSetlists';
 import type { SetlistListItem } from '../types';
 
@@ -27,18 +30,25 @@ export function AddToSetlistModal({
   targetKey,
   nashville,
 }: AddToSetlistModalProps) {
+  const modalManager = useModals();
+  useFocusReturn({ opened: isOpen });
   const apiCall = useApi();
   const { user } = useAuth();
   const { t } = useI18n();
-  const toast = useToast();
   const { setlists, addEntry: lsAddEntry, create: lsCreate } = useLocalSetlists();
   const [userSetlists, setUserSetlists] = useState<SetlistListItem[]>([]);
+  const openSession = useRef(0);
+  useEffect(() => {
+    openSession.current += 1;
+    return () => { openSession.current += 1; };
+  }, [isOpen]);
 
   const loadSetlists = useCallback(async () => {
+    const session = openSession.current;
     if (user) {
       try {
         const sls = await apiCall<SetlistListItem[]>('GET', '/api/setlists');
-        setUserSetlists(sls);
+        if (session === openSession.current) setUserSetlists(sls);
       } catch { /* ignore */ }
     } else {
       const formatted = setlists.map((sl) => ({
@@ -58,7 +68,8 @@ export function AddToSetlistModal({
     }
   }, [isOpen, loadSetlists]);
 
-  const addToExisting = async (targetId: number | string) => {
+  const addToExisting = async (targetId: number | string, confirmed = false) => {
+    const session = openSession.current;
     const targetSetlist = userSetlists.find((sl) => sl.id === targetId);
     if (!user) {
       const added = lsAddEntry(String(targetId), {
@@ -76,8 +87,9 @@ export function AddToSetlistModal({
       }
       return;
     }
-    if (songVisibility === 'private' && targetSetlist?.visibility === 'public') {
-      if (!confirm('This song is private. Other viewers of this public setlist will see it as "[Private Song]". Continue?')) return;
+    if (!confirmed && songVisibility === 'private' && targetSetlist?.visibility === 'public') {
+      modals.openConfirmModal({ children: 'This song is private. Other viewers of this public setlist will see it as "[Private Song]". Continue?', labels: { confirm: 'Continue', cancel: 'Cancel' }, onConfirm: () => { void addToExisting(targetId, true); } });
+      return;
     }
     try {
       await apiCall('POST', `/api/setlists/${targetId}/songs`, {
@@ -85,16 +97,18 @@ export function AddToSetlistModal({
         target_key: targetKey,
         nashville,
       });
+      if (session !== openSession.current) return;
       onClose();
       toast(t('setlist.songAdded'), 'success');
     } catch (e) {
-      toast((e as Error).message, 'error');
+      if (session === openSession.current) toast((e as Error).message, 'error');
     }
   };
 
-  const createAndAdd = async () => {
-    const name = prompt(t('setlist.enterName'));
-    if (!name?.trim()) return;
+  const createAndAdd = () => {
+    const session = openSession.current;
+    modals.openContextModal({ modal: 'setlistName', title: t('setlist.enterName'), innerProps: { onSubmit: async (name: string) => {
+    if (session !== openSession.current) return;
     if (!user) {
       const sl = lsCreate(name.trim());
       if (!sl) {
@@ -121,39 +135,27 @@ export function AddToSetlistModal({
         target_key: targetKey,
         nashville,
       });
+      if (session !== openSession.current) return;
       onClose();
       toast(t('setlist.songAdded'), 'success');
     } catch (e) {
-      toast((e as Error).message, 'error');
+      if (session === openSession.current) toast((e as Error).message, 'error');
     }
+  } } });
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      className="modal-backdrop"
-      data-overlay
-      style={{ display: 'flex' }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="setlist-add-content">
-        <div className="view-header">
-          <h3 className="view-title">{t('setlist.addToSetlist')}</h3>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>
-            &#10005;
-          </button>
-        </div>
+    <Modal opened={isOpen} onClose={onClose} title={<>{t('setlist.addToSetlist')}</>} returnFocus={false} trapFocus={modalManager.modals.length === 0} closeOnEscape={modalManager.modals.length === 0} closeOnClickOutside={modalManager.modals.length === 0}>
+
+
         <div className="song-grid">
-          <div className="song-card" onClick={createAndAdd}>
+          <Paper withBorder className="song-card mantine-focus-auto" role="button" tabIndex={0} onClick={createAndAdd} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); createAndAdd(); } }}>
             <div className="song-card-info">
               <div className="song-card-title">{t('setlist.newSetlist')}</div>
             </div>
-          </div>
+          </Paper>
           {userSetlists.map((sl) => (
-            <div key={sl.id} className="song-card" onClick={() => addToExisting(sl.id)}>
+            <Paper withBorder key={sl.id} className="song-card mantine-focus-auto" role="button" tabIndex={0} onClick={() => addToExisting(sl.id)} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); void addToExisting(sl.id); } }}>
               <div className="song-card-info">
                 <div className="song-card-title">{sl.name}</div>
                 <div className="song-card-meta">
@@ -165,10 +167,10 @@ export function AddToSetlistModal({
                   </span>
                 )}
               </div>
-            </div>
+            </Paper>
           ))}
         </div>
-      </div>
-    </div>
+
+    </Modal>
   );
 }

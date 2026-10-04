@@ -55,20 +55,21 @@
 
 .chord-sheet .chord {
   font-family: var(--font-mono);
-  font-size: calc(0.77em * var(--font-scale)); /* 14px / 18px */
+  font-size: calc(1.08em * var(--font-scale));
   font-weight: 600;
   color: var(--chord);
   min-height: 1.2em;
   display: block;
   white-space: pre;
-  letter-spacing: 0.03em;
+  letter-spacing: 0;
   padding-right: 0.4ch;
   margin-bottom: 3px;
 }
 
 .chord-sheet .lyrics {
   font-family: var(--font-sans);
-  font-size: calc(1em * var(--font-scale)); /* 18px */
+  font-size: calc(1em * var(--font-scale));
+  font-weight: 500;
   color: var(--text);
   white-space: pre;
   line-height: 1.5;
@@ -90,77 +91,29 @@
   margin: 8px 0 4px;
 }
 
-/* -- Section Labels (Badge System) -------------------------- */
-.chord-sheet .section-label,
-.chord-sheet h3.label {
-  /* Default Styles (Neutral/Subtle) */
-  --badge-bg-top: var(--surface2);
-  --badge-bg-bot: var(--surface2);
-  --badge-text:   var(--muted);
-  --badge-border: var(--border);
-
-  /* Missing variables defined here */
-  --badge-font-size: 11px;
-  --badge-font-weight: 600;
-  --badge-letter-spacing: 0.05em;
-  --badge-padding: 3px 10px;
-  --badge-radius: 20px;
-
-  font-family: var(--font-sans) !important;
-  font-size: var(--badge-font-size) !important;
-  font-weight: var(--badge-font-weight) !important;
-  text-transform: uppercase !important;
-  letter-spacing: var(--badge-letter-spacing) !important;
-  
-  color: var(--badge-text) !important;
-  background: linear-gradient(180deg, var(--badge-bg-top), var(--badge-bg-bot)) !important;
-  padding: var(--badge-padding) !important;
-  border-radius: var(--badge-radius) !important;
-  border: 1px solid var(--badge-border) !important;
-  
-  display: inline-block !important;
-  margin: 6px 0 4px !important;
+/* Section markers are quiet; music carries the brick accent. */
+.chord-sheet .section-label, .chord-sheet h3.label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  background: var(--surface2);
+  padding: 3px 10px;
+  border-radius: 5px;
+  display: inline-block;
+  margin: 6px 0 8px;
 }
-
-/* Chorus Styles */
-.paragraph.chorus .section-label,
-.paragraph.chorus h3.label {
-  --badge-bg-top: var(--accent2);
-  --badge-bg-bot: var(--accent);
-  --badge-text:   #ffffff;
-  --badge-border: var(--accent);
-}
-
-/* Verse Styles (Subtle) */
-.paragraph.verse .section-label,
-.paragraph.verse h3.label {
-  --badge-bg-top: var(--surface2);
-  --badge-bg-bot: var(--surface2);
-  --badge-text:   var(--muted);
-  --badge-border: var(--border);
-  opacity: 1;
-}
-
-/* Section Highlighting */
 .chord-sheet .paragraph.chorus {
-  background: linear-gradient(90deg, var(--accent-bg) 0%, transparent 40%);
-  border-left: 4px solid var(--accent);
-  padding: 12px 0 12px 28px;
-  margin-left: -32px;
-  border-radius: 8px; /* Premium rounded corners on all sides */
+  border-left: 2px solid var(--chord);
+  padding: 8px 0 8px 14px;
+  margin-left: -16px;
+}
+.chord-sheet .paragraph.bridge, .chord-sheet .paragraph.prechorus {
+  border-left: 2px dashed var(--border);
+  padding-left: 14px;
+  margin-left: -16px;
 }
 
-.chord-sheet .paragraph.bridge {
-  background: linear-gradient(90deg, var(--surface2) 0%, transparent 30%);
-  border-left: 3px dashed var(--muted);
-  padding: 12px 0 12px 24px;
-  margin-left: -28px;
-  border-radius: 8px;
-}
-
-.chord-sheet .paragraph.prechorus {
-  border-left: 2px dotted var(--accent-alt);
-  padding-left: 28px;
-  margin-left: -32px;
-  border-radius: 8px;
-}
+.chord-sheet .row:has(> h3.label) + .row:not(:has(.chord:not(:empty), .lyrics:not(:empty))) { display: none; }

@@ -1,14 +1,27 @@
+import { Paper, Modal, Button, NativeSelect, TextInput } from '@mantine/core';
+import { useModals } from '@mantine/modals';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../context/I18nContext';
 import type { SongListItem, SongVersion } from '../types';
 
 interface SongPickerProps {
+  opened: boolean;
   onPick: (song: SongListItem) => void;
   onClose: () => void;
 }
 
-export function SongPicker({ onPick, onClose }: SongPickerProps) {
+export function SongPicker({ opened, onPick, onClose }: SongPickerProps) {
+  const modalManager = useModals();
+  const { t } = useI18n();
+  return (
+    <Modal opened={opened} onClose={onClose} title={t('setlist.pickSong')} trapFocus={modalManager.modals.length === 0} closeOnEscape={modalManager.modals.length === 0} closeOnClickOutside={modalManager.modals.length === 0}>
+      {opened && <SongPickerContent onPick={onPick} />}
+    </Modal>
+  );
+}
+
+function SongPickerContent({ onPick }: Pick<SongPickerProps, 'onPick'>) {
   const api = useApi();
   const { t } = useI18n();
   const [songs, setSongs] = useState<SongListItem[]>([]);
@@ -47,29 +60,26 @@ export function SongPicker({ onPick, onClose }: SongPickerProps) {
   };
 
   return (
-    <div className="modal-backdrop" data-overlay onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="setlist-add-content">
-        <div className="view-header">
-          <h3 className="view-title">{t('setlist.pickSong')}</h3>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>&#10005;</button>
-        </div>
+    <>
+
+
         <div className="search-row" style={{ marginBottom: 8 }}>
-          <input
+          <TextInput aria-label={t('songs.searchPlaceholder')}
             type="search"
             placeholder={t('songs.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') load(search); }}
-            autoFocus
+            data-autofocus
           />
-          <button className="btn btn-ghost btn-sm" onClick={() => load(search)}>Search</button>
+          <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => load(search)}>Search</Button>
         </div>
         <div className="song-grid">
           {songs.length === 0 ? (
             <div className="empty"><div className="empty-text">{t('songs.noPublicSongs')}</div></div>
           ) : songs.map((s) => (
             <div key={s.id} className="song-picker-item" style={{ display: 'contents' }}>
-              <div className="song-card" onClick={() => handleCardClick(s)} style={expandedId === s.id ? { borderColor: 'var(--accent)', boxShadow: '0 0 0 1px var(--accent)' } : {}}>
+              <Paper withBorder className="song-card mantine-focus-auto" role="button" tabIndex={0} onClick={() => handleCardClick(s)} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); void handleCardClick(s); } }} style={expandedId === s.id ? { borderColor: 'var(--accent)', boxShadow: '0 0 0 1px var(--accent)' } : {}}>
                 <div className="song-card-info">
                   <div className="song-card-title">{s.title}</div>
                   <div className="song-card-meta">
@@ -81,7 +91,7 @@ export function SongPicker({ onPick, onClose }: SongPickerProps) {
                     )}
                   </div>
                 </div>
-              </div>
+              </Paper>
               {expandedId === s.id && (
                 <div className="song-card version-list-card" style={{ gridColumn: '1 / -1', marginTop: -12, padding: '12px 16px', borderTopLeftRadius: 0, borderTopRightRadius: 0, background: 'var(--bg-alt)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   {loadingVersions ? (
@@ -90,7 +100,7 @@ export function SongPicker({ onPick, onClose }: SongPickerProps) {
                     <>
                       <div className="version-selector-container" style={{ background: 'var(--surface)' }}>
                         <span className="version-selector-label">Version</span>
-                        <select
+                        <NativeSelect
                           className="version-select-compact"
                           onChange={(e) => {
                             const vId = parseInt(e.target.value);
@@ -105,7 +115,7 @@ export function SongPicker({ onPick, onClose }: SongPickerProps) {
                               {idx + 1} (@{v.username}) {v.youtube_url ? '▶' : ''}
                             </option>
                           ))}
-                        </select>
+                        </NativeSelect>
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500 }}>
                         {versions.length} {t('setlist.versions').toLowerCase()}
@@ -117,7 +127,7 @@ export function SongPicker({ onPick, onClose }: SongPickerProps) {
             </div>
           ))}
         </div>
-      </div>
-    </div>
+
+    </>
   );
 }

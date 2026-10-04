@@ -1,9 +1,10 @@
 /* global localStorage */
-const { chromium } = require('playwright');
+const { chromium } = require('../frontend/node_modules/playwright');
+const { setTimeout: sleep } = require('node:timers/promises');
 
 async function run() {
   const baseUrl = process.env.BASE_URL || 'http://localhost:3100';
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) });
   const page = await browser.newPage();
   const consoleErrors = [];
   const missingResources = [];
@@ -61,9 +62,8 @@ async function run() {
   
   // 1. Navigate to local setlists tab via navigation bar and tabs
   await page.goto(baseUrl + '/', { waitUntil: 'domcontentloaded', timeout: 10000 });
-  await page.click('#nav-links button:has-text("Setlists")');
-  await page.waitForSelector('.setlist-tabs button:has-text("My Setlists")', { state: 'visible', timeout: 5000 });
-  await page.click('.setlist-tabs button:has-text("My Setlists")');
+  await page.locator('#nav-links').getByRole('button', { name: 'Setlists', exact: true }).click();
+  await page.getByRole('tab', { name: 'My Setlists', exact: true }).click();
   await page.waitForSelector('button:has-text("New Setlist")', { state: 'visible', timeout: 10000 });
   
   // 2. Open new setlist dialog
@@ -71,11 +71,9 @@ async function run() {
   console.log('Found button text:', await btn.innerText());
   await btn.click();
   
-  await page.waitForSelector('input[type="text"]', { state: 'visible', timeout: 5000 });
-  
   // 3. Fill and Create
-  await page.fill('input[type="text"]', 'Smoke Test Local Setlist');
-  await page.click('button:has-text("Create")');
+  await page.getByRole('textbox', { name: 'Setlist name...' }).fill('Smoke Test Local Setlist');
+  await page.getByRole('button', { name: 'Create', exact: true }).click();
   
   // 4. Verify we navigated to the setlist edit page
   await page.waitForURL(/.*#setlist\/local_\w+$/, { timeout: 10000 });
@@ -85,7 +83,8 @@ async function run() {
   // 5. Test Logo navigation (checks if we get stuck in a hash loop)
   await page.click('.nav-brand');
   await page.waitForURL(baseUrl + '/', { timeout: 5000 });
-  await page.waitForSelector('button.nav-btn.active:has-text("Songs")', { state: 'visible', timeout: 5000 });
+  await page.locator('#nav-links').getByRole('button', { name: 'Songs', exact: true }).waitFor({ state: 'visible', timeout: 5000 });
+  await page.locator('#setlist-name-input').waitFor({ state: 'hidden', timeout: 5000 });
   console.log('Logo navigation succeeded (hash cleared).');
   
   // 6. Go back to the setlist edit view
@@ -107,6 +106,9 @@ async function run() {
   }
   
   // 7. Add a song if any exist
+  // Separate anonymous navigation phases across the production 10 requests / 5 seconds burst window.
+  await sleep(5100);
+  const songsResponse = page.waitForResponse(response => new URL(response.url()).pathname === '/api/songs/public');
   try {
     await page.click('button:has-text("Add Song")', { timeout: 5000 });
   } catch (err) {
@@ -114,20 +116,30 @@ async function run() {
     console.log('Body HTML:', await page.locator('body').innerHTML());
     throw err;
   }
-  await page.waitForSelector('.setlist-add-content', { state: 'visible', timeout: 5000 });
-  
-  const songCards = page.locator('.setlist-add-content .song-card');
-  const songCount = await songCards.count();
+  const picker = page.getByRole('dialog', { name: 'Add a Song', exact: true });
+  await picker.waitFor({ state: 'visible', timeout: 5000 });
+  const songsResult = await songsResponse;
+  if (!songsResult.ok()) throw new Error(`Public song picker request failed: HTTP ${songsResult.status()}`);
+  const publicSongs = await songsResult.json();
+  const songCards = picker.locator('.song-card[role="button"]');
+  const songCount = publicSongs.length;
   if (songCount > 0) {
     console.log(`Found ${songCount} public songs in picker. Adding the first one...`);
+    const versionsResponse = publicSongs[0].version_count > 1
+      ? page.waitForResponse(response => /\/api\/songs\/\d+\/versions$/.test(new URL(response.url()).pathname) && response.status() === 200)
+      : null;
     await songCards.first().click();
+    if (versionsResponse) {
+      await versionsResponse;
+      await picker.locator('select').selectOption({ index: 1 });
+    }
     
     // Wait for modal to close and song list to show
     await page.waitForSelector('.setlist-song-item', { state: 'visible', timeout: 5000 });
     
     // 8. Click the song in the setlist to play it
     await page.locator('.setlist-song-item').first().click();
-    await page.waitForURL(/.*\/play$/, { timeout: 5000 });
+    await page.waitForURL(/#setlist\/local_\w+\/play(?:\/\d+)?$/, { timeout: 5000 });
     console.log('Play navigation succeeded.');
     
     // 9. Exit the player
@@ -136,18 +148,20 @@ async function run() {
     console.log('Exit navigation succeeded.');
   } else {
     console.log('No public songs available. Closing picker...');
-    await page.click('.setlist-add-content button:has-text("✕")');
+    await picker.locator('button.mantine-Modal-close').click();
+    await picker.waitFor({ state: 'hidden', timeout: 5000 });
   }
 
   // 10. Clean up (Delete the local setlist)
-  page.once('dialog', dialog => dialog.accept());
-  await page.click('button:has-text("Delete")');
+  await page.getByRole('button', { name: 'Delete', exact: true }).click();
+  const confirmation = page.getByRole('dialog').filter({ hasText: 'Delete this setlist?' });
+  await confirmation.getByRole('button', { name: 'Confirm', exact: true }).click();
   await page.waitForURL(baseUrl + '/', { timeout: 5000 });
   console.log('Cleaned up smoke test local setlist.');
   
   // 11. Test Sign In Page Navigation
   console.log('Testing Sign In page navigation...');
-  const signInButton = page.locator('#nav-links .nav-signin');
+  const signInButton = page.locator('#nav-links').getByRole('button', { name: 'Sign in', exact: true });
   await signInButton.waitFor({ state: 'visible', timeout: 10000 });
   await signInButton.click();
   await page.waitForSelector('#auth-submit', { state: 'visible', timeout: 10000 });

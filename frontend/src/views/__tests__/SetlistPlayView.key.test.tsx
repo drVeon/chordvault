@@ -1,4 +1,4 @@
-import { render, waitFor } from '@testing-library/react';
+import { render, waitFor, fireEvent, screen } from '@testing-library/react';
 import { SetlistPlayView } from '../SetlistPlayView';
 
 // Renders the real view against the real chord library: the only thing mocked
@@ -7,11 +7,12 @@ import { SetlistPlayView } from '../SetlistPlayView';
 // other suite either mocks away or reimplements.
 
 const mockApiCall = vi.fn();
+const { user } = vi.hoisted(() => ({ user: { id: 1 } }));
 
 vi.mock('../../hooks/useApi', () => ({ useApi: () => mockApiCall }));
-vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: { id: 1 } }) }));
+vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user }) }));
 vi.mock('../../context/I18nContext', () => ({ useI18n: () => ({ t: (k: string) => k }) }));
-vi.mock('../../context/ToastContext', () => ({ useToast: () => vi.fn() }));
+vi.mock('../../lib/notifications', () => ({ showStatusNotification: vi.fn() }));
 
 const ENTRY = {
   entry_id: 1,
@@ -40,9 +41,9 @@ const setlistWith = (target_key: string | null) => ({
 
 const renderPlayer = async () => {
   const { container } = render(<SetlistPlayView setlistId={1} navigate={vi.fn()} />);
-  await waitFor(() => expect(container.querySelector('#key-display')).toBeTruthy());
+  await waitFor(() => expect(container.querySelector('[data-testid="key-display"]')).toBeTruthy());
   return {
-    keyLabel: () => container.querySelector('#key-display')!.textContent,
+    keyLabel: () => container.querySelector('[data-testid="key-display"]')!.textContent,
     chords: () => [...container.querySelectorAll('#chord-output .chord')]
       .map((c) => c.textContent)
       .filter(Boolean),
@@ -89,5 +90,52 @@ describe('SetlistPlayView target key', () => {
 
     expect(keyLabel()).toBe('KEY D');
     expect(chords()).toEqual(['D', 'A', 'G']);
+  });
+
+  it('toggles number notation on and back off with repeated keyboard shortcuts', async () => {
+    mockApiCall.mockResolvedValue(setlistWith(null));
+    const { chords } = await renderPlayer();
+    fireEvent.keyDown(document.body, { key: 'n' });
+    await waitFor(() => expect(chords()).toEqual(['1', '5', '4']));
+    fireEvent.keyDown(document.body, { key: 'N', shiftKey: true });
+    await waitFor(() => expect(chords()).toEqual(['C', 'G', 'F']));
+  });
+
+  it('keeps toolbar font and columns temporary per entry while settings font saves the global default', async () => {
+    const setlist = setlistWith(null);
+    setlist.entries.push({ ...ENTRY, entry_id: 2, title: 'Second song' });
+    mockApiCall.mockResolvedValue(setlist);
+    localStorage.setItem('cv_fontsize', '0');
+    const navigate = vi.fn();
+    const view = render(<SetlistPlayView setlistId={1} navigate={navigate} />);
+    await screen.findByRole('button', { name: 'KEY C' });
+    const scale = () => document.querySelector<HTMLElement>('.chord-sheet-wrap')!.style.getPropertyValue('--font-scale');
+    fireEvent.click(screen.getByRole('button', { name: 'Increase font size' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Multi-column layout' }));
+    expect(scale()).toBe('1.12');
+    expect(localStorage.getItem('cv_fontsize')).toBe('0');
+    expect(document.querySelector('.chord-sheet-wrap')).toHaveClass('two-col');
+    fireEvent.click(screen.getByRole('button', { name: 'Next Song' }));
+    expect(scale()).toBe('');
+    expect(document.querySelector('.chord-sheet-wrap')).not.toHaveClass('two-col');
+    fireEvent.click(screen.getByRole('button', { name: 'Setlist defaults' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Increase default font size' }));
+    expect(localStorage.getItem('cv_fontsize')).toBe('1');
+    view.unmount();
+    render(<SetlistPlayView setlistId={1} navigate={navigate} />);
+    await screen.findByRole('button', { name: 'KEY C' });
+    expect(scale()).toBe('1.12');
+    expect(document.querySelector('.chord-sheet-wrap')).not.toHaveClass('two-col');
+  });
+
+  it('Escape closes the key chooser without leaving playback', async () => {
+    mockApiCall.mockResolvedValue(setlistWith(null));
+    const navigate = vi.fn();
+    render(<SetlistPlayView setlistId={1} navigate={navigate} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'KEY C' }));
+    expect(screen.getByRole('group', { name: 'Transpose key' })).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole('button', { name: 'C' }), { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('group', { name: 'Transpose key' })).not.toBeInTheDocument());
+    expect(navigate).not.toHaveBeenCalled();
   });
 });

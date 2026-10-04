@@ -1,3 +1,7 @@
+import { Switch, Button, TextInput } from '@mantine/core';
+import { useCopyNotification } from '../hooks/useCopyNotification';
+import { useForm } from '@mantine/form';
+import { modals } from '@mantine/modals';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { ApiError } from '../lib/api';
@@ -5,7 +9,7 @@ import { stepKey } from '../lib/keys';
 import { getSongKey } from '../lib/chords';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
-import { useToast } from '../context/ToastContext';
+import { showStatusNotification as toast } from '../lib/notifications';
 import { useLocalSetlists } from '../hooks/useLocalSetlists';
 import { formatLocalEntry, enrichLocalSetlistSongs } from '../lib/setlists';
 import { SongPicker } from '../components/SongPicker';
@@ -24,7 +28,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
   const apiCall = useApi();
   const { user } = useAuth();
   const { t } = useI18n();
-  const toast = useToast();
+  const copyWithFeedback = useCopyNotification(t('setlist.linkCopied') || 'Link copied to clipboard');
   const {
     getOne,
     rename,
@@ -34,16 +38,18 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
     updateEntry: lsUpdateEntry,
     reorderEntries: lsReorderEntries,
   } = useLocalSetlists();
-  
+
   const isLocal = typeof setlistId === 'string' && setlistId.startsWith('local_');
   const [setlist, setSetlist] = useState<Setlist | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const metadata = useForm({ initialValues: { name: '', visibility: false, event_date: '' } });
+  const { setValues: setMetadata } = metadata;
 
   const load = useCallback(async () => {
     if (isLocal) {
       const sl = getOne(String(setlistId));
       if (!sl) { navigate(user ? 'setlists' : 'public-setlists'); return; }
-      
+
       const formatted: Setlist = {
         id: sl.id,
         name: sl.name,
@@ -52,6 +58,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
         visibility: 'private',
         event_date: null,
       };
+      setMetadata({ name: formatted.name, visibility: false, event_date: '' });
       setSetlist(formatted);
       location.hash = `#setlist/${setlistId}`;
       return;
@@ -72,13 +79,14 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
       } else {
         sl = await apiCall<Setlist>('GET', `/api/setlists/public/${setlistId}`);
       }
+      setMetadata({ name: sl.name, visibility: sl.visibility === 'public', event_date: sl.event_date || '' });
       setSetlist(sl);
       location.hash = `#setlist/${setlistId}`;
     } catch (e) {
       toast((e as Error).message, 'error');
       navigate(user ? 'setlists' : 'public-setlists');
     }
-  }, [apiCall, toast, navigate, setlistId, user, isLocal, getOne]);
+  }, [apiCall, navigate, setlistId, user, isLocal, getOne, setMetadata]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -118,9 +126,9 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
     }
   );
 
-  const saveMeta = async () => {
+  const saveMeta = async (values = metadata.values) => {
     if (!setlist) return;
-    const nameInput = (document.getElementById('setlist-name-input') as HTMLInputElement)?.value.trim();
+    const nameInput = values.name.trim();
     if (!nameInput) return;
 
     if (isLocal) {
@@ -128,8 +136,8 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
       rename(String(setlistId), nameInput);
       setSetlist((prev) => prev ? { ...prev, name: nameInput } : prev);
     } else {
-      const vis = (document.getElementById('setlist-visibility') as HTMLInputElement)?.checked ? 'public' : 'private';
-      const date = (document.getElementById('setlist-date') as HTMLInputElement)?.value || '';
+      const vis = values.visibility ? 'public' : 'private';
+      const date = values.event_date;
       try {
         await apiCall('PUT', `/api/setlists/${setlistId}`, { name: nameInput, visibility: vis, event_date: date });
         setSetlist((prev) => prev ? { ...prev, name: nameInput, visibility: vis, event_date: date } : prev);
@@ -138,7 +146,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
   };
 
   const deleteSetlist = async () => {
-    if (!confirm(t('setlist.confirmDelete'))) return;
+    modals.openConfirmModal({ children: t('setlist.confirmDelete'), labels: { confirm: 'Confirm', cancel: 'Cancel' }, onConfirm: async () => {
 
     if (isLocal) {
       remove(String(setlistId));
@@ -153,7 +161,9 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
         navigate('setlists');
       } catch (e) { toast((e as Error).message, 'error'); }
     }
-  };
+
+} });
+};
 
   // Reordering is handled by useDragReorder hook
 
@@ -261,9 +271,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
 
   const copyShareLink = () => {
     const url = window.location.origin + window.location.pathname + `#setlist/${setlistId}`;
-    navigator.clipboard.writeText(url)
-      .then(() => toast(t('setlist.linkCopied') || 'Link copied to clipboard', 'success'))
-      .catch(() => toast('Failed to copy link', 'error'));
+    copyWithFeedback(url);
   };
 
   const isEditable = isLocal || (setlist?.user_id != null && user != null && setlist.user_id === user.id);
@@ -274,27 +282,27 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
     <>
       <div className="song-view-header">
         <div className="song-view-nav">
-          <button className="btn btn-ghost btn-sm" onClick={() => navigate(isEditable ? 'setlists' : 'public-setlists')}>&#8592; {t('songView.back')}</button>
+          <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate(isEditable ? 'setlists' : 'public-setlists')}>&#8592; {t('songView.back')}</Button>
           <div style={{ display: 'flex', gap: 8 }}>
             {setlist.entries.length > 0 && (
-              <button className="btn btn-sm" onClick={() => handleItemClick(0)}>{t('setlist.play')}</button>
+              <Button size="xs" className="btn btn-sm" onClick={() => handleItemClick(0)}>{t('setlist.play')}</Button>
             )}
             {!isLocal && setlist.visibility === 'public' && (
-              <button className="btn btn-ghost btn-sm" onClick={copyShareLink}>{t('setlist.share')}</button>
+              <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={copyShareLink}>{t('setlist.share')}</Button>
             )}
-            {isEditable && <button className="btn btn-danger btn-sm" onClick={deleteSetlist}>{t('admin.delete')}</button>}
+            {isEditable && <Button color="red" size="xs" className="btn btn-danger btn-sm" onClick={deleteSetlist}>{t('admin.delete')}</Button>}
           </div>
         </div>
         <div className="setlist-name-row">
           {!isEditable ? (
             <div className="setlist-name-input" style={{ border: 'none', background: 'none', padding: 0 }}>{setlist.name}</div>
           ) : (
-            <input
+            <TextInput
               type="text"
               id="setlist-name-input"
               className="setlist-name-input"
-              defaultValue={setlist.name}
-              onBlur={saveMeta}
+              {...metadata.getInputProps('name')}
+              onBlur={() => saveMeta()}
               onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
             />
           )}
@@ -309,17 +317,8 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
             </>
           ) : (
             <>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
-                <span className="toggle">
-                  <input type="checkbox" id="setlist-visibility" defaultChecked={setlist.visibility === 'public'} onChange={saveMeta} />
-                  <span className="toggle-slider" />
-                </span>
-                {t('setlist.visibility')}
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-                <span style={{ color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: 12 }}>{t('setlist.date')}</span>
-                <input type="date" id="setlist-date" defaultValue={setlist.event_date || ''} onChange={saveMeta} />
-              </label>
+              <Switch label={t('setlist.visibility')} type="checkbox" id="setlist-visibility" checked={metadata.values.visibility} onChange={(event) => { metadata.setFieldValue('visibility', event.currentTarget.checked); void saveMeta({ ...metadata.values, visibility: event.currentTarget.checked }); }}  />
+              <TextInput label={t('setlist.date')} type="date" id="setlist-date" value={metadata.values.event_date} onChange={(event) => { metadata.setFieldValue('event_date', event.currentTarget.value); void saveMeta({ ...metadata.values, event_date: event.currentTarget.value }); }} />
             </>
           )}
         </div>
@@ -350,11 +349,11 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
 
       {isEditable && (
         <div style={{ marginTop: 20, textAlign: 'center' }}>
-          <button className="btn" onClick={() => setPickerOpen(true)}>{t('setlist.addSongs')}</button>
+          <Button className="btn" onClick={() => setPickerOpen(true)}>{t('setlist.addSongs')}</Button>
         </div>
       )}
 
-      {pickerOpen && <SongPicker onPick={addSong} onClose={() => setPickerOpen(false)} />}
+      <SongPicker opened={pickerOpen} onPick={addSong} onClose={() => setPickerOpen(false)} />
     </>
   );
 }

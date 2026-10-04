@@ -1,7 +1,8 @@
+import { Button, TextInput } from '@mantine/core';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../context/I18nContext';
-import { useToast } from '../context/ToastContext';
+import { showStatusNotification as toast } from '../lib/notifications';
 import { SongCard } from '../components/SongCard';
 import { EmptyState } from '../components/EmptyState';
 import { Pagination } from '../components/Pagination';
@@ -15,7 +16,6 @@ interface MySongsViewProps {
 export function MySongsView({ navigate }: MySongsViewProps) {
   const api = useApi();
   const { t } = useI18n();
-  const toast = useToast();
   const [songs, setSongs] = useState<SongListItem[]>([]);
   const [query, setQuery] = useState(() => getSessionItem('cv_mysongs_query') || '');
   const [loaded, setLoaded] = useState(false);
@@ -32,7 +32,7 @@ export function MySongsView({ navigate }: MySongsViewProps) {
     params.push(`page=${targetPage}`);
     params.push(`limit=20`);
     url += '?' + params.join('&');
-    
+
     interface PaginatedSongsResponse {
       songs: SongListItem[];
       total: number;
@@ -51,7 +51,7 @@ export function MySongsView({ navigate }: MySongsViewProps) {
         setSessionItem('cv_mysongs_page', String(data.page));
       })
       .catch((e) => toast(e.message, 'error'));
-  }, [api, toast]);
+  }, [api]);
 
   useEffect(() => {
     load(query, page);
@@ -77,7 +77,7 @@ export function MySongsView({ navigate }: MySongsViewProps) {
       </div>
       <div className="search-row">
         <div className="search-input-wrapper">
-          <input
+          <TextInput aria-label={t('songs.searchPlaceholder')}
             type="search"
             placeholder={t('songs.searchPlaceholder')}
             value={query}
@@ -85,17 +85,17 @@ export function MySongsView({ navigate }: MySongsViewProps) {
             onKeyDown={(e) => { if (e.key === 'Enter') doSearch(); }}
           />
           {query && (
-            <button
+            <Button
               className="search-clear-btn"
               onClick={handleClear}
               title="Clear search"
             >
               &times;
-            </button>
+            </Button>
           )}
         </div>
-        <button className="btn btn-ghost btn-sm" onClick={doSearch}>{t('songs.search')}</button>
-        <button className="btn btn-sm" onClick={() => navigate('song-edit')}>{t('songs.newSong')}</button>
+        <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={doSearch}>{t('songs.search')}</Button>
+        <Button size="xs" className="btn btn-sm" onClick={() => navigate('song-edit')}>{t('songs.newSong')}</Button>
       </div>
       <div className="song-grid">
         {loaded && songs.length === 0 ? (

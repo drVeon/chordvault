@@ -1,17 +1,16 @@
+import { SetlistNameModal } from '../components/SetlistNameModal';
+import { ResetPasswordModal } from '../components/ResetPasswordModal';
 import { type ReactNode } from 'react';
-
-// Mock all context providers with minimal implementations for testing
-
-const mockUser = { id: 1, username: 'testuser', role: 'owner', token: 'fake-token' };
-
-// vi.mock calls must be at the top of each test file that uses this wrapper.
-// This file provides the wrapper component that composes the mocked providers.
-
-// Instead of trying to mock contexts (which is fragile), we'll mock the hooks
-// directly in each test file using vi.mock. This wrapper just provides a container.
+import { MantineProvider } from '@mantine/core';
+import { ModalsProvider } from '@mantine/modals';
+import { chordVaultTheme, chordVaultVariables } from '../theme';
 
 export function TestWrapper({ children }: { children: ReactNode }) {
-  return <>{children}</>;
+  return (
+    <MantineProvider theme={chordVaultTheme} cssVariablesResolver={chordVaultVariables} forceColorScheme="light" env="test">
+      <ModalsProvider modals={{ setlistName: SetlistNameModal, resetPassword: ResetPasswordModal }} modalProps={{ transitionProps: { duration: 0 } }}>{children}</ModalsProvider>
+    </MantineProvider>
+  );
 }
 
-export { mockUser };
+export const mockUser = { id: 1, username: 'testuser', role: 'owner', token: 'fake-token' };

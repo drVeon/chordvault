@@ -8,6 +8,7 @@ export function useDragReorder<T>(
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [canDrag, setCanDrag] = useState(false);
   const currentTouchIdx = useRef<number | null>(null);
+  const touchOriginalItems = useRef<T[] | null>(null);
 
   const prevInitialItems = useRef<T[]>(initialItems);
 
@@ -19,6 +20,9 @@ export function useDragReorder<T>(
 
     if (!isSame) {
       setItems(initialItems);
+      currentTouchIdx.current = null;
+      touchOriginalItems.current = null;
+      setDraggedIdx(null);
     }
     prevInitialItems.current = initialItems;
   }, [initialItems]);
@@ -47,13 +51,22 @@ export function useDragReorder<T>(
 
   // Touch Reordering (Mobile/Touchscreen)
   const handleTouchStart = (idx: number) => {
+    touchOriginalItems.current = items;
     currentTouchIdx.current = idx;
     setDraggedIdx(idx);
   };
 
+  const cancelTouch = () => {
+    if (touchOriginalItems.current) setItems(touchOriginalItems.current);
+    touchOriginalItems.current = null;
+    currentTouchIdx.current = null;
+    setDraggedIdx(null);
+  };
+
   const handleTouchMove = (e: React.TouchEvent) => {
     if (currentTouchIdx.current === null) return;
-    
+    if (e.touches.length !== 1) { cancelTouch(); return; }
+
     // Prevent default scrolling behavior on mobile while dragging
     if (e.cancelable) {
       e.preventDefault();
@@ -67,19 +80,21 @@ export function useDragReorder<T>(
     if (!entryElement) return;
 
     const hoverIdx = parseInt(entryElement.getAttribute('data-index') || '', 10);
-    if (isNaN(hoverIdx) || hoverIdx === currentTouchIdx.current) return;
+    if (isNaN(hoverIdx) || hoverIdx < 0 || hoverIdx >= items.length || hoverIdx === currentTouchIdx.current) return;
 
     const reordered = [...items];
     const [draggedItem] = reordered.splice(currentTouchIdx.current, 1);
     reordered.splice(hoverIdx, 0, draggedItem);
-    
+
     currentTouchIdx.current = hoverIdx;
     setDraggedIdx(hoverIdx);
     setItems(reordered);
   };
 
   const handleTouchEnd = () => {
+    if (currentTouchIdx.current === null) return;
     currentTouchIdx.current = null;
+    touchOriginalItems.current = null;
     setDraggedIdx(null);
     onSave(items);
   };
@@ -99,9 +114,13 @@ export function useDragReorder<T>(
       onMouseDown: () => setCanDrag(true),
       onMouseUp: () => setCanDrag(false),
       onMouseLeave: () => setCanDrag(false),
-      onTouchStart: () => handleTouchStart(idx),
+      onTouchStart: (event: React.TouchEvent) => {
+        if (event.touches.length === 1) handleTouchStart(idx);
+        else cancelTouch();
+      },
       onTouchMove: handleTouchMove,
       onTouchEnd: handleTouchEnd,
+      onTouchCancel: cancelTouch,
     }),
   };
 }

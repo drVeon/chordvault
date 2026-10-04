@@ -1,3 +1,4 @@
+import { Paper, Button, PasswordInput } from '@mantine/core';
 import { useCallback, useEffect, useState } from 'react';
 import { useApi } from '../hooks/useApi';
 
@@ -5,6 +6,7 @@ export function GeminiKeySettings() {
   const apiCall = useApi();
   const [hasKey, setHasKey] = useState<boolean | null>(null);
   const [geminiKey, setGeminiKey] = useState('');
+  const [pending, setPending] = useState<'save' | 'remove' | null>(null);
   const [message, setMessage] = useState<{ text: string; color: string } | null>(null);
 
   const loadStatus = useCallback(async () => {
@@ -22,11 +24,13 @@ export function GeminiKeySettings() {
   }, [loadStatus]);
 
   const saveKey = async () => {
+    if (pending) return;
     setMessage(null);
     if (!geminiKey.trim()) {
       setMessage({ text: 'Enter an API key', color: 'var(--danger)' });
       return;
     }
+    setPending('save');
     try {
       await apiCall('PUT', '/api/settings/gemini-key', { api_key: geminiKey.trim() });
       setHasKey(true);
@@ -34,10 +38,14 @@ export function GeminiKeySettings() {
       setMessage({ text: hasKey ? 'Key replaced' : 'Key saved', color: 'var(--success)' });
     } catch (error) {
       setMessage({ text: (error as Error).message, color: 'var(--danger)' });
+    } finally {
+      setPending(null);
     }
   };
 
   const removeKey = async () => {
+    if (pending) return;
+    setPending('remove');
     try {
       await apiCall('DELETE', '/api/settings/gemini-key');
       setHasKey(false);
@@ -45,17 +53,19 @@ export function GeminiKeySettings() {
       setMessage({ text: 'Key removed', color: 'var(--success)' });
     } catch (error) {
       setMessage({ text: (error as Error).message, color: 'var(--danger)' });
+    } finally {
+      setPending(null);
     }
   };
 
   return (
-    <div className="auth-card">
+    <Paper withBorder className="auth-card">
       <div className={`gemini-key-status${hasKey ? ' configured' : ''}`} role="status">
         {hasKey === null ? 'Checking key status…' : hasKey ? '✓ Key configured' : 'No key configured'}
       </div>
       <div className="field">
-        <label htmlFor="gemini-api-key">{hasKey ? 'Replace Gemini API Key' : 'Gemini API Key'}</label>
-        <input
+
+        <PasswordInput label={<>{hasKey ? 'Replace Gemini API Key' : 'Gemini API Key'}</>}
           id="gemini-api-key"
           type="password"
           value={geminiKey}
@@ -65,13 +75,13 @@ export function GeminiKeySettings() {
         />
       </div>
       <div className="flex-row">
-        <button className="btn btn-sm" onClick={saveKey}>
+        <Button size="xs" className="btn btn-sm" onClick={saveKey} loading={pending === 'save'} disabled={pending === 'remove'}>
           {hasKey ? 'Replace Key' : 'Save Key'}
-        </button>
+        </Button>
         {hasKey && (
-          <button className="btn btn-danger btn-sm" onClick={removeKey}>
+          <Button color="red" size="xs" className="btn btn-danger btn-sm" onClick={removeKey} loading={pending === 'remove'} disabled={pending === 'save'}>
             Remove Key
-          </button>
+          </Button>
         )}
       </div>
       {message && (
@@ -79,6 +89,6 @@ export function GeminiKeySettings() {
           {message.text}
         </div>
       )}
-    </div>
+    </Paper>
   );
 }
