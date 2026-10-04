@@ -185,6 +185,18 @@ describe('autoFit', () => {
     expect(autoFit()).toEqual({ fontSize: 0, twoCol: false });
   });
 
+  it('keeps the last lines clear of the playback dock', () => {
+    mountSheet();
+    const dock = document.createElement('nav');
+    dock.className = 'playback-dock';
+    dock.getBoundingClientRect = () => ({ height: 80 }) as DOMRect;
+    document.body.appendChild(dock);
+
+    const { fontSize, twoCol } = autoFit();
+
+    expect(renderedHeight(fontSize, twoCol)).toBeLessThanOrEqual(768 - SHEET_TOP - 80 - 24);
+  });
+
   it('returns a neutral layout when no sheet is mounted', () => {
     document.body.innerHTML = '';
     expect(autoFit()).toEqual({ fontSize: 0, twoCol: false });
