@@ -117,30 +117,28 @@ const songs = [
     youtube_url: 'https://www.youtube.com/watch?v=Jbe7OruLk8I',
   },
   {
-    title: 'How Great Is Our God',
-    artist: 'Chris Tomlin',
-    content: `{title: How Great Is Our God}\n{artist: Chris Tomlin}\n{key: C}\n\n{start_of_verse: Verse 1}\n[C]The splendor of the King\n[Am7]Clothed in majesty\nLet all the [Fmaj7]earth rejoice\nAll the earth rejoice\n{end_of_verse}\n\n{start_of_verse: Verse 2}\n[C]He wraps Himself in light\n[Am7]And darkness tries to hide\nAnd trembles [Fmaj7]at His voice\nTrembles at His voice\n{end_of_verse}\n\n{start_of_chorus}\n[C]How great is our God\nSing with me [Am7]how great is our God\n[Fmaj7]And all will see how great\n[G]How great is our God\n{end_of_chorus}\n\n{start_of_bridge: Bridge}\n[Am7]Name above all [C]names\n[Fmaj7]Worthy of all [G]praise\n[Am7]My heart will sing\nHow [F]great [G]is our [C]God\n{end_of_bridge}`,
-    key: 'C', language: 'en', tags: 'worship', bpm: 78, format_detected: 'ChordPro',
+    title: 'It Is Well with My Soul',
+    artist: 'Horatio Spafford',
+    content: `{title: It Is Well with My Soul}\n{artist: Horatio Spafford}\n{key: C}\n\n{start_of_verse: Verse 1}\nWhen [C]peace like a [F]river at[C]tendeth my way,\nWhen [Am]sorrows like [D7]sea billows [G]roll;\nWhat[C]ever my [F]lot, Thou hast [C]taught me to [Am]say,\nIt is [F]well, it is [G7]well with my [C]soul.\n{end_of_verse}\n\n{start_of_chorus}\nIt is [G]well (it is [C]well)\nWith my [G]soul (with my [C]soul),\nIt is [F]well, it is [G7]well with my [C]soul.\n{end_of_chorus}\n\n{start_of_verse: Verse 2}\nThough [C]Satan should [F]buffet, though [C]trials should come,\nLet [Am]this blest as[D7]surance con[G]trol,\nThat [C]Christ has re[F]garded my [C]helpless es[Am]tate,\nAnd hath [F]shed His own [G7]blood for my [C]soul.\n{end_of_verse}`,
+    key: 'C', language: 'en', tags: 'hymn,worship', bpm: 72, format_detected: 'ChordPro',
   },
   {
-    title: '10,000 Reasons (Bless the Lord)',
-    artist: 'Matt Redman',
-    content: `{title: 10,000 Reasons (Bless the Lord)}\n{artist: Matt Redman}\n{key: G}\n\n{start_of_chorus}\n[G]Bless the [D/F#]Lord, O my [Em]soul, [C]O my soul\n[G]Worship His [D]holy [C]name\nSing like [Em]never be[C]fore, [G]O my [D]soul\nI'll [C]worship Your [D]holy [G]name\n{end_of_chorus}\n\n{start_of_verse: Verse 1}\nThe [G]sun comes [D/F#]up, it's a [Em]new day [C]dawning\n[G]It's time to [D]sing Your [Em]song a[C]gain\nWhat[G]ever may [D/F#]pass and what[Em]ever lies be[C]fore me\n[G]Let me be [D]singing when the [C]evening [D]comes\n{end_of_verse}\n\n{start_of_verse: Verse 2}\nYou're [G]rich in [D/F#]love and You're [Em]slow to [C]anger\nYour [G]name is [D]great and Your [Em]heart is [C]kind\nFor [G]all Your [D/F#]goodness I will [Em]keep on [C]singing\n[G]Ten thousand [D]reasons for my [C]heart to [D]find\n{end_of_verse}`,
-    key: 'G', language: 'en', tags: 'worship,opener', bpm: 74, format_detected: 'ChordPro',
-    youtube_url: 'https://www.youtube.com/watch?v=DXDGE_lRI0E',
+    title: 'Blessed Assurance',
+    artist: 'Fanny Crosby',
+    content: `{title: Blessed Assurance}\n{artist: Fanny Crosby}\n{key: D}\n\n{start_of_verse: Verse 1}\n[D]Blessed as[G]surance, [D]Jesus is mine!\n[D]O what a [E7]foretaste of [A]glory divine!\n[D]Heir of sal[G]vation, [D]purchase of [Bm]God,\n[E7]Born of His [D]Spirit, [A7]washed in His [D]blood.\n{end_of_verse}\n\n{start_of_chorus}\n[D]This is my [G]story, [D]this is my song,\n[A]Praising my [E7]Savior all [A]the day long;\n[D]This is my [G]story, [D]this is my [Bm]song,\n[G]Praising my [D]Savior [A7]all the day [D]long.\n{end_of_chorus}\n\n{start_of_verse: Verse 2}\n[D]Perfect sub[G]mission, [D]perfect delight,\n[D]Visions of [E7]rapture now [A]burst on my sight;\n[D]Angels de[G]scending [D]bring from a[Bm]bove\n[E7]Echoes of [D]mercy, [A7]whispers of [D]love.\n{end_of_verse}`,
+    key: 'D', language: 'en', tags: 'hymn,opener', bpm: 96, format_detected: 'ChordPro',
   },
   {
-    title: 'Good Good Father',
-    artist: 'Chris Tomlin',
-    content: `{title: Good Good Father}\n{artist: Chris Tomlin}\n{key: A}\n\n{start_of_verse: Verse 1}\n[A]Oh, I've heard a [E/G#]thousand stories\nOf [F#m7]what they think You're [D]like\nBut [A]I've heard the [E/G#]tender whisper\nOf [F#m7]love in the dead of [D]night\nAnd [A]You tell me [E/G#]that You're pleased\nAnd [F#m7]that I'm never a[D]lone\n{end_of_verse}\n\n{start_of_chorus}\nYou're a [A]good, good [E]Father\nIt's [F#m7]who You are, [D]it's who You are\n[A]It's who You [E]are\nAnd [A]I'm loved by [E]You\nIt's [F#m7]who I am, [D]it's who I am\n[A]It's who I [E]am\n{end_of_chorus}\n\n{start_of_bridge: Bridge}\n[A]You are [E]perfect in [F#m7]all of Your [D]ways\n[A]You are [E]perfect in [F#m7]all of Your [D]ways\n[A]You are [E]perfect in [F#m7]all of Your [D]ways to us\n{end_of_bridge}`,
-    key: 'A', language: 'en', tags: 'worship,closer', bpm: 68, format_detected: 'ChordPro',
+    title: 'Holy, Holy, Holy',
+    artist: 'Reginald Heber',
+    content: `{title: Holy, Holy, Holy}\n{artist: Reginald Heber}\n{key: D}\n\n{start_of_verse: Verse 1}\n[D]Holy, holy, [Bm]holy! [G]Lord God Al[D]mighty!\nEarly in the [G]morning our [E7]song shall rise to [A]Thee;\n[D]Holy, holy, [Bm]holy, [G]merciful and [D]mighty!\n[G]God in three [D]Persons, [A7]blessed Trini[D]ty!\n{end_of_verse}\n\n{start_of_verse: Verse 2}\n[D]Holy, holy, [Bm]holy! [G]All the saints a[D]dore Thee,\nCasting down their [G]golden crowns a[E7]round the glassy [A]sea;\n[D]Cherubim and [Bm]seraphim [G]falling down be[D]fore Thee,\n[G]Who wast, and [D]art, and [A7]evermore shalt [D]be.\n{end_of_verse}`,
+    key: 'D', language: 'en', tags: 'hymn,worship', bpm: 84, format_detected: 'ChordPro',
   },
   {
-    title: 'Build My Life',
-    artist: 'Housefires',
-    content: `{title: Build My Life}\n{artist: Housefires}\n{key: E}\n\n{start_of_verse: Verse 1}\n[E]Worthy of [B]every song we could [C#m7]ever sing\n[A2]Worthy of all the praise we could ever bring\n[E]Worthy of [B]every breath we could [C#m7]ever breathe\nWe [A2]live for You\n{end_of_verse}\n\n{start_of_verse: Verse 2}\n[E]Jesus, the [B]name above every [C#m7]other name\n[A2]Jesus, the only one who could ever save\n[E]Worthy of [B]every breath we could [C#m7]ever breathe\nWe [A2]live for You, we live for You\n{end_of_verse}\n\n{start_of_chorus}\n[E]Holy, there is [B]no one like You\n[C#m7]There is none be[A2]side You\n[E]Open up my [B]eyes in wonder and show me\n[C#m7]Who You are and [A2]fill me\nWith Your heart and [E]lead me in Your [B]love to those a[C#m7]round me[A2]\n{end_of_chorus}\n\n{start_of_bridge: Bridge}\nI will [E]build my [B]life upon Your love\nIt is a [C#m7]firm foun[A2]dation\nI will [E]put my [B]trust in You alone\nAnd I [C#m7]will not be [A2]shaken\n{end_of_bridge}`,
-    key: 'E', language: 'en', tags: 'worship,communion', bpm: 68, format_detected: 'ChordPro',
-    youtube_url: 'https://www.youtube.com/watch?v=Z2kpCMH1mKE',
+    title: 'Come Thou Fount of Every Blessing',
+    artist: 'Robert Robinson',
+    content: `{title: Come Thou Fount of Every Blessing}\n{artist: Robert Robinson}\n{key: D}\n\n{start_of_verse: Verse 1}\n[D]Come, Thou Fount of [G]every [D]blessing,\nTune my heart to [A]sing Thy [D]grace;\nStreams of mercy, [G]never [D]ceasing,\nCall for songs of [A]loudest [D]praise.\n{end_of_verse}\n\n{start_of_bridge: Refrain}\n[A]Teach me some me[D]lodious [A]sonnet,\n[A]Sung by flaming [D]tongues a[A]bove;\n[D]Praise the mount! I'm [G]fixed up[D]on it,\nMount of Thy re[A]deeming [D]love.\n{end_of_bridge}`,
+    key: 'D', language: 'en', tags: 'hymn,closer', bpm: 88, format_detected: 'ChordPro',
   },
   {
     title: 'Silent Night',
@@ -178,11 +176,10 @@ const insertSetlistSong = db.prepare(`
 
 console.log('\nCreating setlists...');
 
-const sl1 = insertSetlist.run(demoUser.id, 'Sunday Morning Worship — March 23', 'public', '2026-03-23');
+const sl1 = insertSetlist.run(demoUser.id, 'Sunday Morning Worship', 'public', '2026-03-23');
 console.log(`  ✓ Sunday Morning Worship (id: ${sl1.lastInsertRowid}, public)`);
-for (let i = 0; i < 4 && i < songIds.length; i++) {
-  insertSetlistSong.run(sl1.lastInsertRowid, songIds[i], i);
-}
+// Opens with a song that has a chorus, so playback shows every section style.
+[1, 2, 3, 0].forEach((songIdx, position) => insertSetlistSong.run(sl1.lastInsertRowid, songIds[songIdx], position));
 console.log('    Added 4 songs');
 
 const sl2 = insertSetlist.run(demoUser.id, 'Christmas Eve Service', 'public', '2025-12-24');
