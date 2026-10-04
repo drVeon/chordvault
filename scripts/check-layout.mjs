@@ -118,6 +118,31 @@ for (const vp of viewports.filter((v) => v.mobile)) {
   failures += problems.length ? 1 : 0;
   await context.close();
 }
+// Song cards must hold the 40px key badge without overflowing at any width.
+for (const width of [390, 768, 1280]) {
+  const touch = width < 1024;
+  const context = await browser.newContext({ viewport: { width, height: 900 }, isMobile: touch, hasTouch: touch });
+  const page = await context.newPage();
+  await page.goto(`${base}/`);
+  await page.locator('.song-card').first().waitFor();
+  const problems = await page.evaluate(() => {
+    const out = [];
+    if (document.documentElement.scrollWidth > innerWidth) out.push('page scrolls sideways');
+    for (const card of document.querySelectorAll('.song-card')) {
+      if (card.scrollWidth > card.clientWidth + 1) out.push(`card overflows: ${card.querySelector('.song-card-title')?.textContent}`);
+    }
+    const badge = document.querySelector('.song-card .key-badge');
+    if (!badge) out.push('no key badge found');
+    else {
+      const r = badge.getBoundingClientRect();
+      if (Math.round(r.height) !== 40 || r.width < 40) out.push(`key badge ${Math.round(r.width)}x${Math.round(r.height)}`);
+    }
+    return out;
+  });
+  console.log(`${problems.length ? 'FAIL' : 'ok  '} browse ${width}${problems.length ? ': ' + problems.join('; ') : ''}`);
+  failures += problems.length ? 1 : 0;
+  await context.close();
+}
 // Signed-in phone pages: nav labels whole, search on one row, card actions inside
 // their card, sheet padding as designed, setlist titles with room to read.
 const { CV_CHECK_USER: user, CV_CHECK_PASSWORD: password, CV_CHECK_SONG_ID: songId } = process.env;
