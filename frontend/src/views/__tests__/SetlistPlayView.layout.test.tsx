@@ -14,11 +14,17 @@ vi.mock('../../context/I18nContext', () => ({ useI18n: () => ({ t: (k: string) =
 vi.mock('../../lib/notifications', () => ({ showStatusNotification: vi.fn() }));
 vi.mock('../../hooks/useSwipe', () => ({ useSwipe: vi.fn() }));
 vi.mock('../../hooks/useKeyboardShortcuts', () => ({ useKeyboardShortcuts: vi.fn() }));
+const narrow = vi.hoisted(() => ({ current: false }));
+vi.mock('@mantine/hooks', async (orig) => ({
+  ...(await orig<typeof import('@mantine/hooks')>()),
+  useMediaQuery: (q: string, ...rest: unknown[]) => (q === '(max-width: 379px)' ? narrow.current : (rest[0] as boolean | undefined) ?? false),
+}));
 
 const LONG = '奇異恩典 Amazing Grace (中英雙語版 bilingual arrangement)';
 
 beforeEach(() => {
   columns.twoCol = false;
+  narrow.current = false;
   (useSetlistPlayer as Mock).mockReturnValue({
     setlist: { id: 1, name: 'Sunday worship', entries: [] },
     entry: { entry_id: 1, title: LONG, content: '{key: G}\n[G]Amazing grace' },
@@ -36,6 +42,17 @@ describe('playback layouts', () => {
     expect(screen.getByRole('button', { name: 'Previous Song' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Next Song' })).toBeEnabled();
     expect(screen.queryByRole('button', { name: 'Multi-column layout' })).toBeNull();
+  });
+
+  it('very narrow phone: Fit keeps its name but shows only the icon', () => {
+    layout.current = 'phone';
+    narrow.current = true;
+    render(<SetlistPlayView setlistId={1} navigate={vi.fn()} />);
+    const fit = screen.getByRole('button', { name: 'Fit' });
+    expect(fit).not.toHaveTextContent('Fit');
+    const key = screen.getByTestId('key-display');
+    expect(key.querySelector('.mantine-VisuallyHidden-root')).toHaveTextContent('Key');
+    expect(key).toHaveTextContent(/^Key\s*\S/);
   });
 
   it('tablet: dock includes the columns toggle', () => {

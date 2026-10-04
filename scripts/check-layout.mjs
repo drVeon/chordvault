@@ -6,6 +6,8 @@ const setlistId = process.env.CV_CHECK_SETLIST_ID;
 if (!setlistId) throw new Error('Set CV_CHECK_SETLIST_ID to a local setlist containing a long-line English song, a Chinese song and a long bilingual title.');
 
 const viewports = [
+  { name: 'phone-320', width: 320, height: 640, mobile: true },
+  { name: 'phone-360', width: 360, height: 740, mobile: true },
   { name: 'phone', width: 390, height: 844, mobile: true },
   { name: 'below-640', width: 639, height: 900, mobile: true },
   { name: 'above-640', width: 641, height: 900, mobile: true },
@@ -58,6 +60,12 @@ function inspect() {
     lastLineHidden: last > dockTop + 1,
     hasDock: !!dock,
     titleTruncated: title ? getComputedStyle(title).textOverflow === 'ellipsis' : false,
+    dockOverlap: (() => {
+      const items = dock ? [...dock.querySelectorAll('button')].filter((b) => b.offsetParent).map((b) => b.getBoundingClientRect()) : [];
+      const clipped = dock ? [...dock.querySelectorAll('button')].some((b) => b.offsetParent && b.scrollWidth > b.clientWidth + 1) : false;
+      const overlaps = items.some((a, i) => items.slice(i + 1).some((b) => a.right > b.left + 1 && b.right > a.left + 1));
+      return overlaps || clipped || (dock ? dock.scrollWidth > dock.clientWidth + 1 : false);
+    })(),
   };
 }
 
@@ -85,6 +93,7 @@ for (const scheme of ['light', 'dark']) {
       if (r.lastLineHidden) problems.push('last line under the dock');
       if (r.hasDock !== vp.width < 1024) problems.push(`dock ${r.hasDock ? 'shown' : 'missing'}`);
       if (r.titleTruncated) problems.push('title truncated');
+      if (r.dockOverlap) problems.push('dock buttons overlap or clip');
       const status = problems.length ? 'FAIL' : notes.length ? 'warn' : 'ok  ';
       const detail = [...problems, ...notes];
       console.log(`${status} ${scheme} ${vp.name} song ${index + 1}${detail.length ? ': ' + detail.join(', ') : ''}`);

@@ -1,4 +1,4 @@
-import { ActionIcon, Button, Indicator, Popover, Text, type MantineSize } from '@mantine/core';
+import { ActionIcon, Button, Indicator, Popover, Text, VisuallyHidden, type MantineSize } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconArrowsMaximize, IconChevronDown, IconLayoutColumns } from '@tabler/icons-react';
 import { useEffect, type ReactNode } from 'react';
@@ -37,9 +37,11 @@ interface KeyGroupProps {
   numOverridden?: boolean;
   size?: ControlSize;
   dense?: boolean;
+  /** Show only the key letter; "Key" stays in the accessible name. */
+  keyOnly?: boolean;
 }
 
-export function KeyGroup({ currentKey, onPickKey, isModified, onSaveOnline, onSaveLocal, renderKey, nashville, nashvilleDisabled, onNashvilleChange, numOverridden, size = 'md', dense }: KeyGroupProps) {
+export function KeyGroup({ currentKey, onPickKey, isModified, onSaveOnline, onSaveLocal, renderKey, nashville, nashvilleDisabled, onNashvilleChange, numOverridden, size = 'md', dense, keyOnly }: KeyGroupProps) {
   const [opened, { toggle, close }] = useDisclosure(false);
   useEffect(close, [renderKey, close]);
   const closeAfter = (fn?: () => void) => fn && (() => { fn(); close(); });
@@ -50,7 +52,7 @@ export function KeyGroup({ currentKey, onPickKey, isModified, onSaveOnline, onSa
         <Popover.Target>
           <Button size={size} px={dense ? 'xs' : undefined} data-testid="key-display" opacity={nashville ? 0.5 : undefined} onClick={toggle}
             rightSection={<IconChevronDown size={16} aria-hidden />}>
-            <span>Key <Text span inherit fw={700} c="var(--cv-chord)" ff="var(--font-chord)" style={{ fontStretch: '78%' }}>{currentKey || '?'}</Text></span>
+            <span>{keyOnly ? <VisuallyHidden>Key </VisuallyHidden> : 'Key '}<Text span inherit fw={700} c="var(--cv-chord)" ff="var(--font-chord)" style={{ fontStretch: '78%' }}>{currentKey || '?'}</Text></span>
           </Button>
         </Popover.Target>
         <Popover.Dropdown>
@@ -77,7 +79,14 @@ export function TextSizeGroup({ onFontChange, overridden, size = 'md', dense }: 
   );
 }
 
-export function FitButton({ onAutoFit, size = 'md', dense }: { onAutoFit: () => void; size?: ControlSize; dense?: boolean }) {
+export function FitButton({ onAutoFit, size = 'md', dense, iconOnly }: { onAutoFit: () => void; size?: ControlSize; dense?: boolean; iconOnly?: boolean }) {
+  if (iconOnly) {
+    return (
+      <ActionIcon size={`input-${size}`} variant="light" className="autofit-btn" aria-label="Fit" title="Auto-fit for this screen (one-time)" onClick={onAutoFit}>
+        <IconArrowsMaximize size={20} aria-hidden />
+      </ActionIcon>
+    );
+  }
   return (
     <Button size={size} px={dense ? 'xs' : undefined} className="autofit-btn" onClick={onAutoFit} title="Auto-fit for this screen (one-time)" leftSection={dense ? undefined : <IconArrowsMaximize size={18} aria-hidden />}>
       Fit
