@@ -23,7 +23,7 @@ The API's output filter can block a reply that reproduces a well-known song's co
 - Each lyric line cut to its first two or three words as an anchor, keeping the chords that fall on those words, then `…` and the rest of that line's chords in order: `[G]I want to …[C] [G]`.
 - Right after the header directives: `# Skeleton: lyrics left out because the transcription was blocked. Fill them in from the sheet.`
 
-Retry a blocked image only as a skeleton, never as a second full transcription.
+Retry a blocked image only as a skeleton, never as a second full transcription. If the skeleton is blocked too (seen with "Delilah"), dispatch one last subagent for a **chords-only** file: the same header and section labels, one bracketed chord line per lyric line, `# Check:` lines without quoted lyrics, no lyric words anywhere, and `# Chords only: lyrics left out because the transcription was blocked. Fill them in from the sheet.` after the header. Stop there; a block on that leaves the image for the app's own OCR.
 
 ## Transcription rules
 
