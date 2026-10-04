@@ -27,7 +27,7 @@ async function capture(filename, route, scheme, mobile = false) {
   await page.locator(`html[data-mantine-color-scheme="${scheme}"]`).waitFor();
   await page.locator(route ? '.chord-sheet .lyrics:not(:empty)' : '.song-card').first().waitFor();
   await page.evaluate(() => document.fonts.ready);
-  if (route.includes('/play/')) await page.getByRole('button', { name: 'FIT', exact: true }).click();
+  if (route.includes('/play/')) await page.getByRole('button', { name: 'Fit', exact: true }).click();
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   if (errors.length) throw new Error(errors.join('\n'));
   await page.screenshot({ path: `${output}${filename}`, fullPage: true });
