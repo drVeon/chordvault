@@ -86,7 +86,7 @@ Header directives in this order, then a blank line, then any `#` notes:
 - **Genre**: one of `pop`, `rock`, `folk` (including klapa and other traditional styles) or `singer-songwriter` (kantavtor), from what you know of the artist and song; `folk,singer-songwriter` together when both clearly apply. Unsure of the artist: do one web search (`<artist> glasba žanr` for a Slovenian or other regional artist). When none fits (country, blues, schlager), tag no genre and name the real one in your report as a suggestion; never invent a tag.
 - **christmas**: the lyrics are about Christmas (Christmas, božič, sveta noč, Božiček, Jezušček).
 - **instrumental**: the sheet has chords but no lyrics.
-- **Difficulty** (exactly one) from the chords in the file. Count distinct chords with 7ths and sus variants folded in (`C7` counts as `C`). Barre chords: F, B, B♭, Bm, F#m, C#m, G#m, E♭, A♭, and any minor other than Am, Em, Dm.
+- **Difficulty** (exactly one) from the chords in the file. Count distinct chords with 7ths and sus variants folded in (`C7` counts as `C`). Barre chords: F, B, Bm, any chord with a sharp or flat root (F#m, C#, B♭, E♭, …), and any minor other than Am, Em, Dm.
   - `easy`: no barre chord and at most 5 distinct chords.
   - `medium`: one or two barre chords, 6–8 distinct chords, or a key change.
   - `hard`: three or more barre chords, 9 or more distinct chords, or jazz chords (dim, aug, m7b5, and maj7/9/11/13 chords that need a barre). Chords with an open shape count as their plain chord: `Cmaj7`, `Fmaj7`, `G9`, and a slash chord in a bass walk-down (`G/B`, `C/G`).

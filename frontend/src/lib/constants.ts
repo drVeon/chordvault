@@ -1,5 +1,6 @@
+// Alphabetical: the tag picker and the tag filter list them in this order.
 export const PRESET_TAGS = [
-  'easy', 'medium', 'hard', 'instrumental', 'pop', 'rock', 'folk', 'singer-songwriter', 'christmas',
+  'christmas', 'easy', 'folk', 'hard', 'instrumental', 'medium', 'pop', 'rock', 'singer-songwriter',
 ];
 
 export const MAX_LOCAL_SETLISTS = 50;

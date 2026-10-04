@@ -346,7 +346,6 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
   margin-top: -12px;
 }
 .search-filters .language-filter { max-width: 220px; }
-.search-filters .tag-filter { align-items: center; }
 
 /* -- Toast -------------------------------- */
 #toast {
