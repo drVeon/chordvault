@@ -25,13 +25,13 @@ export interface ToolbarProps {
   renderKey?: number | string;
 }
 
-export function Toolbar(props: ToolbarProps) {
+export function Toolbar({ dense, ...props }: ToolbarProps & { dense?: boolean }) {
   const { twoCol, fontSize, onReset, onAutoFit, onExportPdf, settingsPanel, overrides = {} } = props;
   return (
     <Group className="transpose-bar" role="toolbar" aria-label="Display" gap="xs">
-      <KeyGroup {...props} numOverridden={overrides.num} />
-      <TextSizeGroup onFontChange={props.onFontChange} overridden={overrides.font} />
-      {onAutoFit && <FitButton onAutoFit={onAutoFit} />}
+      <KeyGroup {...props} dense={dense} numOverridden={overrides.num} />
+      <TextSizeGroup dense={dense} onFontChange={props.onFontChange} overridden={overrides.font} />
+      {onAutoFit && <FitButton dense={dense} onAutoFit={onAutoFit} />}
       <ColumnsToggle twoCol={twoCol} onTwoColToggle={props.onTwoColToggle} overridden={overrides.twoCol} />
       <Divider orientation="vertical" mx={4} />
       {onExportPdf && (

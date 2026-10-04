@@ -468,6 +468,11 @@
 }
 
 
+/* Mantine's md controls are 42px; touch screens need 44. */
+@media (pointer: coarse) {
+  .transpose-bar button, .playback-topbar :is(button, a), .playback-dock button, .setlist-defaults-panel button { min-width: 44px; min-height: 44px; }
+}
+
 .setlist-drag-handle { touch-action: none; min-width: 44px; min-height: 44px; }
 
 @media (max-width: 600px) {

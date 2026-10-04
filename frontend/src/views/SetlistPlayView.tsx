@@ -262,7 +262,8 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   return (
     <div ref={containerRef} className={`setlist-play-container${layout === 'desktop' ? '' : ' has-dock'}`}>
       <PlaybackTopBar layout={layout} title={entry.title} position={`${index + 1} of ${total}, ${setlist.name}`}
-        nav={nav} onExit={exit} toolbar={toolbar} more={more} />
+        nav={nav} onExit={exit} toolbar={toolbar} more={more}
+        bpm={entry.bpm} youtubeUrl={hideYt ? null : entry.youtube_url} />
 
 
       {editing ? (

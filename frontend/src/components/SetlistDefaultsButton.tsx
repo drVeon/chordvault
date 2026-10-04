@@ -11,7 +11,7 @@ export function SetlistDefaultsButton({ panel }: { panel: ReactNode }) {
           <IconAdjustmentsHorizontal size={22} aria-hidden />
         </ActionIcon>
       </Popover.Target>
-      <Popover.Dropdown p="lg" bg="var(--cv-raise)">{panel}</Popover.Dropdown>
+      <Popover.Dropdown className="setlist-defaults-panel" p="lg" bg="var(--cv-raise)">{panel}</Popover.Dropdown>
     </Popover>
   );
 }

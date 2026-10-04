@@ -51,6 +51,25 @@ describe('playback layouts', () => {
     expect(screen.getByRole('button', { name: 'Export PDF' })).toBeInTheDocument();
   });
 
+  it('desktop: shows the tempo and YouTube link in the top bar', () => {
+    layout.current = 'desktop';
+    (useSetlistPlayer as Mock).mockReturnValue({
+      setlist: { id: 1, name: 'Sunday worship', entries: [] },
+      entry: { entry_id: 1, title: 'It Is Well', content: '{key: C}\n[C]When peace', bpm: 72, youtube_url: 'https://youtube.com/watch?v=abc' },
+      index: 0, total: 4, prev: vi.fn(), next: vi.fn(), exit: vi.fn(),
+      updateEntry: vi.fn(), isModified: false, saveOnline: vi.fn(), saveLocal: vi.fn(),
+    });
+    render(<SetlistPlayView setlistId={1} navigate={vi.fn()} />);
+    expect(screen.getByText('72 bpm')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Watch on YouTube' })).toHaveAttribute('href', 'https://youtube.com/watch?v=abc');
+  });
+
+  it.each(['desktop', 'tablet', 'phone'] as const)('%s: a swipe on the top bar cannot change songs', (l) => {
+    layout.current = l;
+    const { container } = render(<SetlistPlayView setlistId={1} navigate={vi.fn()} />);
+    expect(container.querySelector('.playback-topbar')).toHaveAttribute('data-no-swipe');
+  });
+
   it('shows the full title and position without truncating', () => {
     render(<SetlistPlayView setlistId={1} navigate={vi.fn()} />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(LONG);

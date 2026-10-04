@@ -46,7 +46,9 @@ function inspect() {
   const last = rows.at(-1)?.getBoundingClientRect().bottom ?? 0;
   const dockTop = dock ? dock.getBoundingClientRect().top : window.innerHeight;
   const title = document.querySelector('.playback-title-main');
+  const bar = document.querySelector('.playback-topbar');
   return {
+    barOverflow: bar.scrollWidth > bar.clientWidth,
     sheetOverflow: wrap.scrollWidth > wrap.clientWidth,
     pageOverflow: document.documentElement.scrollWidth > window.innerWidth,
     wrappedChordRows: wrapped,
@@ -73,6 +75,7 @@ for (const scheme of ['light', 'dark']) {
       const problems = [];
       if (r.sheetOverflow) problems.push('sheet scrolls sideways');
       if (r.pageOverflow) problems.push('page scrolls sideways');
+      if (r.barOverflow) problems.push('top bar controls cut off');
       const notes = [];
       if (r.wrappedChordRows) (r.cleanFitExists ? problems : notes).push(`${r.wrappedChordRows} wrapped chord rows${r.cleanFitExists ? '' : ' (no layout fits without wrapping)'}`);
       if (r.lastLineHidden) problems.push('last line under the dock');
@@ -85,6 +88,35 @@ for (const scheme of ['light', 'dark']) {
       await context.close();
     }
   }
+}
+// Playback opened from inside the app runs the view-enter animation first; the
+// dock must still sit on the bottom of the screen, not after the song.
+// Touch screens also need 44px targets on every playback control.
+for (const vp of viewports.filter((v) => v.mobile)) {
+  const context = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, isMobile: true, hasTouch: true });
+  const page = await context.newPage();
+  await page.goto(`${base}/#setlist/${setlistId}`);
+  await page.getByRole('button', { name: 'Open', exact: true }).click();
+  await page.locator('.chord-sheet .lyrics:not(:empty)').first().waitFor();
+  await page.waitForTimeout(400);
+  const problems = await page.evaluate(() => {
+    const out = [];
+    const dock = document.querySelector('.playback-dock');
+    if (dock && Math.abs(dock.getBoundingClientRect().bottom - innerHeight) > 1) out.push(`dock bottom at ${Math.round(dock.getBoundingClientRect().bottom)}, screen ends at ${innerHeight}`);
+    const small = [...document.querySelectorAll('.playback-topbar button, .playback-topbar a, .playback-dock button')]
+      .filter((b) => b.offsetParent && Math.min(b.getBoundingClientRect().width, b.getBoundingClientRect().height) < 44)
+      .map((b) => `${b.getAttribute('aria-label') || b.textContent.trim()} ${Math.round(b.getBoundingClientRect().height)}px`);
+    if (small.length) out.push(`small targets: ${small.join(', ')}`);
+    return out;
+  });
+  await page.getByRole('button', { name: 'Setlist defaults' }).click();
+  const smallInPanel = await page.locator('.mantine-Popover-dropdown button').evaluateAll((els) => els
+    .filter((b) => Math.min(b.getBoundingClientRect().width, b.getBoundingClientRect().height) < 44)
+    .map((b) => b.getAttribute('aria-label') || b.textContent.trim()));
+  if (smallInPanel.length) problems.push(`small defaults targets: ${smallInPanel.join(', ')}`);
+  console.log(`${problems.length ? 'FAIL' : 'ok  '} in-app ${vp.name}${problems.length ? ': ' + problems.join('; ') : ''}`);
+  failures += problems.length ? 1 : 0;
+  await context.close();
 }
 await browser.close();
 process.exit(failures ? 1 : 0);
