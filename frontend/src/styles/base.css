@@ -1,6 +1,8 @@
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body {
+  /* clip, not hidden: hidden makes these scroll containers and breaks position: sticky. hidden is the fallback for engines without clip. */
+  overflow-x: hidden;
   overflow-x: clip;
   position: relative;
   width: 100%;

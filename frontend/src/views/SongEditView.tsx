@@ -44,8 +44,9 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
           setSong(s);
           setVisibility(s.visibility === 'private' ? 'private' : 'public');
 
+          // CodeMirror joins lines with \n, so CRLF content would read as an unsaved edit.
+          let c = s.content.replace(/\r\n?/g, '\n');
           // Inject missing directives from DB columns into content for old songs
-          let c = s.content;
           if (s.title && !extractDirective(c, 'title')) c = updateDirective(c, 'title', s.title);
           if (s.artist && !extractDirective(c, 'artist')) c = updateDirective(c, 'artist', s.artist);
           if (s.bpm && !extractDirective(c, 'tempo')) c = updateDirective(c, 'tempo', String(s.bpm));

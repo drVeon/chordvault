@@ -101,6 +101,16 @@ describe('SongEditView action bar', () => {
     expect(screen.queryByRole('button', { name: 'songEdit.deleteSong' })).toBeNull();
   });
 
+  it('song stored with Windows line endings: editor gets plain newlines, so it opens clean', async () => {
+    serve({ ...SONG, content: SONG.content.replace(/\n/g, '\r\n') + '\r\n{x_language: en}' });
+    await renderEditor(5);
+    await waitFor(() => expect((screen.getByTestId('editor') as HTMLTextAreaElement).value).toContain('It Is Well'));
+    fireEvent.click(screen.getByRole('button', { name: 'songEdit.save' }));
+    await waitFor(() => expect(mockApiCall).toHaveBeenCalledWith('PUT', '/api/songs/5', expect.anything()));
+    const body = mockApiCall.mock.calls.find((c) => c[0] === 'PUT')![2] as { content: string };
+    expect(body.content).not.toContain('\r');
+  });
+
   it("someone else's song: one primary Save as my version, no menu, no Delete", async () => {
     serve({ ...SONG, user_id: 2 });
     await renderEditor(5);

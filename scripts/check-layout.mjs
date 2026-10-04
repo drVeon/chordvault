@@ -198,6 +198,8 @@ if (user && password && songId) {
         if (sheet && innerWidth <= 900 && parseFloat(getComputedStyle(sheet).paddingLeft) !== 16) out.push(`sheet padding ${getComputedStyle(sheet).paddingLeft}, want 16px`);
         const narrow = [...document.querySelectorAll('.setlist-song-item .song-card-title')].filter((t) => t.getBoundingClientRect().width < 160);
         if (narrow.length) out.push(`setlist titles squeezed to ${Math.round(narrow[0].getBoundingClientRect().width)}px`);
+        const tiny = [...document.querySelectorAll('.setlist-song-item button')].filter((b) => b.offsetParent && Math.min(b.getBoundingClientRect().width, b.getBoundingClientRect().height) < 44);
+        if (tiny.length) out.push(`setlist entry targets under 44px: ${[...new Set(tiny.map((b) => b.getAttribute('aria-label') || b.textContent.trim()))].join(', ')}`);
         const toggle = document.querySelector('#setlist-visibility')?.closest('.mantine-Switch-root');
         const dateField = document.querySelector('#setlist-date')?.closest('.mantine-TextInput-root');
         if (toggle && dateField) {
