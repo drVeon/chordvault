@@ -1,4 +1,5 @@
-import { Badge, Paper, Switch, Button, SimpleGrid } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
+import { Badge, Paper, Switch, Button, SimpleGrid, Group, Stack, Text, Box, Divider, Code } from '@mantine/core';
 import { ListCard } from '../components/ListCard';
 import { useCopyNotification } from '../hooks/useCopyNotification';
 import { modals } from '@mantine/modals';
@@ -18,6 +19,7 @@ interface AdminViewProps {
 }
 
 export function AdminView({ navigate }: AdminViewProps) {
+  const wideStats = useMediaQuery('(min-width: 900px)', undefined, { getInitialValueInEffect: false });
   const apiCall = useApi();
   const { user, isAdmin } = useAuth();
   const { demoMode } = useDemo();
@@ -142,29 +144,29 @@ export function AdminView({ navigate }: AdminViewProps) {
   return (
     <>
       <div className="view-header"><PageTitle className="view-title">{t('admin.title')}</PageTitle></div>
-      <div className="admin-stats">
-        <Paper withBorder className="stat-card"><div className="stat-value">{stats.userCount}</div><div className="stat-label">{t('admin.users')}</div></Paper>
-        <Paper withBorder className="stat-card"><div className="stat-value">{stats.songCount}</div><div className="stat-label">{t('admin.songs')}</div></Paper>
-        {stats.pendingCount > 0 && <Paper withBorder className="stat-card stat-warn"><div className="stat-value">{stats.pendingCount}</div><div className="stat-label">Pending corrections</div></Paper>}
-        {stats.noFormatCount > 0 && <Paper withBorder className="stat-card stat-warn"><div className="stat-value">{stats.noFormatCount}</div><div className="stat-label">No chords detected</div></Paper>}
-      </div>
+      <SimpleGrid className="admin-stats" cols={wideStats ? 3 : 1} spacing={12} mb={28}>
+        <Paper withBorder className="stat-card" bg="var(--ui-card-bg)" radius="var(--radius)" py={22} px={20} ta="center" shadow="sm"><Text fz={36} fw={700} c="var(--accent)" lh={1.2}>{stats.userCount}</Text><Text fz={13} c="dimmed" mt={4}>{t('admin.users')}</Text></Paper>
+        <Paper withBorder className="stat-card" bg="var(--ui-card-bg)" radius="var(--radius)" py={22} px={20} ta="center" shadow="sm"><Text fz={36} fw={700} c="var(--accent)" lh={1.2}>{stats.songCount}</Text><Text fz={13} c="dimmed" mt={4}>{t('admin.songs')}</Text></Paper>
+        {stats.pendingCount > 0 && <Paper withBorder className="stat-card stat-warn" bg="var(--ui-card-bg)" radius="var(--radius)" py={22} px={20} ta="center" shadow="sm"><Text fz={36} fw={700} c="var(--accent)" lh={1.2}>{stats.pendingCount}</Text><Text fz={13} c="dimmed" mt={4}>Pending corrections</Text></Paper>}
+        {stats.noFormatCount > 0 && <Paper withBorder className="stat-card stat-warn" bg="var(--ui-card-bg)" radius="var(--radius)" py={22} px={20} ta="center" shadow="sm"><Text fz={36} fw={700} c="var(--accent)" lh={1.2}>{stats.noFormatCount}</Text><Text fz={13} c="dimmed" mt={4}>No chords detected</Text></Paper>}
+      </SimpleGrid>
 
       {stats.languageDistribution && stats.languageDistribution.length > 0 && (
         <div style={{ marginTop: 16 }}>
           <h3 className="admin-section-title">Languages</h3>
-          <div className="admin-stats">
+          <SimpleGrid className="admin-stats" cols={wideStats ? 3 : 1} spacing={12} mb={28}>
             {stats.languageDistribution.map(({ language, count }) => (
-              <Paper withBorder key={language} className="stat-card">
-                <div className="stat-value">{count}</div>
-                <div className="stat-label">{language ? languageName(language) : 'Not set'}</div>
+              <Paper withBorder key={language} className="stat-card" bg="var(--ui-card-bg)" radius="var(--radius)" py={22} px={20} ta="center" shadow="sm">
+                <Text fz={36} fw={700} c="var(--accent)" lh={1.2}>{count}</Text>
+                <Text fz={13} c="dimmed" mt={4}>{language ? languageName(language) : 'Not set'}</Text>
               </Paper>
             ))}
-          </div>
+          </SimpleGrid>
         </div>
       )}
 
       <h3 className="admin-section-title">{t('admin.inviteUsers')}</h3>
-      <Paper withBorder className="ocr-invite-card">
+      <Paper withBorder bg="var(--surface)" radius="var(--radius)" py={16} px={20} mb={20}>
         <div style={{ marginBottom: 14 }}>
           <Switch mb="sm" label="Open Registration" checked={config.allowRegistration} onChange={(e) => toggleReg(e.target.checked)} disabled={demoMode || busy}  />
           <div className="muted-text" style={{ marginTop: 4 }}>
@@ -172,30 +174,30 @@ export function AdminView({ navigate }: AdminViewProps) {
           </div>
           {demoMode && <div className="muted-text" style={{ fontSize: 12, marginTop: 4 }}>Disabled in demo mode</div>}
         </div>
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
-          <div className="flex-align-center" style={{ gap: 12, flexWrap: 'wrap' }}>
+        <Stack gap={14}><Divider />
+          <Group gap={12}>
             <Button className="btn" onClick={generateInvite} disabled={demoMode || busy} title={demoMode ? 'Disabled in demo mode' : ''}>{t('admin.generateInvite')}</Button>
             {inviteCode && (
-              <div className="flex-align-center">
-                <code style={{ fontSize: 18, fontWeight: 600, padding: '6px 14px', background: 'var(--accent-bg)', borderRadius: 8, userSelect: 'all' as const, letterSpacing: '0.08em' }}>{inviteCode}</code>
+              <Group gap={8}>
+                <Code fz={18} fw={600} py={6} px={14} bg="var(--accent-bg)" style={{ userSelect: 'all', letterSpacing: '0.08em' }}>{inviteCode}</Code>
                 <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => copyWithFeedback(inviteCode)}>{t('admin.copy')}</Button>
-              </div>
+              </Group>
             )}
-          </div>
+          </Group>
           <div className="muted-text" style={{ marginTop: 8 }}>Generate a single-use code and share it. The person enters it on the sign-in page to create their account.</div>
           {pending.length > 0 && (
-            <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+            <Stack gap={6} mt={12}><Divider />
               <div className="muted-text" style={{ fontSize: 12, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>{t('admin.pendingInvites')}</div>
               {pending.map((inv) => (
-                <div key={inv.id} className="flex-align-center" style={{ marginBottom: 4 }}>
+                <Group key={inv.id} gap={8} mb={4}>
                   <code style={{ fontSize: 13 }}>{inv.code}</code>
                   <span className="muted-text" style={{ fontSize: 12 }}>{new Date(inv.created_at).toLocaleDateString()}</span>
                   <Button variant="default" size="xs" className="btn btn-ghost btn-sm" style={{ fontSize: 11, padding: '2px 6px' }} onClick={() => deleteInvite(inv.id)} disabled={demoMode || busy}>&#10005;</Button>
-                </div>
+                </Group>
               ))}
-            </div>
+            </Stack>
           )}
-        </div>
+        </Stack>
       </Paper>
 
       <h3 className="admin-section-title">{t('admin.users')}</h3>
@@ -208,20 +210,20 @@ export function AdminView({ navigate }: AdminViewProps) {
           const canManage = !isSelf && !isTargetOwner && (isOwner || !isTargetAdmin);
 
           return (
-            <div key={u.id} className="user-card">
-              <div className="user-card-top">
-                <div className="user-card-info">
+            <Paper key={u.id} className="user-card" withBorder bg="var(--ui-card-bg)" radius="var(--radius)" py={16} px={20} shadow="sm">
+              <Group className="user-card-top" justify="space-between" gap={12}>
+                <Box flex="1 1 180px" miw={0}>
                   <div className="song-card-title">@{u.username}{isSelf && <span className="muted-text"> {t('admin.you')}</span>}</div>
                   <div className="song-card-meta">{u.song_count} {u.song_count !== 1 ? t('admin.songPlural') : t('admin.song')} &middot; {t('admin.joined')} {new Date(u.created_at).toLocaleDateString()}</div>
-                </div>
-                <div className="user-card-badges">
+                </Box>
+                <Group gap={6}>
                   {u.role === 'owner' && <Badge>owner</Badge>}
                   {u.role === 'admin' && <Badge>admin</Badge>}
                   {u.disabled && <Badge color="red">disabled</Badge>}
-                </div>
-              </div>
+                </Group>
+              </Group>
               {canManage && !demoMode && (
-                <div className="user-card-actions">
+                <Stack gap={10} mt={10}><Divider /><Group className="user-card-actions" gap={6}>
                   {isOwner && (isTargetAdmin
                     ? <Button variant="default" size="xs" className="btn btn-ghost btn-sm" disabled={busy} onClick={(e) => { e.stopPropagation(); setRole(u.id, 'user'); }}>{t('admin.demote')}</Button>
                     : <Button variant="default" size="xs" className="btn btn-ghost btn-sm" disabled={busy} onClick={(e) => { e.stopPropagation(); setRole(u.id, 'admin'); }}>{t('admin.promote')}</Button>
@@ -229,9 +231,9 @@ export function AdminView({ navigate }: AdminViewProps) {
                   <Button variant="default" size="xs" className="btn btn-ghost btn-sm" disabled={busy} onClick={(e) => { e.stopPropagation(); resetPassword(u.id, u.username); }}>{t('admin.resetPassword')}</Button>
                   <Button variant="default" size="xs" className="btn btn-ghost btn-sm" disabled={busy} onClick={(e) => { e.stopPropagation(); setDisabled(u.id, !u.disabled); }}>{u.disabled ? t('admin.enable') : t('admin.disable')}</Button>
                   <Button color="red" size="xs" className="btn btn-danger btn-sm" disabled={busy} onClick={(e) => { e.stopPropagation(); deleteUser(u.id, u.username); }}>{t('admin.delete')}</Button>
-                </div>
+                </Group></Stack>
               )}
-            </div>
+            </Paper>
           );
         })}
       </SimpleGrid>

@@ -75,21 +75,7 @@
   box-shadow: var(--ui-shadow);
 }
 
-.gemini-key-status {
-  display: inline-flex;
-  margin-bottom: 12px;
-  padding: 5px 10px;
-  border-radius: var(--badge-radius);
-  background: var(--surface2);
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 600;
-}
 
-.gemini-key-status.configured {
-  background: color-mix(in srgb, var(--success) 15%, transparent);
-  color: var(--success);
-}
 
 .auth-logo {
   font-family: var(--font-sans);
@@ -142,9 +128,6 @@
 
 /* -- Corrections -------------------------- */
 .corrections-section { margin-top: 32px; border-top: 1px solid var(--border); padding-top: 16px; }
-.correction-card { background: var(--ui-card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow-sm); }
-.correction-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: var(--muted); font-size: 13px; }
-.correction-actions { display: flex; gap: 8px; }
 .correction-preview {
   max-height: 300px;
   overflow-y: auto;
@@ -248,35 +231,9 @@
 .setlist-name-input:focus { border-bottom-color: var(--text); }
 
 /* -- Admin -------------------------------- */
-.admin-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-bottom: 28px;
-}
 
-.stat-card {
-  background: var(--ui-card-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 22px 20px;
-  text-align: center;
-  box-shadow: var(--shadow-sm);
-}
 
-.stat-value {
-  font-family: var(--font-sans);
-  font-size: 36px;
-  font-weight: 700;
-  color: var(--accent);
-  line-height: 1.2;
-}
 
-.stat-label {
-  font-size: 13px;
-  color: var(--muted);
-  margin-top: 4px;
-}
 
 .admin-section-title {
   font-family: var(--font-sans);
@@ -286,16 +243,7 @@
   margin-bottom: 12px;
 }
 
-.user-card {
-  background: var(--ui-card-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px 20px;
-  box-shadow: var(--shadow-sm);
-}
 
-.user-card-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.user-card-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
 
 /* -- Setlist Edit View --------------------- */
 .setlist-entries {
@@ -415,8 +363,7 @@
 
   #app { padding: 16px 12px 100px 12px; overflow-x: hidden; overflow-x: clip; }
   .transpose-bar { margin: 8px 0; padding: 6px 8px; gap: 4px; }
-  .admin-stats { grid-template-columns: 1fr; }
-}
+  }
 
 @media (max-width: 600px) {
   .search-filters { flex-direction: column; gap: 8px; margin-top: 0; }
