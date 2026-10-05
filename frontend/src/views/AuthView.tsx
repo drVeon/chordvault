@@ -1,5 +1,6 @@
-import { Tabs, Button, PasswordInput, TextInput } from '@mantine/core';
+import { Anchor, Box, Center, Paper, Text, Tabs, Button, PasswordInput, TextInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import { useMediaQuery } from '@mantine/hooks';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
@@ -12,6 +13,7 @@ interface AuthViewProps {
 
 export function AuthView({ navigate }: AuthViewProps) {
   const { login } = useAuth();
+  const compact = useMediaQuery('(max-width: 600px)', undefined, { getInitialValueInEffect: false });
   const { t } = useI18n();
   const [tab, setTab] = useState<'login' | 'register' | 'invite'>('login');
   const form = useForm({ initialValues: { username: '', password: '', inviteCode: '' }, validate: { username: value => value ? null : t('auth.fillAllFields'), password: value => value ? null : t('auth.fillAllFields') } });
@@ -91,43 +93,34 @@ export function AuthView({ navigate }: AuthViewProps) {
   const showInviteLink = !config.allowRegistration && config.invitesEnabled && tab !== 'invite';
 
   return (
-    <div className="auth-wrap">
-      <form className="auth-card" onSubmit={(event) => form.onSubmit(submit)(event)}>
-        <div className="auth-logo">{t('auth.logo')}</div>
-        <div className="auth-tagline">{t('auth.tagline')}</div>
+    <Center mih="calc(100vh - 56px)">
+      <Paper component="form" w="100%" maw={400} py={compact ? 24 : 44} px={compact ? 24 : 40} radius={14} bg="var(--ui-modal-bg)" style={{ border: '1px solid var(--border)', boxShadow: 'var(--ui-shadow)' }} onSubmit={(event) => form.onSubmit(submit)(event)}>
+        <Text fz={36} fw={700} c="var(--cv-brand)" ta="center" mb={6}>{t('auth.logo')}</Text>
+        <Text fz={13} c="var(--muted)" ta="center" mb={28}>{t('auth.tagline')}</Text>
         {showTabs && (
-          <Tabs value={tab === 'login' ? 'login' : 'register'} onChange={(value) => setTab(value === 'login' ? 'login' : 'register')} className="auth-tabs">
+          <Tabs value={tab === 'login' ? 'login' : 'register'} onChange={(value) => setTab(value === 'login' ? 'login' : 'register')} mb={24}>
             <Tabs.List grow><Tabs.Tab value="login">{t('auth.signIn')}</Tabs.Tab><Tabs.Tab value="register">{t('auth.register')}</Tabs.Tab></Tabs.List>
           </Tabs>
         )}
         {tab === 'invite' && (
-          <div className="field">
-
-            <TextInput label={<>{t('auth.inviteCode')}</>} type="text" ref={inviteRef} {...form.getInputProps('inviteCode')} placeholder={t('auth.inviteCodePlaceholder')} autoComplete="off" />
-          </div>
+          <TextInput mb={14} label={<>{t('auth.inviteCode')}</>} type="text" ref={inviteRef} {...form.getInputProps('inviteCode')} placeholder={t('auth.inviteCodePlaceholder')} autoComplete="off" />
         )}
-        <div className="field">
-
-          <TextInput label={<>{t('auth.username')}</>} type="text" ref={userRef} id="auth-user" {...form.getInputProps('username')} placeholder={t('auth.usernamePlaceholder')} autoComplete="username" />
-        </div>
-        <div className="field">
-
-          <PasswordInput label={<>{t('auth.password')}</>} type="password" {...form.getInputProps('password')} placeholder="••••••••" autoComplete={tab === 'login' ? 'current-password' : 'new-password'} />
-        </div>
-        {config.turnstileSiteKey && tab !== 'login' && <div ref={turnstileRef} style={{ marginTop: 8 }} />}
-        <Button fullWidth className="btn btn-full" id="auth-submit" style={{ marginTop: 8 }} type="submit" loading={submitting} disabled={submitting}>
+        <TextInput mb={14} label={<>{t('auth.username')}</>} type="text" ref={userRef} id="auth-user" {...form.getInputProps('username')} placeholder={t('auth.usernamePlaceholder')} autoComplete="username" />
+        <PasswordInput mb={14} label={<>{t('auth.password')}</>} type="password" {...form.getInputProps('password')} placeholder="••••••••" autoComplete={tab === 'login' ? 'current-password' : 'new-password'} />
+        {config.turnstileSiteKey && tab !== 'login' && <Box ref={turnstileRef} mt={8} />}
+        <Button fullWidth className="btn btn-full" id="auth-submit" mt={8} type="submit" loading={submitting} disabled={submitting}>
           {tab === 'invite' ? t('auth.createAccount') : (tab === 'login' || !showTabs ? t('auth.signIn') : t('auth.createAccount'))}
         </Button>
         {showInviteLink && (
-          <Button variant="default" fullWidth className="btn btn-ghost btn-full" style={{ marginTop: 10 }} onClick={() => setTab('invite')}>{t('auth.haveInvite')}</Button>
+          <Button variant="default" fullWidth className="btn btn-ghost btn-full" mt={10} onClick={() => setTab('invite')}>{t('auth.haveInvite')}</Button>
         )}
         {tab === 'invite' && (
-          <div style={{ textAlign: 'center', marginTop: 12 }}>
-            <a href="#" onClick={(e) => { e.preventDefault(); setTab('login'); }} style={{ fontSize: 13, color: 'var(--muted)' }}>{t('auth.backToLogin')}</a>
-          </div>
+          <Box ta="center" mt={12}>
+            <Anchor href="#" onClick={(e) => { e.preventDefault(); setTab('login'); }} fz={13} c="var(--muted)" underline="never">{t('auth.backToLogin')}</Anchor>
+          </Box>
         )}
-        {error && <div style={{ color: 'var(--danger)', fontSize: 13, marginTop: 12, textAlign: 'center' }}>{error}</div>}
-      </form>
-    </div>
+        {error && <Text role="alert" c="var(--danger)" fz={13} mt={12} ta="center">{error}</Text>}
+      </Paper>
+    </Center>
   );
 }
