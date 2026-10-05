@@ -211,9 +211,9 @@ export function useSetlistPlayer({
   }, [setlist, onNavigate, setlistId, index]);
 
   useWindowEvent('hashchange', () => {
-    const match = location.hash.match(/^#setlist\/(?:local_\w+|\d+)\/play(?:\/(\d+))?$/);
-    if (match) {
-      const urlIdx = match[1] ? parseInt(match[1]) : 0;
+    const match = location.hash.match(/^#setlist\/(local_\w+|\d+)\/play(?:\/(\d+))?$/);
+    if (match && match[1] === String(setlistId)) {
+      const urlIdx = match[2] ? parseInt(match[2]) : 0;
       if (urlIdx !== index) {
         goTo(urlIdx);
       }

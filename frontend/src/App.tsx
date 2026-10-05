@@ -146,12 +146,13 @@ export function App() {
           try {
             const sl = JSON.parse(params._setlist) as Setlist;
             const initialIdx = params.index ? parseInt(params.index) : undefined;
-            return <SetlistPlayView setlistId={sl.id} isLocal initialSetlist={sl} initialIndex={initialIdx} navigate={navigate} />;
+            return <SetlistPlayView key={sl.id} setlistId={sl.id} isLocal initialSetlist={sl} initialIndex={initialIdx} navigate={navigate} />;
           } catch { /* fall through */ }
         }
         const initialIdx = params.index ? parseInt(params.index) : undefined;
         return params.id ? (
           <SetlistPlayView
+            key={params.id}
             setlistId={params.id.startsWith('local_') ? params.id : parseInt(params.id)}
             isLocal={!!params.local || params.id.startsWith('local_')}
             initialIndex={initialIdx}

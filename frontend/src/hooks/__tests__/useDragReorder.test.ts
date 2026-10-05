@@ -3,6 +3,21 @@ import { useDragReorder } from '../useDragReorder';
 import { describe, it, expect, vi } from 'vitest';
 
 describe('useDragReorder Hook', () => {
+  it('moves the same desktop item across queued drag-over events', () => {
+    const initial = ['A', 'B', 'C', 'D'];
+    const save = vi.fn();
+    const { result } = renderHook(() => useDragReorder(initial, save));
+    act(() => result.current.dragProps(0).onDragStart());
+    const event = { preventDefault: vi.fn() } as unknown as React.DragEvent;
+    act(() => {
+      result.current.dragProps(1).onDragOver(event);
+      result.current.dragProps(3).onDragOver(event);
+    });
+    expect(result.current.items).toEqual(['B', 'C', 'D', 'A']);
+    act(() => result.current.dragProps(3).onDragEnd());
+    expect(save).toHaveBeenCalledExactlyOnceWith(['B', 'C', 'D', 'A']);
+  });
+
   it('initializes with the provided items', () => {
     const onSave = vi.fn();
     const initialItems = ['A', 'B', 'C'];

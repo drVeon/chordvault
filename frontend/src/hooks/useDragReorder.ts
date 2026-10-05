@@ -8,6 +8,7 @@ export function useDragReorder<T>(
   const [items, { setState: setItems, reorder }] = useListState(initialItems);
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [canDrag, setCanDrag] = useState(false);
+  const currentDragIdx = useRef<number | null>(null);
   const currentTouchIdx = useRef<number | null>(null);
   const touchOriginalItems = useRef<T[] | null>(null);
 
@@ -21,6 +22,7 @@ export function useDragReorder<T>(
 
     if (!isSame) {
       setItems(initialItems);
+      currentDragIdx.current = null;
       currentTouchIdx.current = null;
       touchOriginalItems.current = null;
       setDraggedIdx(null);
@@ -30,18 +32,21 @@ export function useDragReorder<T>(
 
   // HTML5 Drag & Drop (Desktop)
   const handleDragStart = (idx: number) => {
+    currentDragIdx.current = idx;
     setDraggedIdx(idx);
   };
 
   const handleDragOver = (e: React.DragEvent, idx: number) => {
     e.preventDefault();
-    if (draggedIdx === null || draggedIdx === idx) return;
+    if (currentDragIdx.current === null || currentDragIdx.current === idx) return;
 
-    reorder({ from: draggedIdx, to: idx });
+    reorder({ from: currentDragIdx.current, to: idx });
+    currentDragIdx.current = idx;
     setDraggedIdx(idx);
   };
 
   const handleDragEnd = () => {
+    currentDragIdx.current = null;
     setDraggedIdx(null);
     setCanDrag(false);
     onSave(items);
