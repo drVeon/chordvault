@@ -81,6 +81,9 @@ describe('ImportModal', () => {
     const confirmation = screen.getByText('You selected 3 files. Import all of them?').closest('[role="dialog"]') as HTMLElement;
     await userEvent.click(within(confirmation).getByRole('button', { name: 'Import' }));
     await waitFor(() => expect(importSongs).toHaveBeenCalledTimes(1));
+    expect(screen.getByRole('button', { name: 'Clear selected files' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Clear selected files' }));
+    expect((screen.getByLabelText('ChordPro file upload') as HTMLInputElement).files).toHaveLength(3);
     fireEvent.click(screen.getByTestId('import-start'));
     fireEvent.keyDown(screen.getByTestId('import-start'), { key: 'Escape' });
     expect(importSongs).toHaveBeenCalledTimes(1);

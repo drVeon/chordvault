@@ -29,6 +29,9 @@ it('loads only while open, restores focus, and ignores a closed extraction failu
   await userEvent.upload(screen.getByLabelText('Image or PDF file upload'), new File(['image'], 'sheet.png', { type: 'image/png' }));
   await userEvent.click(screen.getByRole('button', { name: /Extract text/ }));
   await waitFor(() => expect(api).toHaveBeenCalledWith('POST', '/api/ocr/gemini', expect.objectContaining({ model: 'test-model' })));
+  expect(screen.getByRole('button', { name: 'Clear selected file' })).toBeDisabled();
+  await userEvent.click(screen.getByRole('button', { name: 'Clear selected file' }));
+  expect((screen.getByLabelText('Image or PDF file upload') as HTMLInputElement).files).toHaveLength(1);
   await userEvent.keyboard('{Escape}');
   await waitFor(() => expect(opener).toHaveFocus());
   await userEvent.click(opener);

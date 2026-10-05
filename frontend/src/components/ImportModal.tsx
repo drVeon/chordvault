@@ -126,7 +126,7 @@ function ImportContent({ busy, setBusy, onClose, onDone }: Omit<ImportModalProps
             accept={IMPORT_ACCEPT}
             disabled={busy}
             clearable
-            clearButtonProps={{ 'aria-label': 'Clear selected files' }}
+            clearButtonProps={{ 'aria-label': 'Clear selected files', disabled: busy }}
             fileInputProps={{ 'aria-label': 'ChordPro file upload' }}
           />
           {demoMode && <Text c="dimmed" fz={13}>Demo mode: only the first {DEMO_MAX_IMPORT} songs will be imported.</Text>}

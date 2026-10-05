@@ -164,7 +164,7 @@ function OcrContent({ hasGeminiKey, onResult, onClose }: Omit<OcrModalProps, 'op
             accept="image/*,application/pdf"
             disabled={processing}
             clearable
-            clearButtonProps={{ 'aria-label': 'Clear selected file' }}
+            clearButtonProps={{ 'aria-label': 'Clear selected file', disabled: processing }}
             fileInputProps={{ 'aria-label': 'Image or PDF file upload' }}
           />
           {preview && (isPdf ? (
