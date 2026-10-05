@@ -22,7 +22,7 @@ it('closes the key picker after choosing a key and restores trigger focus', asyn
   render(<EditorPreview content="{key: C}\n[C]Amazing grace" />);
   const trigger = screen.getByRole('button', { name: 'Key: C' });
   await userEvent.click(trigger);
-  await userEvent.click(screen.getByRole('button', { name: 'D', exact: true }));
+  await userEvent.click(screen.getByRole('button', { name: 'D' }));
   await waitFor(() => expect(screen.queryByRole('group', { name: 'Transpose key' })).not.toBeInTheDocument());
   await waitFor(() => expect(trigger).toHaveFocus());
 });
