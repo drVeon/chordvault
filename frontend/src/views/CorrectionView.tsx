@@ -1,4 +1,4 @@
-import { Button, useComputedColorScheme } from '@mantine/core';
+import { Button, useComputedColorScheme, Group, Title, Text, Paper } from '@mantine/core';
 import { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import { showStatusNotification as toast } from '../lib/notifications';
@@ -38,24 +38,22 @@ export function CorrectionView({ songId, navigate }: CorrectionViewProps) {
 
   return (
     <>
-      <div className="edit-header">
+      <Group mb="lg">
         <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate('song-view', { id: String(songId) })}>&#8592; Cancel</Button>
-        <h2>Submit Correction</h2>
+        <Title order={2} size="h3" flex="1 1 160px">Submit Correction</Title>
         <Button size="xs" className="btn btn-sm" onClick={submit}>Submit</Button>
-      </div>
-      <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 12 }}>
+      </Group>
+      <Text size="sm" c="dimmed" mb="sm">
         Edit the chords below. Your correction will be reviewed by the song owner before being applied.
-      </p>
-      <div className="field">
-        <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+      </Text>
+      <Paper withBorder radius="md" mb="sm" style={{ overflow: 'hidden' }}>
           <CodeMirrorEditor
             value={content}
             onChange={setContent}
             darkMode={theme === 'dark'}
             placeholder="Corrected chord sheet..."
           />
-        </div>
-      </div>
+      </Paper>
     </>
   );
 }

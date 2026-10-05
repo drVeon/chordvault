@@ -12,7 +12,6 @@
 .nav-brand { font-family: var(--font-sans); font-size: 20px; font-weight: 700; letter-spacing: -0.01em; color: var(--cv-brand); display: flex; align-items: center; gap: 8px; white-space: nowrap; }
 .nav-logo { display: inline-flex; }
 .nav-logo svg { width: 26px; height: 26px; }
-.field { margin-bottom: 14px; }
 
 /* -- Song Cards --------------------------─ */
 
@@ -42,10 +41,6 @@
 
 .song-card-meta { font-size: 14px; color: var(--muted); margin-top: 2px; }
 
-/* -- Song Card Tags & BPM ---------------- */
-.song-view-bpm { margin-top: 6px; }
-.song-view-tags { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
-
 /* -- Search ------------------------------─ */
 .search-filters {
   display: flex;
@@ -54,40 +49,6 @@
   margin-top: -12px;
 }
 .search-filters .language-filter { max-width: 220px; }
-
-/* -- OCR Modal ---------------------------- */
-.ocr-row {
-  margin-bottom: 8px;
-}
-
-/* OCR chat / fix UI */
-.ocr-chat-history {
-  max-height: 120px;
-  overflow-y: auto;
-  margin-bottom: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.ocr-chat-bubble {
-  font-size: 12px;
-  padding: 6px 10px;
-  border-radius: 8px;
-  max-width: 85%;
-}
-
-.ocr-chat-user {
-  background: var(--accent-bg);
-  color: var(--accent);
-  align-self: flex-end;
-}
-
-.ocr-chat-ai {
-  background: var(--surface2);
-  color: var(--muted);
-  align-self: flex-start;
-}
 
 /* -- General Utility Classes -- */
 .muted-hint {

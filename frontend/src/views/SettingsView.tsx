@@ -148,7 +148,7 @@ export function SettingsView() {
 
   return (
     <>
-      <div className="view-header"><PageTitle className="view-title">Settings</PageTitle></div>
+      <Group justify="space-between" mb="lg"><PageTitle className="view-title">Settings</PageTitle></Group>
       <div className="settings-grid">
         <Paper component="section" withBorder radius="lg" p="lg" bg="var(--cv-raise)" className="settings-section">
           <Title order={3} fz={16} mb={4}>Change Password</Title>

@@ -143,7 +143,7 @@ export function AdminView({ navigate }: AdminViewProps) {
 
   return (
     <>
-      <div className="view-header"><PageTitle className="view-title">{t('admin.title')}</PageTitle></div>
+      <Group justify="space-between" mb="lg"><PageTitle className="view-title">{t('admin.title')}</PageTitle></Group>
       <SimpleGrid className="admin-stats" cols={wideStats ? 3 : 1} spacing={12} mb={28}>
         <Paper withBorder className="stat-card" bg="var(--ui-card-bg)" radius="var(--radius)" py={22} px={20} ta="center" shadow="sm"><Text fz={36} fw={700} c="var(--accent)" lh={1.2}>{stats.userCount}</Text><Text fz={13} c="dimmed" mt={4}>{t('admin.users')}</Text></Paper>
         <Paper withBorder className="stat-card" bg="var(--ui-card-bg)" radius="var(--radius)" py={22} px={20} ta="center" shadow="sm"><Text fz={36} fw={700} c="var(--accent)" lh={1.2}>{stats.songCount}</Text><Text fz={13} c="dimmed" mt={4}>{t('admin.songs')}</Text></Paper>

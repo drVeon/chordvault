@@ -105,3 +105,14 @@ it('opens the new-setlist prompt from its keyboard card', async () => {
   await userEvent.keyboard('{Enter}');
   expect(await screen.findByLabelText('Setlist name')).toBeInTheDocument();
 });
+
+it('labels the expanded version selector and picks the chosen arrangement', async () => {
+  const song = { id: 7, title: 'Amazing Grace', artist: 'John Newton', version_count: 2 };
+  api.mockImplementation((_method: string, path: string) => Promise.resolve(path.endsWith('/versions')
+    ? [{ id: 7, username: 'original' }, { id: 8, username: 'arranger' }] : [song]));
+  const pick = vi.fn();
+  render(<SongPicker opened onPick={pick} onClose={vi.fn()} />);
+  await userEvent.click(await screen.findByRole('button', { name: /Amazing Grace/ }));
+  await userEvent.selectOptions(await screen.findByLabelText('Version'), '8');
+  expect(pick).toHaveBeenCalledExactlyOnceWith({ ...song, id: 8, username: 'arranger' });
+});

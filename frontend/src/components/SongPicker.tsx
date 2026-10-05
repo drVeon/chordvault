@@ -1,4 +1,4 @@
-import { Badge, Flex, Modal, Button, NativeSelect, TextInput, SimpleGrid } from '@mantine/core';
+import { Badge, Flex, Modal, Button, NativeSelect, TextInput, SimpleGrid, Group, Text } from '@mantine/core';
 import { EmptyState } from './EmptyState';
 import { ListCard } from './ListCard';
 import { SearchRow } from './SearchRow';
@@ -102,10 +102,10 @@ function SongPickerContent({ onPick }: Pick<SongPickerProps, 'onPick'>) {
                     <div style={{ padding: 8, color: 'var(--muted)', fontSize: 13 }}>Loading versions...</div>
                   ) : (
                     <>
-                      <div className="version-selector-container" style={{ background: 'var(--surface)' }}>
-                        <span className="version-selector-label">Version</span>
+                      <Group gap="xs" wrap="nowrap" maw="100%">
+                        <Text component="label" htmlFor={`picker-version-${s.id}`} size="xs" c="dimmed" fw={600}>Version</Text>
                         <NativeSelect
-                          className="version-select-compact"
+                          id={`picker-version-${s.id}`} size="xs" miw={0}
                           onChange={(e) => {
                             const vId = parseInt(e.target.value);
                             const v = versions.find(ver => ver.id === vId);
@@ -120,7 +120,7 @@ function SongPickerContent({ onPick }: Pick<SongPickerProps, 'onPick'>) {
                             </option>
                           ))}
                         </NativeSelect>
-                      </div>
+                      </Group>
                       <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500 }}>
                         {versions.length} {t('setlist.versions').toLowerCase()}
                       </div>
