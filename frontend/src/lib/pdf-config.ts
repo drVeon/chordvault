@@ -23,7 +23,7 @@ function buildFonts(fontName: string | null, delta: number) {
     if (fontName) spec.name = fontName;
     out[section] = spec;
   }
-  out.chord = { ...out.chord, size: out.text.size! * 1.08, color: '#8e3f3b' };
+  out.chord = { ...out.chord, size: out.text.size, color: '#8e3f3b' };
   return out;
 }
 

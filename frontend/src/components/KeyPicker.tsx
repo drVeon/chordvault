@@ -30,6 +30,8 @@ export function KeyPicker({
         {keys.map((k) => (
           <Button
             key={k}
+            px="xs"
+            mih={44}
             className={`key-pill${k === norm ? ' active' : ''}`}
             variant={k === norm ? 'light' : 'default'}
             aria-pressed={k === norm}

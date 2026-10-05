@@ -1,6 +1,6 @@
 import { Chip, createTheme, defaultVariantColorsResolver, localStorageColorSchemeManager, Pagination, type CSSVariablesResolver } from '@mantine/core';
 
-const fontFamily = '"Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "PingFang TC", "PingFang SC", "Microsoft YaHei", "Noto Sans TC", sans-serif';
+const fontFamily = '"Source Sans 3 Variable", "Noto Sans TC Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
 export const chordVaultTheme = createTheme({
   fontFamily,

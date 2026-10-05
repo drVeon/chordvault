@@ -83,6 +83,14 @@ for (const scheme of ['light', 'dark']) {
       await page.getByRole('button', { name: 'Fit', exact: true }).click();
       const r = await page.evaluate(inspect);
       const problems = [];
+      if (index === 0) {
+        await page.getByTestId('key-display').click();
+        const clippedKeys = await page.locator('.key-pill .mantine-Button-label').evaluateAll((labels) => labels
+          .filter((label) => label.scrollWidth > label.clientWidth + 1)
+          .map((label) => label.textContent));
+        if (clippedKeys.length) problems.push(`key labels clipped: ${clippedKeys.join(', ')}`);
+        await page.keyboard.press('Escape');
+      }
       if (r.sheetOverflow) problems.push('sheet scrolls sideways');
       if (r.pageOverflow) problems.push('page scrolls sideways');
       if (r.barOverflow) problems.push('top bar controls cut off');
@@ -131,7 +139,7 @@ for (const vp of viewports.filter((v) => v.mobile)) {
   failures += problems.length ? 1 : 0;
   await context.close();
 }
-// Song cards must hold the 40px key badge without overflowing at any width.
+// Song metadata badges share a height and type scale without overflowing cards.
 for (const width of [390, 768, 1280]) {
   const touch = width < 1024;
   const context = await browser.newContext({ viewport: { width, height: 900 }, isMobile: touch, hasTouch: touch });
@@ -144,12 +152,13 @@ for (const width of [390, 768, 1280]) {
     for (const card of document.querySelectorAll('.song-card')) {
       if (card.scrollWidth > card.clientWidth + 1) out.push(`card overflows: ${card.querySelector('.song-card-title')?.textContent}`);
     }
-    const badge = document.querySelector('.song-card .key-badge');
-    if (!badge) out.push('no key badge found');
-    else {
-      const r = badge.getBoundingClientRect();
-      if (Math.round(r.height) !== 40 || r.width < 40) out.push(`key badge ${Math.round(r.width)}x${Math.round(r.height)}`);
-    }
+    const badges = [...document.querySelectorAll('.song-card .mantine-Badge-root')];
+    if (!badges.length) out.push('no song badges found');
+    const sizes = new Set(badges.map((badge) => {
+      const style = getComputedStyle(badge);
+      return `${badge.getBoundingClientRect().height}/${style.fontSize}/${style.fontWeight}`;
+    }));
+    if (sizes.size > 1) out.push(`inconsistent badge sizes: ${[...sizes].join(', ')}`);
     return out;
   });
   console.log(`${problems.length ? 'FAIL' : 'ok  '} browse ${width}${problems.length ? ': ' + problems.join('; ') : ''}`);

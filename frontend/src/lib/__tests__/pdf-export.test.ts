@@ -88,7 +88,7 @@ describe('exportSongPdf', () => {
     expect(key.y - artist.y).toBeGreaterThanOrEqual(14);
     expect(artist.y - chord.y).toBeGreaterThanOrEqual(14);
     const lyrics = runs.find((run) => run.text.includes('奇異恩典，何等甘甜'))!;
-    expect(chord.fontSize / lyrics.fontSize).toBeCloseTo(1.08);
+    expect(chord.fontSize / lyrics.fontSize).toBeCloseTo(1);
     expect(await pageCount(bytes)).toBe(1);
   });
 
