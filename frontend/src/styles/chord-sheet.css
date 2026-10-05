@@ -11,6 +11,7 @@
   -ms-overflow-style: none;
 }
 .chord-sheet-wrap::-webkit-scrollbar { display: none; }
+@media (max-width: 900px) { .chord-sheet-wrap { padding: 20px 16px; } }
 .chord-sheet-wrap { --font-scale: 1; }
 
 @media (min-width: 640px) {

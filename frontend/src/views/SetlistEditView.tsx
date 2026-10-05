@@ -1,4 +1,4 @@
-import { Switch, Button, TextInput } from '@mantine/core';
+import { Switch, Button, TextInput, Group } from '@mantine/core';
 import { useCopyNotification } from '../hooks/useCopyNotification';
 import { useForm } from '@mantine/form';
 import { modals } from '@mantine/modals';
@@ -307,7 +307,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
             />
           )}
         </div>
-        <div className="setlist-meta-row">
+        <Group gap={16} mt={12} py={8}>
           {isLocal ? (
             <span style={{ fontSize: 13, color: 'var(--muted)' }}>Local Setlist (Saved in Browser)</span>
           ) : !isEditable ? (
@@ -318,10 +318,10 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
           ) : (
             <>
               <Switch label={t('setlist.visibility')} type="checkbox" id="setlist-visibility" checked={metadata.values.visibility} onChange={(event) => { metadata.setFieldValue('visibility', event.currentTarget.checked); void saveMeta({ ...metadata.values, visibility: event.currentTarget.checked }); }}  />
-              <TextInput label={t('setlist.date')} type="date" id="setlist-date" value={metadata.values.event_date} onChange={(event) => { metadata.setFieldValue('event_date', event.currentTarget.value); void saveMeta({ ...metadata.values, event_date: event.currentTarget.value }); }} />
+              <TextInput aria-label={t('setlist.date')} type="date" id="setlist-date" value={metadata.values.event_date} onChange={(event) => { metadata.setFieldValue('event_date', event.currentTarget.value); void saveMeta({ ...metadata.values, event_date: event.currentTarget.value }); }} />
             </>
           )}
-        </div>
+        </Group>
       </div>
 
       {setlist.entries.length === 0 ? (

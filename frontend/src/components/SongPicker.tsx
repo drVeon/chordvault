@@ -1,4 +1,6 @@
-import { Badge, Paper, Modal, Button, NativeSelect, TextInput } from '@mantine/core';
+import { Badge, Flex, Modal, Button, NativeSelect, TextInput } from '@mantine/core';
+import { ListCard } from './ListCard';
+import { SearchRow } from './SearchRow';
 import { useModals } from '@mantine/modals';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
@@ -63,8 +65,10 @@ function SongPickerContent({ onPick }: Pick<SongPickerProps, 'onPick'>) {
     <>
 
 
-        <div className="search-row" style={{ marginBottom: 8 }}>
+        <SearchRow mb={8}>
           <TextInput aria-label={t('songs.searchPlaceholder')}
+            flex={3}
+            miw={0}
             type="search"
             placeholder={t('songs.searchPlaceholder')}
             value={search}
@@ -73,25 +77,26 @@ function SongPickerContent({ onPick }: Pick<SongPickerProps, 'onPick'>) {
             data-autofocus
           />
           <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => load(search)}>Search</Button>
-        </div>
+        </SearchRow>
         <div className="song-grid">
           {songs.length === 0 ? (
             <div className="empty"><div className="empty-text">{t('songs.noPublicSongs')}</div></div>
           ) : songs.map((s) => (
             <div key={s.id} className="song-picker-item" style={{ display: 'contents' }}>
-              <Paper withBorder className="song-card mantine-focus-auto" role="button" tabIndex={0} onClick={() => handleCardClick(s)} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); void handleCardClick(s); } }} style={expandedId === s.id ? { borderColor: 'var(--accent)', boxShadow: '0 0 0 1px var(--accent)' } : {}}>
-                <div className="song-card-info">
-                  <div className="song-card-title">{s.title}</div>
-                  <div className="song-card-meta">
-                    {s.artist || ''}
-                    {s.version_count && s.version_count > 1 && (
-                      <Badge variant="filled" size="sm" ml={8}>{s.version_count} Versions</Badge>
-                    )}
-                  </div>
-                </div>
-              </Paper>
+              <ListCard
+                className="mantine-focus-auto"
+                title={s.title}
+                meta={<>
+                  {s.artist || ''}
+                  {(s.version_count ?? 0) > 1 && (
+                    <Badge variant="filled" size="sm" ml={8}>{s.version_count} Versions</Badge>
+                  )}
+                </>}
+                onClick={() => { void handleCardClick(s); }}
+                style={expandedId === s.id ? { borderColor: 'var(--accent)', boxShadow: '0 0 0 1px var(--accent)' } : undefined}
+              />
               {expandedId === s.id && (
-                <div className="song-card version-list-card" style={{ gridColumn: '1 / -1', marginTop: -12, padding: '12px 16px', borderTopLeftRadius: 0, borderTopRightRadius: 0, background: 'var(--bg-alt)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Flex className="song-card version-list-card" align="center" justify="space-between" wrap="wrap" gap={12} px={16} py={12} mt={-12} style={{ gridColumn: '1 / -1', borderTopLeftRadius: 0, borderTopRightRadius: 0, background: 'var(--bg-alt)' }}>
                   {loadingVersions ? (
                     <div style={{ padding: 8, color: 'var(--muted)', fontSize: 13 }}>Loading versions...</div>
                   ) : (
@@ -120,7 +125,7 @@ function SongPickerContent({ onPick }: Pick<SongPickerProps, 'onPick'>) {
                       </div>
                     </>
                   )}
-                </div>
+                </Flex>
               )}
             </div>
           ))}

@@ -247,15 +247,6 @@
 }
 .setlist-name-input:focus { border-bottom-color: var(--text); }
 
-.setlist-meta-row {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  flex-wrap: wrap;
-  margin-top: 12px;
-  padding: 8px 0;
-}
-
 /* -- Admin -------------------------------- */
 .admin-stats {
   display: grid;
@@ -314,11 +305,7 @@
   margin-top: 24px;
 }
 
-.setlist-song-item {
-  padding: 12px 20px;
-  min-height: 72px;
-  transition: all 0.2s ease;
-}
+.setlist-song-item { transition: all 0.2s ease; }
 
 .setlist-song-pos {
   font-family: var(--font-sans);
@@ -326,8 +313,6 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--muted);
-  margin-right: 16px;
-  width: 24px;
   text-align: center;
 }
 
@@ -340,7 +325,6 @@
   height: 32px;
   cursor: grab;
   font-size: 18px;
-  margin-right: 16px;
   user-select: none;
   touch-action: none;
   transition: color 0.15s;
@@ -360,25 +344,10 @@
   transform: translateY(-4px);
 }
 
-.setlist-remove-btn {
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--muted);
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-left: 12px;
-  font-size: 14px;
-}
-
-.setlist-remove-btn:hover {
-  background: var(--surface2);
-  color: var(--text);
+/* Phones (below Mantine's xs): key buttons drop to their own line so the title keeps the row.
+   Mantine only exposes responsive `order` on Grid.Col, so the reorder stays here. */
+@media (max-width: 35.99375em) {
+  .setlist-song-item .setlist-entry-controls { order: 1; }
 }
 
 /* -- Setlist Playback --------------------─ */
@@ -411,6 +380,14 @@
   background: transparent;
 }
 
+/* Sheet side padding follows the playback layouts: 48px desktop, 20px tablet, 18px phone. */
+@media (max-width: 1023px) {
+  .setlist-play-container .chord-sheet-wrap { padding: 20px 20px 48px; }
+}
+@media (max-width: 639px) {
+  .setlist-play-container .chord-sheet-wrap { padding-inline: 18px; }
+}
+
 .setlist-play-container::-webkit-scrollbar {
   display: none;
 }
@@ -419,10 +396,6 @@
   .setlist-play-container {
     /* Negate mobile app padding (16px 12px) */
     margin: -16px -12px;
-  }
-
-  .setlist-play-container .chord-sheet-wrap {
-    padding: 20px 20px 48px;
   }
 }
 
@@ -440,14 +413,12 @@
   /* Hide side navigation zones on mobile and portrait tablets (Swipe handles it) */
   .nav-zone { display: none; }
 
-  #app { padding: 16px 12px 100px 12px; overflow-x: hidden; }
-  .chord-sheet-wrap { padding: 20px 16px; }
+  #app { padding: 16px 12px 100px 12px; overflow-x: hidden; overflow-x: clip; }
   .transpose-bar { margin: 8px 0; padding: 6px 8px; gap: 4px; }
   .admin-stats { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 600px) {
-  .search-row { flex-direction: column; align-items: stretch; }
   .search-filters { flex-direction: column; gap: 8px; margin-top: 0; }
   .search-filters .language-filter { max-width: none; }
 }
@@ -470,7 +441,7 @@
 
 /* Mantine's md controls are 42px; touch screens need 44. */
 @media (pointer: coarse) {
-  .transpose-bar button, .playback-topbar :is(button, a), .playback-dock button, .setlist-defaults-panel button { min-width: 44px; min-height: 44px; }
+  .transpose-bar button, .playback-topbar :is(button, a), .playback-dock button, .setlist-defaults-panel button, .editor-action-bar :is(button, a), .setlist-song-item button { min-width: 44px; min-height: 44px; }
 }
 
 .setlist-drag-handle { touch-action: none; min-width: 44px; min-height: 44px; }

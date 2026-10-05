@@ -1,4 +1,6 @@
-import { Badge, Paper, Modal } from '@mantine/core';
+import { Badge, Group, Modal } from '@mantine/core';
+import { IconPlus } from '@tabler/icons-react';
+import { ListCard } from './ListCard';
 import { modals, useModals } from '@mantine/modals';
 import { useFocusReturn } from '@mantine/hooks';
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -149,23 +151,19 @@ export function AddToSetlistModal({
 
 
         <div className="song-grid">
-          <Paper withBorder className="song-card mantine-focus-auto" role="button" tabIndex={0} onClick={createAndAdd} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); createAndAdd(); } }}>
-            <div className="song-card-info">
-              <div className="song-card-title">{t('setlist.newSetlist')}</div>
-            </div>
-          </Paper>
+          <ListCard className="mantine-focus-auto" title={<Group gap={6}><IconPlus size={16} aria-hidden />{t('setlist.newSetlist')}</Group>} onClick={createAndAdd} />
           {userSetlists.map((sl) => (
-            <Paper withBorder key={sl.id} className="song-card mantine-focus-auto" role="button" tabIndex={0} onClick={() => addToExisting(sl.id)} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); void addToExisting(sl.id); } }}>
-              <div className="song-card-info">
-                <div className="song-card-title">{sl.name}</div>
-                <div className="song-card-meta">
-                  {sl.song_count} {sl.song_count !== 1 ? t('admin.songPlural') : t('admin.song')}
-                </div>
-                {sl.visibility === 'public' && (
-                  <Badge size="sm">Public</Badge>
-                )}
-              </div>
-            </Paper>
+            <ListCard
+              key={sl.id}
+              className="mantine-focus-auto"
+              title={sl.name}
+              meta={<>{sl.song_count} {sl.song_count !== 1 ? t('admin.songPlural') : t('admin.song')}</>}
+              onClick={() => { void addToExisting(sl.id); }}
+            >
+              {sl.visibility === 'public' && (
+                <Badge size="sm">Public</Badge>
+              )}
+            </ListCard>
           ))}
         </div>
 

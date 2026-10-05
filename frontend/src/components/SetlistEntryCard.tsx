@@ -1,4 +1,4 @@
-import { Badge, Button, VisuallyHidden } from '@mantine/core';
+import { Badge, Box, Button, VisuallyHidden, CloseButton, Flex, Group } from '@mantine/core';
 import { IconGripVertical, IconLock } from '@tabler/icons-react';
 import { getSongKey } from '../lib/chords';
 import { entrySemitones } from '../lib/setlistKeys';
@@ -13,8 +13,8 @@ interface SetlistEntryCardProps {
   onStepKey: (entryId: number | string, idx: number, direction: 1 | -1) => void;
   onClick: (idx: number) => void;
   t: (key: string) => string;
-  dragProps?: React.HTMLProps<HTMLDivElement>;
-  handleProps?: React.HTMLProps<HTMLDivElement>;
+  dragProps?: React.HTMLAttributes<HTMLDivElement>;
+  handleProps?: React.HTMLAttributes<HTMLDivElement>;
   isDragging?: boolean;
 }
 
@@ -37,23 +37,31 @@ export function SetlistEntryCard({
   const canStep = !!(entry.target_key || getSongKey(content, 0));
 
   return (
-    <div
+    <Flex
       className={`song-card setlist-song-item ${isDragging ? 'dragging' : ''}`}
+      align="center"
+      wrap="wrap"
+      columnGap={{ base: 6, xs: 12 }}
+      rowGap={{ base: 4, xs: 12 }}
+      px={{ base: 12, xs: 20 }}
+      py={{ base: 10, xs: 12 }}
+      mih={72}
       onClick={() => onClick(idx)}
       {...dragProps}
     >
       {isEditable && (
-        <div
+        <Box
           className="setlist-drag-handle"
+          mr={{ base: 0, xs: 16 }}
           onClick={(e) => e.stopPropagation()}
           {...handleProps}
           title="Drag to reorder"
         >
           <IconGripVertical size={20} aria-hidden />
-        </div>
+        </Box>
       )}
-      <div className="setlist-song-pos">{idx + 1}</div>
-      <div className="song-card-info">
+      <Box className="setlist-song-pos" mr={{ base: 4, xs: 16 }} w={{ base: 20, xs: 24 }}>{idx + 1}</Box>
+      <Box className="song-card-info" flex={1} miw={0}>
         <div className="song-card-title">
           {entry.title}
           {entry.visibility === 'private' && (
@@ -67,30 +75,29 @@ export function SetlistEntryCard({
           {entry.artist ? `${entry.artist} · ` : ''}
           {keyDisplay}
         </div>
-      </div>
+      </Box>
       {isEditable && (
-        <div className="setlist-entry-controls" onClick={(e) => e.stopPropagation()}>
+        <Group className="setlist-entry-controls" gap={4} wrap="nowrap" justify="flex-end" w={{ base: '100%', xs: 'auto' }} onClick={(e) => e.stopPropagation()}>
           <Button variant="default" size="xs" className="btn btn-ghost btn-sm" disabled={!canStep} onClick={() => onStepKey(entry.entry_id, idx, -1)}>
             &#9837;
           </Button>
           <Button variant="default" size="xs" className="btn btn-ghost btn-sm" disabled={!canStep} onClick={() => onStepKey(entry.entry_id, idx, 1)}>
             &#9839;
           </Button>
-        </div>
+        </Group>
       )}
       {isEditable && (
-        <Button
-          className="setlist-remove-btn"
+        <CloseButton
+          size="lg"
+          aria-label="Remove"
+          title="Remove"
           onClick={(e) => {
             e.stopPropagation();
             onRemove(entry.entry_id, idx);
           }}
-          title="Remove"
-        >
-          &#10005;
-        </Button>
+        />
       )}
-    </div>
+    </Flex>
   );
 }
 
