@@ -225,7 +225,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
 
       {(song.tags || song.youtube_url) && (
         <div className="song-view-meta song-view-meta-bottom">
-          {song.tags && song.tags.split(',').map((tag) => <Badge key={tag} size="md">{tag}</Badge>)}
+          {song.tags && song.tags.split(',').map((tag) => <Badge key={tag}>{tag}</Badge>)}
           {song.youtube_url && <a href={song.youtube_url} target="_blank" rel="noopener" className="yt-link">&#9654; YouTube</a>}
         </div>
       )}

@@ -241,7 +241,7 @@
 
 .setlist-name-row { margin-bottom: 12px; }
 .setlist-name-input {
-  font-family: var(--font-sans); font-size: 32px; font-weight: 700; font-stretch: 92%; letter-spacing: -0.015em;
+  font-family: var(--font-sans); font-size: 32px; font-weight: 700; letter-spacing: -0.015em;
   color: var(--text); border: none; background: none; width: 100%; outline: none;
   padding: 4px 0; border-bottom: 1px solid transparent; transition: all 0.2s;
 }
@@ -404,7 +404,7 @@
 .playback-topbar:not(.compact) { width: 100vw; margin-inline: calc(50% - 50vw); }
 .playback-topbar .btn-exit, .playback-topbar .transpose-bar { flex-shrink: 0; }
 .playback-topbar .transpose-bar { margin: 0; padding: 0; background: none; flex-wrap: nowrap; }
-.playback-title-main { font-stretch: 94%; letter-spacing: -0.012em; text-wrap: balance; overflow-wrap: anywhere; }
+.playback-title-main { letter-spacing: -0.012em; text-wrap: balance; overflow-wrap: anywhere; }
 .playback-dock-bar { min-height: 76px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
 .setlist-play-container.has-dock .chord-sheet-wrap { padding-bottom: calc(76px + env(safe-area-inset-bottom) + 32px); }
 

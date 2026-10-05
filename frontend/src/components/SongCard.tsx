@@ -37,7 +37,7 @@ export function SongCard({ song, isOwner, onClick, onEdit }: SongCardProps) {
       {song.tags && (
         <div className="song-card-tags">
           {song.tags.split(',').map((tag) => (
-            <Badge key={tag} size="md">{tag}</Badge>
+            <Badge key={tag}>{tag}</Badge>
           ))}
         </div>
       )}

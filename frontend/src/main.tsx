@@ -12,6 +12,10 @@ import { ResetPasswordModal } from './components/ResetPasswordModal';
 import { App } from './App';
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
+import '@fontsource-variable/source-sans-3';
+import '@fontsource-variable/source-sans-3/wght-italic.css';
+import '@fontsource-variable/noto-sans-tc';
+import '@fontsource-variable/jetbrains-mono';
 import './styles/global.css';
 
 createRoot(document.getElementById('root')!).render(

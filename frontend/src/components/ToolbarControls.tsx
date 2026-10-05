@@ -52,7 +52,7 @@ export function KeyGroup({ currentKey, onPickKey, isModified, onSaveOnline, onSa
         <Popover.Target>
           <Button size={size} px={dense ? 'xs' : undefined} data-testid="key-display" opacity={nashville ? 0.5 : undefined} onClick={toggle}
             rightSection={<IconChevronDown size={16} aria-hidden />}>
-            <span>{keyOnly ? <VisuallyHidden>Key </VisuallyHidden> : 'Key '}<Text span inherit fw={700} c="var(--cv-chord)" ff="var(--font-chord)" style={{ fontStretch: '78%' }}>{currentKey || '?'}</Text></span>
+            <span>{keyOnly ? <VisuallyHidden>Key </VisuallyHidden> : 'Key '}<Text span inherit fw={600} c="var(--cv-chord)" ff="var(--font-chord)">{currentKey || '?'}</Text></span>
           </Button>
         </Popover.Target>
         <Popover.Dropdown>

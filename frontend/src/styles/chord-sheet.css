@@ -35,9 +35,8 @@
 
 .chord-sheet .chord {
   font-family: var(--font-chord);
-  font-stretch: 78%;
-  font-size: calc(1.08em * var(--font-scale));
-  font-weight: 700;
+  font-size: calc(1em * var(--font-scale));
+  font-weight: 600;
   line-height: 1.12;
   color: var(--chord);
   min-height: 1.12em;
@@ -50,7 +49,7 @@
 .chord-sheet .lyrics {
   font-family: var(--font-sans);
   font-size: calc(1em * var(--font-scale));
-  font-weight: 500;
+  font-weight: 400;
   color: var(--text);
   white-space: pre;
   line-height: 1.32;

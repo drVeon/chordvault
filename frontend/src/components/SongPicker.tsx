@@ -89,7 +89,7 @@ function SongPickerContent({ onPick }: Pick<SongPickerProps, 'onPick'>) {
                 meta={<>
                   {s.artist || ''}
                   {(s.version_count ?? 0) > 1 && (
-                    <Badge variant="filled" size="sm" ml={8}>{s.version_count} Versions</Badge>
+                    <Badge variant="filled" ml={8}>{s.version_count} Versions</Badge>
                   )}
                 </>}
                 onClick={() => { void handleCardClick(s); }}
