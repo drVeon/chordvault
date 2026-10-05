@@ -1,4 +1,4 @@
-import { Button, PasswordInput, Stack } from '@mantine/core';
+import { Button, PasswordInput, Stack, Group, Badge, Alert } from '@mantine/core';
 import { useCallback, useEffect, useState } from 'react';
 import { useApi } from '../hooks/useApi';
 
@@ -15,7 +15,7 @@ export function GeminiKeySettings() {
       setHasKey(data.hasKey);
     } catch {
       setHasKey(null);
-      setMessage({ text: 'Could not check key status', color: 'var(--danger)' });
+      setMessage({ text: 'Could not check key status', color: 'red' });
     }
   }, [apiCall]);
 
@@ -27,7 +27,7 @@ export function GeminiKeySettings() {
     if (pending) return;
     setMessage(null);
     if (!geminiKey.trim()) {
-      setMessage({ text: 'Enter an API key', color: 'var(--danger)' });
+      setMessage({ text: 'Enter an API key', color: 'red' });
       return;
     }
     setPending('save');
@@ -35,9 +35,9 @@ export function GeminiKeySettings() {
       await apiCall('PUT', '/api/settings/gemini-key', { api_key: geminiKey.trim() });
       setHasKey(true);
       setGeminiKey('');
-      setMessage({ text: hasKey ? 'Key replaced' : 'Key saved', color: 'var(--success)' });
+      setMessage({ text: hasKey ? 'Key replaced' : 'Key saved', color: 'green' });
     } catch (error) {
-      setMessage({ text: (error as Error).message, color: 'var(--danger)' });
+      setMessage({ text: (error as Error).message, color: 'red' });
     } finally {
       setPending(null);
     }
@@ -50,9 +50,9 @@ export function GeminiKeySettings() {
       await apiCall('DELETE', '/api/settings/gemini-key');
       setHasKey(false);
       setGeminiKey('');
-      setMessage({ text: 'Key removed', color: 'var(--success)' });
+      setMessage({ text: 'Key removed', color: 'green' });
     } catch (error) {
-      setMessage({ text: (error as Error).message, color: 'var(--danger)' });
+      setMessage({ text: (error as Error).message, color: 'red' });
     } finally {
       setPending(null);
     }
@@ -60,12 +60,12 @@ export function GeminiKeySettings() {
 
   return (
     <Stack gap="sm">
-      <div className={`gemini-key-status${hasKey ? ' configured' : ''}`} role="status">
+      <div role="status" aria-live="polite">
+        <Badge color={hasKey ? 'green' : 'gray'}>
         {hasKey === null ? 'Checking key status…' : hasKey ? '✓ Key configured' : 'No key configured'}
+        </Badge>
       </div>
-      <div className="field">
-
-        <PasswordInput label={<>{hasKey ? 'Replace Gemini API Key' : 'Gemini API Key'}</>}
+              <PasswordInput label={<>{hasKey ? 'Replace Gemini API Key' : 'Gemini API Key'}</>}
           id="gemini-api-key"
           type="password"
           value={geminiKey}
@@ -73,8 +73,7 @@ export function GeminiKeySettings() {
           placeholder={hasKey ? '•••••••••••• (saved key)' : 'Paste your Gemini API key here'}
           autoComplete="off"
         />
-      </div>
-      <div className="flex-row">
+      <Group gap={8}>
         <Button size="xs" className="btn btn-sm" onClick={saveKey} loading={pending === 'save'} disabled={pending === 'remove'}>
           {hasKey ? 'Replace Key' : 'Save Key'}
         </Button>
@@ -83,11 +82,11 @@ export function GeminiKeySettings() {
             Remove Key
           </Button>
         )}
-      </div>
+      </Group>
       {message && (
-        <div className="field-message" style={{ color: message.color }}>
+        <Alert color={message.color} role={message.color === 'red' ? 'alert' : 'status'}>
           {message.text}
-        </div>
+        </Alert>
       )}
     </Stack>
   );

@@ -1,7 +1,7 @@
 import { SearchField } from '../components/SearchField';
 import { SearchRow } from '../components/SearchRow';
-import { Tabs, Button, TextInput, ActionIcon } from '@mantine/core';
-import { IconCalendar, IconPlus } from '@tabler/icons-react';
+import { Tabs, Button, TextInput, ActionIcon, SimpleGrid } from '@mantine/core';
+import { IconCalendar, IconPlus, IconMusic } from '@tabler/icons-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
@@ -12,7 +12,7 @@ import { SetlistCard } from '../components/SetlistCard';
 import { EmptyState } from '../components/EmptyState';
 import { Pagination } from '../components/Pagination';
 import type { SetlistListItem } from '../types';
-import { getSessionItem, setSessionItem } from '../lib/storage';
+import { useSearchSessionValue, searchPage } from '../hooks/useSearchSessionValue';
 import { PageTitle } from '../components/PageTitle';
 
 interface SetlistsViewProps {
@@ -32,16 +32,24 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
   const [loaded, setLoaded] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [newName, setNewName] = useState('');
-  const [query, setQuery] = useState(() => getSessionItem('cv_setlists_query') || '');
-  const [dateFrom, setDateFrom] = useState(() => getSessionItem('cv_setlists_date_from') || '');
-  const [dateTo, setDateTo] = useState(() => getSessionItem('cv_setlists_date_to') || '');
-  const [showDates, setShowDates] = useState(() => getSessionItem('cv_setlists_show_dates') === 'true');
-  const [page, setPage] = useState(() => {
-    const saved = getSessionItem('cv_setlists_page');
-    return saved ? parseInt(saved, 10) : 1;
-  });
+  const [savedQuery, saveQuery] = useSearchSessionValue('cv_setlists_query');
+  const [query, setQuery] = useState(savedQuery);
+  const [savedDateFrom, saveDateFrom] = useSearchSessionValue('cv_setlists_date_from');
+  const [dateFrom, setDateFrom] = useState(savedDateFrom);
+  const [savedDateTo, saveDateTo] = useSearchSessionValue('cv_setlists_date_to');
+  const [dateTo, setDateTo] = useState(savedDateTo);
+  const [savedShowDates, saveShowDates] = useSearchSessionValue('cv_setlists_show_dates', 'false');
+  const showDates = savedShowDates === 'true';
+  const [savedPage, savePage] = useSearchSessionValue('cv_setlists_page', '1');
+  const [page, setPage] = useState(() => searchPage(savedPage));
   const [totalPages, setTotalPages] = useState(1);
   const nameRef = useRef<HTMLInputElement>(null);
+
+  const active = useRef(false);
+  useEffect(() => {
+    active.current = true;
+    return () => { active.current = false; };
+  }, []);
 
   const load = useCallback(async (q = '', from = '', to = '', targetPage = 1) => {
     if (!user) return;
@@ -61,17 +69,18 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
         totalPages: number;
       }
       const data = await apiCall<PaginatedSetlistsResponse>('GET', `/api/setlists${qs}`);
+      if (!active.current) return;
       setSetlists(data.setlists);
       setPage(data.page);
       setTotalPages(data.totalPages);
       setLoaded(true);
 
-      setSessionItem('cv_setlists_query', q);
-      setSessionItem('cv_setlists_date_from', from);
-      setSessionItem('cv_setlists_date_to', to);
-      setSessionItem('cv_setlists_page', String(data.page));
-    } catch (e) { toast((e as Error).message, 'error'); }
-  }, [apiCall, user]);
+      saveQuery(q);
+      saveDateFrom(from);
+      saveDateTo(to);
+      savePage(String(data.page));
+    } catch (e) { if (active.current) toast((e as Error).message, 'error'); }
+  }, [apiCall, user, saveQuery, saveDateFrom, saveDateTo, savePage]);
 
   useEffect(() => {
     if (activeTab === 'cloud') {
@@ -105,7 +114,7 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
   const handleClear = () => {
     setQuery('');
     if (activeTab === 'local') {
-      setSessionItem('cv_setlists_query', '');
+      saveQuery('');
     } else {
       load('', dateFrom, dateTo, 1);
     }
@@ -165,7 +174,7 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
 
             setQuery(val);
 
-            if (activeTab === 'local') setSessionItem('cv_setlists_query', val);
+            if (activeTab === 'local') saveQuery(val);
 
           }} />
         <Button variant="default" size="sm" onClick={handleSearch}>{t('songs.search')}</Button>
@@ -178,8 +187,7 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
             title="Filter by date"
             onClick={() => {
               const next = !showDates;
-              setShowDates(next);
-              setSessionItem('cv_setlists_show_dates', String(next));
+              saveShowDates(String(next));
             }}
           >
             <IconCalendar size={18} aria-hidden />
@@ -192,11 +200,11 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
           <TextInput label={<>To</>} type="date" flex={1} miw={0} value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
         </SearchRow>
       )}
-      <div className="song-grid">
+      <SimpleGrid className="song-grid" minColWidth="min(100%, 320px)" autoFlow="auto-fill" spacing={12}>
         {loaded && (
           activeTab === 'cloud' ? (
             setlists.length === 0 ? (
-              <EmptyState icon="&#127926;" text={t('setlist.noSetlists')} />
+              <EmptyState icon={<IconMusic size={56} aria-hidden />} text={t('setlist.noSetlists')} />
             ) : (
               setlists.map((sl) => (
                 <SetlistCard
@@ -209,7 +217,7 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
             )
           ) : (
             localSetlistsToRender.length === 0 ? (
-              <EmptyState icon="&#127926;" text={t('setlist.noSetlists')} />
+              <EmptyState icon={<IconMusic size={56} aria-hidden />} text={t('setlist.noSetlists')} />
             ) : (
               localSetlistsToRender.map((sl) => (
                 <SetlistCard
@@ -228,7 +236,7 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
             )
           )
         )}
-      </div>
+      </SimpleGrid>
       {activeTab === 'cloud' && (
         <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
       )}

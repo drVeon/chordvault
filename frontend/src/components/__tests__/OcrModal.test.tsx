@@ -26,15 +26,39 @@ it('loads only while open, restores focus, and ignores a closed extraction failu
   expect(api).not.toHaveBeenCalled();
   const opener = screen.getByRole('button', { name: 'Open OCR' });
   await userEvent.click(opener);
-  await userEvent.upload(screen.getByLabelText('Select image or PDF'), new File(['image'], 'sheet.png', { type: 'image/png' }));
+  await userEvent.upload(screen.getByLabelText('Image or PDF file upload'), new File(['image'], 'sheet.png', { type: 'image/png' }));
   await userEvent.click(screen.getByRole('button', { name: /Extract text/ }));
   await waitFor(() => expect(api).toHaveBeenCalledWith('POST', '/api/ocr/gemini', expect.objectContaining({ model: 'test-model' })));
+  expect(screen.getByRole('button', { name: 'Clear selected file' })).toBeDisabled();
+  await userEvent.click(screen.getByRole('button', { name: 'Clear selected file' }));
+  expect((screen.getByLabelText('Image or PDF file upload') as HTMLInputElement).files).toHaveLength(1);
   await userEvent.keyboard('{Escape}');
   await waitFor(() => expect(opener).toHaveFocus());
   await userEvent.click(opener);
-  expect((screen.getByLabelText('Select image or PDF') as HTMLInputElement).files).toHaveLength(0);
+  expect((screen.getByLabelText('Image or PDF file upload') as HTMLInputElement).files).toHaveLength(0);
   expect(screen.getByRole('button', { name: /Extract text/ })).toBeEnabled();
   await act(async () => { rejectExtraction(new Error('Old request failed')); });
   expect(toast).not.toHaveBeenCalled();
   expect(api.mock.calls.filter(([method]) => method === 'GET')).toHaveLength(2);
+});
+
+it('clears the selected PDF and never extracts a stale file', async () => {
+  render(<OcrModal opened hasGeminiKey onResult={vi.fn()} onClose={vi.fn()} />);
+  const input = screen.getByLabelText('Image or PDF file upload');
+  await userEvent.upload(input, new File(['pdf'], 'sheet.pdf', { type: 'application/pdf' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Clear selected file' }));
+  expect(screen.queryByText(/sheet.pdf/)).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: /Extract text/ }));
+  expect(toast).toHaveBeenCalledWith('Please select a file first', 'error');
+  expect(api.mock.calls.filter(([method]) => method === 'POST')).toHaveLength(0);
+});
+
+it('extracts the replacement file, not the earlier selection', async () => {
+  api.mockImplementation((method: string) => Promise.resolve(method === 'GET' ? { model: 'test-model', models: [] } : { text: '[C]Grace', language: 'en' }));
+  render(<OcrModal opened hasGeminiKey onResult={vi.fn()} onClose={vi.fn()} />);
+  const input = screen.getByLabelText('Image or PDF file upload');
+  await userEvent.upload(input, new File(['old'], 'old.pdf', { type: 'application/pdf' }));
+  await userEvent.upload(input, new File(['replacement'], 'new.pdf', { type: 'application/pdf' }));
+  await userEvent.click(screen.getByRole('button', { name: /Extract text/ }));
+  await waitFor(() => expect(api).toHaveBeenCalledWith('POST', '/api/ocr/gemini', expect.objectContaining({ image: 'data:application/pdf;base64,cmVwbGFjZW1lbnQ=' })));
 });

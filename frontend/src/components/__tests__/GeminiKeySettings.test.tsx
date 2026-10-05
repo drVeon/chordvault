@@ -50,3 +50,13 @@ it('does not submit or remove another key while a replacement is pending', async
   fireEvent.click(screen.getByRole('button', { name: 'Remove Key' }));
   expect(mockApiCall.mock.calls.filter(call => call[0] !== 'GET')).toHaveLength(1);
 });
+
+it('announces a save failure as an alert while keeping the configured status', async () => {
+  mockApiCall.mockResolvedValueOnce({ hasKey: true }).mockRejectedValueOnce(new Error('Could not save key'));
+  render(<GeminiKeySettings />);
+  await screen.findByText('✓ Key configured');
+  fireEvent.change(screen.getByLabelText('Replace Gemini API Key'), { target: { value: 'sample-key' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Replace Key' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Could not save key');
+  expect(screen.getByRole('status')).toHaveTextContent('✓ Key configured');
+});

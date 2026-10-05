@@ -1,4 +1,4 @@
-import { Modal, Button, Input } from '@mantine/core';
+import { Modal, Button, FileInput, Stack, Text } from '@mantine/core';
 import { modals, useModals } from '@mantine/modals';
 import { useFocusReturn } from '@mantine/hooks';
 import { useEffect, useRef, useState } from 'react';
@@ -55,8 +55,8 @@ function ImportContent({ busy, setBusy, onClose, onDone }: Omit<ImportModalProps
   const [total, setTotal] = useState(0);
   const [summary, setSummary] = useState<Summary | null>(null);
 
-  const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let picked = Array.from(e.target.files ?? []);
+  const handleFiles = (selected: File[]) => {
+    let picked = selected;
     if (demoMode && picked.length > DEMO_MAX_IMPORT) picked = picked.slice(0, DEMO_MAX_IMPORT);
     setFiles(picked);
     setSummary(null);
@@ -114,55 +114,45 @@ function ImportContent({ busy, setBusy, onClose, onDone }: Omit<ImportModalProps
     }
   };
 
-  return (<>
-
-
-
-        {!summary && (
-          <>
-            <div className="field">
-
-              <Input.Wrapper label="Select ChordPro files" id="import-files">
-              <Input id="import-files"
-                data-testid="import-file-input"
-                type="file"
-                multiple
-                accept={IMPORT_ACCEPT}
-                onChange={handleFiles}
-                disabled={busy}
-                style={{ fontSize: 14, padding: 8 }}
-              />
-              </Input.Wrapper>
-            </div>
-            {demoMode && (
-              <div className="muted-text" style={{ marginBottom: 12 }}>
-                Demo mode: only the first {DEMO_MAX_IMPORT} songs will be imported.
-              </div>
-            )}
-            {files.length > 0 && <div className="muted-text" style={{ marginBottom: 12 }}>{files.length} file(s) selected</div>}
-            {busy && <div className="muted-text" style={{ marginBottom: 12 }}>Importing {progress} / {total}…</div>}
-            <Button className="btn btn-primary" data-testid="import-start" onClick={() => start()} disabled={busy || files.length === 0}>
-              {busy ? 'Importing…' : 'Import'}
-            </Button>
-          </>
-        )}
-
-        {summary && (
-          <div data-testid="import-summary">
-            <p>
-              <strong>{summary.imported}</strong> imported ·{' '}
-              <strong>{summary.skipped.length}</strong> already in your library ·{' '}
-              <strong>{summary.errors.length}</strong> errors
-            </p>
-            {summary.errors.length > 0 && (
-              <details>
-                <summary>Skipped with errors ({summary.errors.length})</summary>
-                <ul>{summary.errors.map((er, i) => <li key={i}>{er.filename} — {er.error}</li>)}</ul>
-              </details>
-            )}
-            <Button className="btn" onClick={onClose}>Done</Button>
-          </div>
-        )}
-
-    </>);
+  return (
+    <Stack gap={12}>
+      {!summary && (
+        <>
+          <FileInput
+            label="Select ChordPro files"
+            multiple
+            value={files}
+            onChange={handleFiles}
+            accept={IMPORT_ACCEPT}
+            disabled={busy}
+            clearable
+            clearButtonProps={{ 'aria-label': 'Clear selected files', disabled: busy }}
+            fileInputProps={{ 'aria-label': 'ChordPro file upload' }}
+          />
+          {demoMode && <Text c="dimmed" fz={13}>Demo mode: only the first {DEMO_MAX_IMPORT} songs will be imported.</Text>}
+          {files.length > 0 && <Text c="dimmed" fz={13}>{files.length} file(s) selected</Text>}
+          {busy && <Text c="dimmed" fz={13} role="status">Importing {progress} / {total}…</Text>}
+          <Button data-testid="import-start" onClick={() => start()} loading={busy} disabled={busy || files.length === 0}>
+            {busy ? 'Importing…' : 'Import'}
+          </Button>
+        </>
+      )}
+      {summary && (
+        <Stack gap={12} data-testid="import-summary">
+          <Text>
+            <strong>{summary.imported}</strong> imported ·{' '}
+            <strong>{summary.skipped.length}</strong> already in your library ·{' '}
+            <strong>{summary.errors.length}</strong> errors
+          </Text>
+          {summary.errors.length > 0 && (
+            <details>
+              <summary>Skipped with errors ({summary.errors.length})</summary>
+              <ul>{summary.errors.map((er, i) => <li key={i}>{er.filename}: {er.error}</li>)}</ul>
+            </details>
+          )}
+          <Button onClick={onClose}>Done</Button>
+        </Stack>
+      )}
+    </Stack>
+  );
 }

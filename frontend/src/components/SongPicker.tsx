@@ -1,4 +1,4 @@
-import { Badge, Flex, Modal, Button, NativeSelect, TextInput } from '@mantine/core';
+import { Badge, Flex, Modal, Button, NativeSelect, TextInput, SimpleGrid } from '@mantine/core';
 import { ListCard } from './ListCard';
 import { SearchRow } from './SearchRow';
 import { useModals } from '@mantine/modals';
@@ -78,7 +78,7 @@ function SongPickerContent({ onPick }: Pick<SongPickerProps, 'onPick'>) {
           />
           <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => load(search)}>Search</Button>
         </SearchRow>
-        <div className="song-grid">
+        <SimpleGrid className="song-grid" minColWidth="min(100%, 320px)" autoFlow="auto-fill" spacing={12}>
           {songs.length === 0 ? (
             <div className="empty"><div className="empty-text">{t('songs.noPublicSongs')}</div></div>
           ) : songs.map((s) => (
@@ -129,7 +129,7 @@ function SongPickerContent({ onPick }: Pick<SongPickerProps, 'onPick'>) {
               )}
             </div>
           ))}
-        </div>
+        </SimpleGrid>
 
     </>
   );

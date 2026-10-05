@@ -97,20 +97,6 @@ export function migrateOverride(
   return { ...rest, target_key: legacyTransposeToTargetKey(content, transpose) };
 }
 
-export function getSessionItem(key: string): string | null {
-  try {
-    return sessionStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-export function setSessionItem(key: string, value: string): void {
-  try {
-    sessionStorage.setItem(key, value);
-  } catch {}
-}
-
 export function removeSessionItem(key: string): void {
   try {
     sessionStorage.removeItem(key);

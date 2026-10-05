@@ -1,4 +1,5 @@
-import { Badge, Paper, Button, NativeSelect } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { Badge, Paper, Button, NativeSelect, Group } from '@mantine/core';
 import { IconLock } from '@tabler/icons-react';
 import { modals } from '@mantine/modals';
 import { useState, useEffect, useMemo } from 'react';
@@ -31,7 +32,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const [song, setSong] = useState<Song | null>(null);
   const [versions, setVersions] = useState<SongVersion[]>([]);
   const [corrections, setCorrections] = useState<Correction[]>([]);
-  const [addToSetlistOpen, setAddToSetlistOpen] = useState(false);
+  const [addToSetlistOpen, addToSetlist] = useDisclosure(false);
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
@@ -167,7 +168,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
                 </Button>
               </>
             )}
-            <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => setAddToSetlistOpen(true)}>
+            <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={addToSetlist.open}>
               &#43; {t('songView.addToSetlist')}
             </Button>
           </div>
@@ -235,14 +236,14 @@ export function SongView({ songId, navigate }: SongViewProps) {
         <div className="corrections-section">
           <h3 className="admin-section-title">Pending Corrections ({corrections.length})</h3>
           {corrections.map((c) => (
-            <Paper withBorder key={c.id} className="correction-card">
-              <div className="correction-card-header">
+            <Paper withBorder key={c.id} className="correction-card" bg="var(--ui-card-bg)" radius={12} p={16} mb={12} shadow="sm">
+              <Group justify="space-between" gap={8} mb={12} c="dimmed" fz={13}>
                 <span>@{c.username} &middot; {new Date(c.created_at).toLocaleDateString()}</span>
-                <div className="correction-actions">
+                <Group gap={8}>
                   <Button size="xs" className="btn btn-sm" onClick={() => approveCorrection(c.id)}>Approve</Button>
                   <Button color="red" size="xs" className="btn btn-danger btn-sm" onClick={() => rejectCorrection(c.id)}>Reject</Button>
-                </div>
-              </div>
+                </Group>
+              </Group>
               <div className="correction-preview" dangerouslySetInnerHTML={{ __html: renderChordPro(c.content, 0, false) }} />
             </Paper>
           ))}
@@ -251,7 +252,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
 
       <AddToSetlistModal
         isOpen={addToSetlistOpen}
-        onClose={() => setAddToSetlistOpen(false)}
+        onClose={addToSetlist.close}
         songId={songId}
         songTitle={song?.title || ''}
         songArtist={song?.artist || ''}

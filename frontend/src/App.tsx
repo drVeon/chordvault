@@ -63,6 +63,7 @@ function parseHash(): Route {
 export function App() {
   const { user } = useAuth();
   const { setDemoMode } = useDemo();
+  const listIdentity = user?.id ?? 'guest';
   const [route, setRoute] = useState<Route>(() => parseHash());
   const [animClass, setAnimClass] = useState('');
 
@@ -120,28 +121,28 @@ export function App() {
 
     switch (view) {
       case 'browse':
-        return <BrowseView navigate={navigate} />;
+        return <BrowseView key={listIdentity} navigate={navigate} />;
       case 'my-songs':
-        return user ? <MySongsView navigate={navigate} /> : <BrowseView navigate={navigate} />;
+        return user ? <MySongsView key={listIdentity} navigate={navigate} /> : <BrowseView key={listIdentity} navigate={navigate} />;
       case 'song-view':
-        return params.id ? <SongView songId={parseInt(params.id)} navigate={navigate} /> : <BrowseView navigate={navigate} />;
+        return params.id ? <SongView songId={parseInt(params.id)} navigate={navigate} /> : <BrowseView key={listIdentity} navigate={navigate} />;
       case 'song-edit':
         return <SongEditView songId={params.id ? parseInt(params.id) : undefined} navigate={navigate} />;
       case 'correction':
-        return params.id ? <CorrectionView songId={parseInt(params.id)} navigate={navigate} /> : <BrowseView navigate={navigate} />;
+        return params.id ? <CorrectionView songId={parseInt(params.id)} navigate={navigate} /> : <BrowseView key={listIdentity} navigate={navigate} />;
       case 'auth':
         return <AuthView navigate={navigate} />;
       case 'setlists':
-        return <SetlistsView navigate={navigate} />;
+        return <SetlistsView key={listIdentity} navigate={navigate} />;
       case 'public-setlists':
-        return <PublicSetlistsView navigate={navigate} />;
+        return <PublicSetlistsView key={listIdentity} navigate={navigate} />;
       case 'setlist-edit':
         return params.id ? (
           <SetlistEditView
             setlistId={params.id.startsWith('local_') ? params.id : parseInt(params.id)}
             navigate={navigate}
           />
-        ) : <SetlistsView navigate={navigate} />;
+        ) : <SetlistsView key={listIdentity} navigate={navigate} />;
       case 'setlist-play': {
         if (params._setlist) {
           // Local setlist play with pre-loaded data
@@ -159,7 +160,7 @@ export function App() {
             initialIndex={initialIdx}
             navigate={navigate}
           />
-        ) : <SetlistsView navigate={navigate} />;
+        ) : <SetlistsView key={listIdentity} navigate={navigate} />;
       }
       case 'admin':
         return <AdminView navigate={navigate} />;
@@ -168,7 +169,7 @@ export function App() {
       case 'about':
         return <AboutView navigate={navigate} />;
       default:
-        return <BrowseView navigate={navigate} />;
+        return <BrowseView key={listIdentity} navigate={navigate} />;
     }
   };
 

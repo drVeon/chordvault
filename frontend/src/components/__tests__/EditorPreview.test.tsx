@@ -1,4 +1,5 @@
-import { act, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { EditorPreview } from '../EditorPreview';
 vi.mock('../../lib/chords', () => ({ renderChordPro: (content: string) => `<div>${content}</div>`, songHasKey: () => false, fontScaleValue: () => undefined }));
 afterEach(() => vi.useRealTimers());
@@ -15,4 +16,13 @@ it('flushes on a preview trigger including zero, then keeps subsequent edits deb
   act(() => vi.advanceTimersByTime(300));
   expect(screen.getByText('After preview')).toBeInTheDocument();
   expect(screen.queryByText('Latest')).not.toBeInTheDocument();
+});
+
+it('closes the key picker after choosing a key and restores trigger focus', async () => {
+  render(<EditorPreview content="{key: C}\n[C]Amazing grace" />);
+  const trigger = screen.getByRole('button', { name: 'Key: C' });
+  await userEvent.click(trigger);
+  await userEvent.click(screen.getByRole('button', { name: 'D' }));
+  await waitFor(() => expect(screen.queryByRole('group', { name: 'Transpose key' })).not.toBeInTheDocument());
+  await waitFor(() => expect(trigger).toHaveFocus());
 });

@@ -15,7 +15,9 @@ vi.mock('../../lib/api', () => ({
 }));
 vi.mock('../../hooks/useApi', () => ({ useApi: () => vi.fn() }));
 vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: { token: 'tok' } }) }));
-vi.mock('../../context/DemoContext', () => ({ useDemo: () => ({ demoMode: false }) }));
+const demo = vi.hoisted(() => ({ enabled: false }));
+vi.mock('../../context/DemoContext', () => ({ useDemo: () => ({ demoMode: demo.enabled }) }));
+afterEach(() => { demo.enabled = false; });
 vi.mock('../../lib/notifications', () => ({ showStatusNotification: vi.fn() }));
 
 function file(name: string, content: string) {
@@ -34,7 +36,7 @@ describe('ImportModal', () => {
     const opener = screen.getByRole('button', { name: 'Open import' });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     await userEvent.click(opener);
-    await userEvent.upload(screen.getByTestId('import-file-input'), [file('A.cho', '[G]a'), file('B.cho', '[G]b'), file('C.cho', '[G]c')]);
+    await userEvent.upload(screen.getByLabelText('ChordPro file upload'), [file('A.cho', '[G]a'), file('B.cho', '[G]b'), file('C.cho', '[G]c')]);
     expect(screen.getByTestId('import-start')).toBeEnabled();
     await userEvent.click(screen.getByTestId('import-start'));
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
@@ -42,12 +44,12 @@ describe('ImportModal', () => {
     await waitFor(() => expect(opener).toHaveFocus());
     await userEvent.click(opener);
     expect(screen.getByTestId('import-start')).toBeDisabled();
-    expect((screen.getByTestId('import-file-input') as HTMLInputElement).files).toHaveLength(0);
+    expect((screen.getByLabelText('ChordPro file upload') as HTMLInputElement).files).toHaveLength(0);
   });
 
   it('imports selected files and shows a summary', async () => {
     render(<ImportModal opened onClose={() => {}} onDone={() => {}} />);
-    const input = screen.getByTestId('import-file-input') as HTMLInputElement;
+    const input = screen.getByLabelText('ChordPro file upload') as HTMLInputElement;
     await userEvent.upload(input, [file('A.cho', '[G]a'), file('B.cho', '[G]a')]);
     await userEvent.click(screen.getByTestId('import-start'));
     await waitFor(() => {
@@ -59,7 +61,7 @@ describe('ImportModal', () => {
   it('Escape dismisses only the bulk confirmation and performs no import', async () => {
     const onClose = vi.fn();
     render(<ImportModal opened onClose={onClose} onDone={vi.fn()} />);
-    await userEvent.upload(screen.getByTestId('import-file-input'), [file('A.cho', '[G]a'), file('B.cho', '[G]b'), file('C.cho', '[G]c')]);
+    await userEvent.upload(screen.getByLabelText('ChordPro file upload'), [file('A.cho', '[G]a'), file('B.cho', '[G]b'), file('C.cho', '[G]c')]);
     await userEvent.click(screen.getByTestId('import-start'));
     expect(await screen.findByText('You selected 3 files. Import all of them?')).toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole('button', { name: 'Cancel' }), { key: 'Escape' });
@@ -72,7 +74,7 @@ describe('ImportModal', () => {
   it('Cancel performs no import and a pending import cannot be repeated or dismissed', async () => {
     const onClose = vi.fn();
     render(<ImportModal opened onClose={onClose} onDone={vi.fn()} />);
-    await userEvent.upload(screen.getByTestId('import-file-input'), [file('A.cho', '[G]a'), file('B.cho', '[G]b'), file('C.cho', '[G]c')]);
+    await userEvent.upload(screen.getByLabelText('ChordPro file upload'), [file('A.cho', '[G]a'), file('B.cho', '[G]b'), file('C.cho', '[G]c')]);
     await userEvent.click(screen.getByTestId('import-start'));
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(importSongs).not.toHaveBeenCalled();
@@ -81,9 +83,32 @@ describe('ImportModal', () => {
     const confirmation = screen.getByText('You selected 3 files. Import all of them?').closest('[role="dialog"]') as HTMLElement;
     await userEvent.click(within(confirmation).getByRole('button', { name: 'Import' }));
     await waitFor(() => expect(importSongs).toHaveBeenCalledTimes(1));
+    expect(screen.getByRole('button', { name: 'Clear selected files' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Clear selected files' }));
+    expect((screen.getByLabelText('ChordPro file upload') as HTMLInputElement).files).toHaveLength(3);
     fireEvent.click(screen.getByTestId('import-start'));
     fireEvent.keyDown(screen.getByTestId('import-start'), { key: 'Escape' });
     expect(importSongs).toHaveBeenCalledTimes(1);
     expect(onClose).not.toHaveBeenCalled();
   });
+});
+
+it('clearing the selected files disables import and allows selecting them again', async () => {
+  render(<ImportModal opened onClose={vi.fn()} onDone={vi.fn()} />);
+  const chosen = file('Again.cho', '[C]Again');
+  await userEvent.upload(screen.getByLabelText('ChordPro file upload'), chosen);
+  await userEvent.click(screen.getByRole('button', { name: 'Clear selected files' }));
+  expect(screen.getByTestId('import-start')).toBeDisabled();
+  await userEvent.upload(screen.getByLabelText('ChordPro file upload'), chosen);
+  expect(screen.getByTestId('import-start')).toBeEnabled();
+});
+
+it('truncates a demo selection to the existing import limit', async () => {
+  demo.enabled = true;
+  vi.mocked(importSongs).mockClear();
+  render(<ImportModal opened onClose={vi.fn()} onDone={vi.fn()} />);
+  await userEvent.upload(screen.getByLabelText('ChordPro file upload'), Array.from({ length: 25 }, (_, i) => file(`${i}.cho`, `[G]Song ${i}`)));
+  await userEvent.click(screen.getByTestId('import-start'));
+  await waitFor(() => expect(importSongs).toHaveBeenCalledTimes(1));
+  expect(vi.mocked(importSongs).mock.calls[0][0]).toHaveLength(20);
 });
