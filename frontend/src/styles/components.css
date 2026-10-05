@@ -71,15 +71,7 @@
   overflow-y: auto;
 }
 
-.ocr-preview {
-  max-height: 200px;
-  max-width: 100%;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  object-fit: contain;
-}
 
-.ocr-result textarea { min-height: 200px; max-height: 300px; font-family: var(--font-mono); font-size: 12px; line-height: 1.6; }
 
 /* OCR chat / fix UI */
 .ocr-chat-history {
@@ -110,13 +102,7 @@
   align-self: flex-start;
 }
 
-.ocr-fix-row {
-  display: flex;
-  gap: 6px;
-  margin-top: 10px;
-}
 
-.ocr-fix-input { flex: 1; }
 
 /* -- General Utility Classes -- */
 .muted-hint {
