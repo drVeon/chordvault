@@ -1,5 +1,5 @@
-import { useRef, useEffect } from 'react';
-import { EditorState } from '@codemirror/state';
+import { useRef, useEffect, useState } from 'react';
+import { Compartment, EditorState } from '@codemirror/state';
 import { EditorView, keymap, placeholder as cmPlaceholder } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { bracketMatching } from '@codemirror/language';
@@ -39,6 +39,7 @@ const lightTheme = EditorView.theme({
 export function CodeMirrorEditor({ value, onChange, darkMode, placeholder }: CodeMirrorEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
+  const [theme] = useState(() => new Compartment());
   const onChangeRef = useRef(onChange);
   const valueRef = useRef(value);
   const placeholderRef = useRef(placeholder);
@@ -58,7 +59,7 @@ export function CodeMirrorEditor({ value, onChange, darkMode, placeholder }: Cod
 
     const extensions = [
       cvTheme,
-      darkMode ? darkTheme : lightTheme,
+      theme.of([]),
       chordProLanguage,
       chordProHighlightStyle,
       bracketMatching(),
@@ -74,7 +75,11 @@ export function CodeMirrorEditor({ value, onChange, darkMode, placeholder }: Cod
     viewRef.current = view;
 
     return () => { view.destroy(); viewRef.current = null; };
-  }, [darkMode]);
+  }, [theme]);
+
+  useEffect(() => {
+    viewRef.current?.dispatch({ effects: theme.reconfigure(darkMode ? darkTheme : lightTheme) });
+  }, [darkMode, theme]);
 
   // Sync external value changes (OCR import, initial load) into CodeMirror
   useEffect(() => {
