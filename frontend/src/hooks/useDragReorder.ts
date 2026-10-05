@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
+import { useListState } from '@mantine/hooks';
 
 export function useDragReorder<T>(
   initialItems: T[],
   onSave: (items: T[]) => void
 ) {
-  const [items, setItems] = useState<T[]>(initialItems);
+  const [items, { setState: setItems, reorder }] = useListState(initialItems);
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [canDrag, setCanDrag] = useState(false);
+  const currentDragIdx = useRef<number | null>(null);
   const currentTouchIdx = useRef<number | null>(null);
   const touchOriginalItems = useRef<T[] | null>(null);
 
@@ -20,30 +22,31 @@ export function useDragReorder<T>(
 
     if (!isSame) {
       setItems(initialItems);
+      currentDragIdx.current = null;
       currentTouchIdx.current = null;
       touchOriginalItems.current = null;
       setDraggedIdx(null);
     }
     prevInitialItems.current = initialItems;
-  }, [initialItems]);
+  }, [initialItems, setItems]);
 
   // HTML5 Drag & Drop (Desktop)
   const handleDragStart = (idx: number) => {
+    currentDragIdx.current = idx;
     setDraggedIdx(idx);
   };
 
   const handleDragOver = (e: React.DragEvent, idx: number) => {
     e.preventDefault();
-    if (draggedIdx === null || draggedIdx === idx) return;
+    if (currentDragIdx.current === null || currentDragIdx.current === idx) return;
 
-    const reordered = [...items];
-    const [draggedItem] = reordered.splice(draggedIdx, 1);
-    reordered.splice(idx, 0, draggedItem);
+    reorder({ from: currentDragIdx.current, to: idx });
+    currentDragIdx.current = idx;
     setDraggedIdx(idx);
-    setItems(reordered);
   };
 
   const handleDragEnd = () => {
+    currentDragIdx.current = null;
     setDraggedIdx(null);
     setCanDrag(false);
     onSave(items);
@@ -82,13 +85,10 @@ export function useDragReorder<T>(
     const hoverIdx = parseInt(entryElement.getAttribute('data-index') || '', 10);
     if (isNaN(hoverIdx) || hoverIdx < 0 || hoverIdx >= items.length || hoverIdx === currentTouchIdx.current) return;
 
-    const reordered = [...items];
-    const [draggedItem] = reordered.splice(currentTouchIdx.current, 1);
-    reordered.splice(hoverIdx, 0, draggedItem);
+    reorder({ from: currentTouchIdx.current, to: hoverIdx });
 
     currentTouchIdx.current = hoverIdx;
     setDraggedIdx(hoverIdx);
-    setItems(reordered);
   };
 
   const handleTouchEnd = () => {

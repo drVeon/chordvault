@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useWindowEvent } from '@mantine/hooks';
 import { useAuth } from './context/AuthContext';
 import { useDemo } from './context/DemoContext';
 import { Nav } from './components/Nav';
@@ -74,21 +75,17 @@ export function App() {
   }, [setDemoMode]);
 
   // Listen for hash changes
-  useEffect(() => {
-    const onHashChange = () => {
-      const newRoute = parseHash();
-      setRoute((prev) => {
-        const isSameView = prev.view === newRoute.view;
-        const isSameParams =
-          Object.keys(prev.params).length === Object.keys(newRoute.params).length &&
-          Object.keys(prev.params).every((k) => prev.params[k] === newRoute.params[k]);
+  useWindowEvent('hashchange', () => {
+    const newRoute = parseHash();
+    setRoute((prev) => {
+      const isSameView = prev.view === newRoute.view;
+      const isSameParams =
+        Object.keys(prev.params).length === Object.keys(newRoute.params).length &&
+        Object.keys(prev.params).every((k) => prev.params[k] === newRoute.params[k]);
 
-        return isSameView && isSameParams ? prev : newRoute;
-      });
-    };
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
-  }, []);
+      return isSameView && isSameParams ? prev : newRoute;
+    });
+  });
 
   const navigate = useCallback((view: string, params: Record<string, string> = {}) => {
     // Trigger animation
@@ -149,12 +146,13 @@ export function App() {
           try {
             const sl = JSON.parse(params._setlist) as Setlist;
             const initialIdx = params.index ? parseInt(params.index) : undefined;
-            return <SetlistPlayView setlistId={sl.id} isLocal initialSetlist={sl} initialIndex={initialIdx} navigate={navigate} />;
+            return <SetlistPlayView key={sl.id} setlistId={sl.id} isLocal initialSetlist={sl} initialIndex={initialIdx} navigate={navigate} />;
           } catch { /* fall through */ }
         }
         const initialIdx = params.index ? parseInt(params.index) : undefined;
         return params.id ? (
           <SetlistPlayView
+            key={params.id}
             setlistId={params.id.startsWith('local_') ? params.id : parseInt(params.id)}
             isLocal={!!params.local || params.id.startsWith('local_')}
             initialIndex={initialIdx}

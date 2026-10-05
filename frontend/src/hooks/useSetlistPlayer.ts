@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useWindowEvent } from '@mantine/hooks';
 import { useApi } from './useApi';
 import { ApiError } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -209,19 +210,15 @@ export function useSetlistPlayer({
     }, 40);
   }, [setlist, onNavigate, setlistId, index]);
 
-  useEffect(() => {
-    const onHash = () => {
-      const match = location.hash.match(/^#setlist\/(?:local_\w+|\d+)\/play(?:\/(\d+))?$/);
-      if (match) {
-        const urlIdx = match[1] ? parseInt(match[1]) : 0;
-        if (urlIdx !== index) {
-          goTo(urlIdx);
-        }
+  useWindowEvent('hashchange', () => {
+    const match = location.hash.match(/^#setlist\/(local_\w+|\d+)\/play(?:\/(\d+))?$/);
+    if (match && match[1] === String(setlistId)) {
+      const urlIdx = match[2] ? parseInt(match[2]) : 0;
+      if (urlIdx !== index) {
+        goTo(urlIdx);
       }
-    };
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, [goTo, index]);
+    }
+  });
 
   const prev = useCallback(() => goTo(index - 1), [goTo, index]);
   const next = useCallback(() => goTo(index + 1), [goTo, index]);

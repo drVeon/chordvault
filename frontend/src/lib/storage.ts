@@ -97,8 +97,29 @@ export function migrateOverride(
   return { ...rest, target_key: legacyTransposeToTargetKey(content, transpose) };
 }
 
-export function removeSessionItem(key: string): void {
+function removeSessionItem(key: string): void {
   try {
     sessionStorage.removeItem(key);
   } catch {}
+}
+
+export function clearSearchSession(): void {
+  [
+    'cv_browse_query',
+    'cv_browse_lang',
+    'cv_browse_show_filters',
+    'cv_browse_page',
+    'cv_mysongs_query',
+    'cv_mysongs_page',
+    'cv_publicsetlists_query',
+    'cv_publicsetlists_date_from',
+    'cv_publicsetlists_date_to',
+    'cv_publicsetlists_show_dates',
+    'cv_publicsetlists_page',
+    'cv_setlists_query',
+    'cv_setlists_date_from',
+    'cv_setlists_date_to',
+    'cv_setlists_show_dates',
+    'cv_setlists_page',
+  ].forEach(removeSessionItem);
 }
