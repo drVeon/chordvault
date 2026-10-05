@@ -28,3 +28,25 @@ it('blocks repeated pending requests and reports a backend error', async () => {
   await screen.findByText('Current password incorrect');
   await waitFor(() => expect(button).toBeEnabled());
 });
+
+it('resets passwords and announces a successful save', async () => {
+  render(<SettingsView />);
+  fill('newpass');
+  fireEvent.click(screen.getByRole('button', { name: 'Change Password' }));
+  expect(await screen.findByRole('status')).toHaveTextContent('Password changed successfully');
+  expect(call).toHaveBeenCalledWith('PUT', '/api/auth/password', {
+    current_password: 'oldpass', new_password: 'newpass',
+  });
+  expect(screen.getByLabelText('Current Password')).toHaveValue('');
+  expect(screen.getByLabelText('New Password')).toHaveValue('');
+  expect(screen.getByLabelText('Confirm New Password')).toHaveValue('');
+});
+it('exposes standalone language removal to keyboard and screen-reader users', async () => {
+  call.mockImplementation((_method: string, path: string) => Promise.resolve(path.endsWith('/languages') ? { languages: ['en', 'zh'] } : path.endsWith('/ocr-model') ? { models: [] } : { defaultPrompt: '' }));
+  render(<SettingsView />);
+  const remove = await screen.findByRole('button', { name: 'Remove Chinese' });
+  expect(remove.tabIndex).toBe(0);
+  fireEvent.click(remove);
+  await waitFor(() => expect(screen.queryByRole('button', { name: 'Remove Chinese' })).not.toBeInTheDocument());
+  expect(call).toHaveBeenCalledWith('PUT', '/api/settings/languages', { languages: ['en'] });
+});

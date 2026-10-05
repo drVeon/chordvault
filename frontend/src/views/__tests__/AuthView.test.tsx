@@ -21,6 +21,25 @@ it('shows backend failure and allows a subsequent attempt', async () => {
   fireEvent.change(screen.getByLabelText('auth.username'), { target: { value: 'preview' } });
   fireEvent.change(screen.getByLabelText('auth.password'), { target: { value: 'password' } });
   fireEvent.click(document.querySelector('#auth-submit')!);
-  expect(await screen.findByText('Denied')).toBeInTheDocument();
+  expect(await screen.findByRole('alert')).toHaveTextContent('Denied');
   expect(document.querySelector('#auth-submit')).not.toBeDisabled();
+});
+
+it('keeps invite redemption distinct when registration is closed', async () => {
+  api.mockImplementation((method: string) => method === 'GET'
+    ? Promise.resolve({ allowRegistration: false, invitesEnabled: true })
+    : Promise.resolve({ token: 'local-test-token' }));
+  const navigate = vi.fn();
+  render(<AuthView navigate={navigate} />);
+  fireEvent.click(await screen.findByRole('button', { name: 'auth.haveInvite' }));
+  const invite = screen.getByLabelText('auth.inviteCode');
+  expect(invite).toHaveFocus();
+  fireEvent.change(invite, { target: { value: 'local-invite' } });
+  fireEvent.change(screen.getByLabelText('auth.username'), { target: { value: 'preview' } });
+  fireEvent.change(screen.getByLabelText('auth.password'), { target: { value: 'password' } });
+  fireEvent.click(document.querySelector('#auth-submit')!);
+  await waitFor(() => expect(navigate).toHaveBeenCalledWith('browse'));
+  expect(api).toHaveBeenCalledWith('POST', '/api/auth/redeem-invite', {
+    code: 'local-invite', username: 'preview', password: 'password', turnstile_token: null,
+  });
 });

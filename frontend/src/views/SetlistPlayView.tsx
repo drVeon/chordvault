@@ -1,4 +1,4 @@
-import { Button, Textarea } from '@mantine/core';
+import { Box, Button, Text, Textarea } from '@mantine/core';
 import { useState, useCallback, useMemo, useRef } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
@@ -16,6 +16,7 @@ import { PlaybackTopBar } from '../components/PlaybackTopBar';
 import { PlaybackDock, type PlaybackNav } from '../components/PlaybackDock';
 import { PlaybackMoreMenu } from '../components/PlaybackMoreMenu';
 import { SettingsPanel } from '../components/SettingsPanel';
+import { EmptyState } from '../components/EmptyState';
 import { Loading } from '../components/Loading';
 import { renderChordPro, getSongKey, clampFontSize, songHasKey, resolveEffectivePreferences, autoFit } from '../lib/chords';
 import { useSetlistPreferences } from '../hooks/useSetlistPreferences';
@@ -217,7 +218,7 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   };
 
   if (!setlist) return <Loading />;
-  if (!entry) return <div className="empty"><div className="empty-text">{t('setlist.noSongsYet')}</div></div>;
+  if (!entry) return <EmptyState text={t('setlist.noSongsYet')} />;
 
   const resetEntryLayout = () => { if (entry) updateEntry({ _font: null, _twoCol: null }); };
   const canReset = entry._font != null || entry._twoCol != null;
@@ -288,11 +289,9 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
       ) : (
         <>
           {entry?.is_private_placeholder ? (
-            <div className="empty" style={{ marginTop: 40 }}>
-              <div className="empty-icon">&#128274;</div>
-              <div className="empty-text">This song is private</div>
-              <div style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>The song owner has marked it as private.</div>
-            </div>
+            <Box mt={40}>
+              <EmptyState icon={<Text span fz={56} aria-hidden>🔒</Text>} text={<>This song is private<Text span display="block" size="sm" mt="xs">The song owner has marked it as private.</Text></>} />
+            </Box>
           ) : (
             <ChordSheet
               html={renderedHtml}

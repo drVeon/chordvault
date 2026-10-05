@@ -2,8 +2,8 @@ import { Button, EmptyState as MantineEmptyState } from '@mantine/core';
 import type { ReactNode } from 'react';
 
 interface EmptyStateProps {
-  icon: ReactNode;
-  text: string;
+  icon?: ReactNode;
+  text: ReactNode;
   action?: { label: string; onClick: () => void };
 }
 

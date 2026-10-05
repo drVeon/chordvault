@@ -57,44 +57,6 @@
   line-height: 1.6;
 }
 
-/* -- Auth --------------------------------─ */
-.auth-wrap {
-  min-height: calc(100vh - 56px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.auth-card {
-  background: var(--ui-modal-bg);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 44px 40px;
-  width: 100%;
-  max-width: 400px;
-  box-shadow: var(--ui-shadow);
-}
-
-
-
-.auth-logo {
-  font-family: var(--font-sans);
-  font-size: 36px;
-  font-weight: 700;
-  color: var(--cv-brand);
-  text-align: center;
-  margin-bottom: 6px;
-}
-
-.auth-tagline {
-  text-align: center;
-  color: var(--muted);
-  font-size: 13px;
-  margin-bottom: 28px;
-}
-
-.auth-tabs { margin-bottom: 24px; }
-
 /* -- Setlist Tabs -------------------------- */
 .setlist-tabs { margin-bottom: 16px; }
 .setlist-tabs .mantine-Tabs-list {
@@ -121,7 +83,6 @@
 /* Surface comes from Mantine Paper; this is the two-column masonry only. */
 .settings-grid { column-gap: 16px; }
 .settings-section { margin-bottom: 16px; break-inside: avoid; }
-.settings-section .muted-hint { margin-bottom: 14px; }
 @media (min-width: 900px) {
   .settings-grid { column-count: 2; }
 }
@@ -392,7 +353,3 @@
 }
 
 .setlist-drag-handle { touch-action: none; min-width: 44px; min-height: 44px; }
-
-@media (max-width: 600px) {
-  .auth-card { padding: 24px; }
-}
