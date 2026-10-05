@@ -2,7 +2,7 @@ import { SearchField } from '../components/SearchField';
 import { SearchRow } from '../components/SearchRow';
 import { Button, SimpleGrid } from '@mantine/core';
 import { IconPlus, IconGuitarPick } from '@tabler/icons-react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../context/I18nContext';
 import { showStatusNotification as toast } from '../lib/notifications';
@@ -10,7 +10,7 @@ import { SongCard } from '../components/SongCard';
 import { EmptyState } from '../components/EmptyState';
 import { Pagination } from '../components/Pagination';
 import type { SongListItem } from '../types';
-import { getSessionItem, setSessionItem } from '../lib/storage';
+import { useSearchSessionValue, searchPage } from '../hooks/useSearchSessionValue';
 import { PageTitle } from '../components/PageTitle';
 
 interface MySongsViewProps {
@@ -21,13 +21,18 @@ export function MySongsView({ navigate }: MySongsViewProps) {
   const api = useApi();
   const { t } = useI18n();
   const [songs, setSongs] = useState<SongListItem[]>([]);
-  const [query, setQuery] = useState(() => getSessionItem('cv_mysongs_query') || '');
+  const [savedQuery, saveQuery] = useSearchSessionValue('cv_mysongs_query');
+  const [query, setQuery] = useState(savedQuery);
   const [loaded, setLoaded] = useState(false);
-  const [page, setPage] = useState(() => {
-    const saved = getSessionItem('cv_mysongs_page');
-    return saved ? parseInt(saved, 10) : 1;
-  });
+  const [savedPage, savePage] = useSearchSessionValue('cv_mysongs_page', '1');
+  const [page, setPage] = useState(() => searchPage(savedPage));
   const [totalPages, setTotalPages] = useState(1);
+
+  const active = useRef(false);
+  useEffect(() => {
+    active.current = true;
+    return () => { active.current = false; };
+  }, []);
 
   const load = useCallback((q = '', targetPage = 1) => {
     let url = '/api/songs';
@@ -47,15 +52,16 @@ export function MySongsView({ navigate }: MySongsViewProps) {
 
     api<PaginatedSongsResponse>('GET', url)
       .then((data) => {
+        if (!active.current) return;
         setSongs(data.songs);
         setPage(data.page);
         setTotalPages(data.totalPages);
         setLoaded(true);
-        setSessionItem('cv_mysongs_query', q);
-        setSessionItem('cv_mysongs_page', String(data.page));
+        saveQuery(q);
+        savePage(String(data.page));
       })
-      .catch((e) => toast(e.message, 'error'));
-  }, [api]);
+      .catch((e) => { if (active.current) toast(e.message, 'error'); });
+  }, [api, saveQuery, savePage]);
 
   useEffect(() => {
     load(query, page);

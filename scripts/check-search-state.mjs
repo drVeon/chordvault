@@ -1,0 +1,58 @@
+import assert from 'node:assert/strict';
+import { chromium } from 'playwright';
+const base = process.env.CV_CHECK_BASE || 'http://localhost:3118';
+const browser = await chromium.launch({ ...(process.env.CV_CHECK_CHANNEL ? { channel: process.env.CV_CHECK_CHANNEL } : {}) });
+try {
+  for (const width of [390, 768, 1440]) {
+    const page = await browser.newPage({ viewport: { width, height: 900 }, reducedMotion: 'reduce' });
+    page.setDefaultTimeout(15000);
+    await page.goto(base);
+    await page.locator('.song-card').first().waitFor();
+    await page.evaluate(() => sessionStorage.setItem('cv_browse_query', 'old guest search'));
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await page.getByLabel('Username', { exact: true }).fill(process.env.CV_CHECK_USER || 'demo');
+    await page.getByLabel('Password', { exact: true }).fill(process.env.CV_CHECK_PASSWORD || 'demopass123');
+    await page.locator('#auth-submit').click();
+    const search = page.getByRole('searchbox');
+    await search.waitFor();
+    assert.equal(await search.inputValue(), '');
+    await search.fill('Grace');
+    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    await page.waitForFunction(() => sessionStorage.getItem('cv_browse_query') === 'Grace');
+    await page.locator('.song-card-title').filter({ hasText: 'Amazing Grace' }).click();
+    await page.locator('.lyrics:not(:empty)').first().waitFor();
+    await page.getByRole('button', { name: 'Songs', exact: true }).click();
+    assert.equal(await search.inputValue(), 'Grace');
+    await search.fill('unfinished draft');
+    await page.getByRole('button', { name: 'Setlists', exact: true }).click();
+    await page.getByRole('button', { name: 'Songs', exact: true }).click();
+    assert.equal(await search.inputValue(), 'Grace');
+    await page.getByRole('button', { name: 'Clear search' }).click();
+    await page.waitForFunction(() => sessionStorage.getItem('cv_browse_query') === '');
+    let release;
+    let started;
+    let finished;
+    const pending = new Promise(resolve => { release = resolve; });
+    const requested = new Promise(resolve => { started = resolve; });
+    const completed = new Promise(resolve => { finished = resolve; });
+    await page.route('**/api/songs/public?*q=Late*', async route => {
+      const response = await route.fetch();
+      started();
+      await pending;
+      await route.fulfill({ response });
+      finished();
+    });
+    await search.fill('Late');
+    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    await requested;
+    await page.getByRole('button', { name: 'Account menu' }).click();
+    await page.getByRole('menuitem', { name: 'Sign out', exact: true }).click();
+    await page.getByRole('button', { name: 'Sign in', exact: true }).waitFor();
+    release(); await completed;
+    await page.waitForTimeout(100);
+    assert.notEqual(await page.evaluate(() => sessionStorage.getItem('cv_browse_query')), 'Late');
+    assert.equal(await search.inputValue(), '');
+    await page.close();
+    console.log(`PASS ${width}: login, submitted search, detail/back, draft loss, clear, logout with delayed response`);
+  }
+} finally { await browser.close(); }

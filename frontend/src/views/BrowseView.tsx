@@ -2,7 +2,7 @@ import { SearchField } from '../components/SearchField';
 import { SearchRow } from '../components/SearchRow';
 import { ActionIcon, Button, NativeSelect, SimpleGrid } from '@mantine/core';
 import { IconAdjustmentsHorizontal, IconPlus, IconSearch } from '@tabler/icons-react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
@@ -12,7 +12,7 @@ import { EmptyState } from '../components/EmptyState';
 import { Pagination } from '../components/Pagination';
 import type { SongListItem } from '../types';
 import { LANGUAGES } from '../lib/languages';
-import { getSessionItem, setSessionItem } from '../lib/storage';
+import { useSearchSessionValue, searchPage } from '../hooks/useSearchSessionValue';
 
 interface BrowseViewProps {
   navigate: (view: string, params?: Record<string, string>) => void;
@@ -23,15 +23,22 @@ export function BrowseView({ navigate }: BrowseViewProps) {
   const { user } = useAuth();
   const { t } = useI18n();
   const [songs, setSongs] = useState<SongListItem[]>([]);
-  const [query, setQuery] = useState(() => getSessionItem('cv_browse_query') || '');
-  const [langFilter, setLangFilter] = useState(() => getSessionItem('cv_browse_lang') || '');
-  const [showFilters, setShowFilters] = useState(() => getSessionItem('cv_browse_show_filters') === 'true');
+  const [savedQuery, saveQuery] = useSearchSessionValue('cv_browse_query');
+  const [query, setQuery] = useState(savedQuery);
+  const [savedLangFilter, saveLangFilter] = useSearchSessionValue('cv_browse_lang');
+  const [langFilter, setLangFilter] = useState(savedLangFilter);
+  const [savedShowFilters, saveShowFilters] = useSearchSessionValue('cv_browse_show_filters', 'false');
+  const showFilters = savedShowFilters === 'true';
   const [loaded, setLoaded] = useState(false);
-  const [page, setPage] = useState(() => {
-    const saved = getSessionItem('cv_browse_page');
-    return saved ? parseInt(saved, 10) : 1;
-  });
+  const [savedPage, savePage] = useSearchSessionValue('cv_browse_page', '1');
+  const [page, setPage] = useState(() => searchPage(savedPage));
   const [totalPages, setTotalPages] = useState(1);
+
+  const active = useRef(false);
+  useEffect(() => {
+    active.current = true;
+    return () => { active.current = false; };
+  }, []);
 
   const load = useCallback(async (q = '', lang = '', targetPage = 1) => {
     try {
@@ -51,16 +58,17 @@ export function BrowseView({ navigate }: BrowseViewProps) {
         totalPages: number;
       }
       const data = await api<PaginatedSongsResponse>('GET', url);
+      if (!active.current) return;
       setSongs(data.songs);
       setPage(data.page);
       setTotalPages(data.totalPages);
       setLoaded(true);
 
-      setSessionItem('cv_browse_query', q);
-      setSessionItem('cv_browse_lang', lang);
-      setSessionItem('cv_browse_page', String(data.page));
-    } catch (e) { toast((e as Error).message, 'error'); }
-  }, [api]);
+      saveQuery(q);
+      saveLangFilter(lang);
+      savePage(String(data.page));
+    } catch (e) { if (active.current) toast((e as Error).message, 'error'); }
+  }, [api, saveQuery, saveLangFilter, savePage]);
 
   useEffect(() => {
     load(query, langFilter, page);
@@ -106,8 +114,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
               title="Filters"
               onClick={() => {
                 const next = !showFilters;
-                setShowFilters(next);
-                setSessionItem('cv_browse_show_filters', String(next));
+                saveShowFilters(String(next));
               }}
             >
               <IconAdjustmentsHorizontal size={18} aria-hidden />

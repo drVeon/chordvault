@@ -2,7 +2,7 @@ import { SearchField } from '../components/SearchField';
 import { SearchRow } from '../components/SearchRow';
 import { Tabs, Button, TextInput, ActionIcon, SimpleGrid } from '@mantine/core';
 import { IconCalendar, IconSearch } from '@tabler/icons-react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../context/I18nContext';
 import { showStatusNotification as toast } from '../lib/notifications';
@@ -10,7 +10,7 @@ import { SetlistCard } from '../components/SetlistCard';
 import { EmptyState } from '../components/EmptyState';
 import { Pagination } from '../components/Pagination';
 import type { SetlistListItem } from '../types';
-import { getSessionItem, setSessionItem } from '../lib/storage';
+import { useSearchSessionValue, searchPage } from '../hooks/useSearchSessionValue';
 import { PageTitle } from '../components/PageTitle';
 
 interface PublicSetlistsViewProps {
@@ -22,15 +22,23 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
   const { t } = useI18n();
   const [setlists, setSetlists] = useState<SetlistListItem[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [query, setQuery] = useState(() => getSessionItem('cv_publicsetlists_query') || '');
-  const [dateFrom, setDateFrom] = useState(() => getSessionItem('cv_publicsetlists_date_from') || '');
-  const [dateTo, setDateTo] = useState(() => getSessionItem('cv_publicsetlists_date_to') || '');
-  const [showDates, setShowDates] = useState(() => getSessionItem('cv_publicsetlists_show_dates') === 'true');
-  const [page, setPage] = useState(() => {
-    const saved = getSessionItem('cv_publicsetlists_page');
-    return saved ? parseInt(saved, 10) : 1;
-  });
+  const [savedQuery, saveQuery] = useSearchSessionValue('cv_publicsetlists_query');
+  const [query, setQuery] = useState(savedQuery);
+  const [savedDateFrom, saveDateFrom] = useSearchSessionValue('cv_publicsetlists_date_from');
+  const [dateFrom, setDateFrom] = useState(savedDateFrom);
+  const [savedDateTo, saveDateTo] = useSearchSessionValue('cv_publicsetlists_date_to');
+  const [dateTo, setDateTo] = useState(savedDateTo);
+  const [savedShowDates, saveShowDates] = useSearchSessionValue('cv_publicsetlists_show_dates', 'false');
+  const showDates = savedShowDates === 'true';
+  const [savedPage, savePage] = useSearchSessionValue('cv_publicsetlists_page', '1');
+  const [page, setPage] = useState(() => searchPage(savedPage));
   const [totalPages, setTotalPages] = useState(1);
+
+  const active = useRef(false);
+  useEffect(() => {
+    active.current = true;
+    return () => { active.current = false; };
+  }, []);
 
   const load = useCallback(async (q = '', from = '', to = '', targetPage = 1) => {
     const params: string[] = [];
@@ -49,17 +57,18 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
         totalPages: number;
       }
       const data = await apiCall<PaginatedSetlistsResponse>('GET', `/api/setlists/public${qs}`);
+      if (!active.current) return;
       setSetlists(data.setlists);
       setPage(data.page);
       setTotalPages(data.totalPages);
       setLoaded(true);
 
-      setSessionItem('cv_publicsetlists_query', q);
-      setSessionItem('cv_publicsetlists_date_from', from);
-      setSessionItem('cv_publicsetlists_date_to', to);
-      setSessionItem('cv_publicsetlists_page', String(data.page));
-    } catch (e) { toast((e as Error).message, 'error'); }
-  }, [apiCall]);
+      saveQuery(q);
+      saveDateFrom(from);
+      saveDateTo(to);
+      savePage(String(data.page));
+    } catch (e) { if (active.current) toast((e as Error).message, 'error'); }
+  }, [apiCall, saveQuery, saveDateFrom, saveDateTo, savePage]);
 
   useEffect(() => {
     load(query, dateFrom, dateTo, page);
@@ -101,8 +110,7 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
               title="Filter by date"
               onClick={() => {
                 const next = !showDates;
-                setShowDates(next);
-                setSessionItem('cv_publicsetlists_show_dates', String(next));
+                saveShowDates(String(next));
               }}
             >
               <IconCalendar size={18} aria-hidden />
