@@ -15,11 +15,6 @@
 .field { margin-bottom: 14px; }
 
 /* -- Song Cards --------------------------─ */
-.song-grid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
-}
 
 .song-card {
   background: var(--raise);

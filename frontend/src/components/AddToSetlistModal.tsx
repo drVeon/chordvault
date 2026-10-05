@@ -1,4 +1,4 @@
-import { Badge, Group, Modal } from '@mantine/core';
+import { Badge, Group, Modal, SimpleGrid } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
 import { ListCard } from './ListCard';
 import { modals, useModals } from '@mantine/modals';
@@ -150,7 +150,7 @@ export function AddToSetlistModal({
     <Modal opened={isOpen} onClose={onClose} title={<>{t('setlist.addToSetlist')}</>} returnFocus={false} trapFocus={modalManager.modals.length === 0} closeOnEscape={modalManager.modals.length === 0} closeOnClickOutside={modalManager.modals.length === 0}>
 
 
-        <div className="song-grid">
+        <SimpleGrid className="song-grid" minColWidth="min(100%, 320px)" autoFlow="auto-fill" spacing={12}>
           <ListCard className="mantine-focus-auto" title={<Group gap={6}><IconPlus size={16} aria-hidden />{t('setlist.newSetlist')}</Group>} onClick={createAndAdd} />
           {userSetlists.map((sl) => (
             <ListCard
@@ -165,7 +165,7 @@ export function AddToSetlistModal({
               )}
             </ListCard>
           ))}
-        </div>
+        </SimpleGrid>
 
     </Modal>
   );

@@ -1,7 +1,7 @@
 import { SearchField } from '../components/SearchField';
 import { SearchRow } from '../components/SearchRow';
-import { Button } from '@mantine/core';
-import { IconPlus } from '@tabler/icons-react';
+import { Button, SimpleGrid } from '@mantine/core';
+import { IconPlus, IconGuitarPick } from '@tabler/icons-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../context/I18nContext';
@@ -84,10 +84,10 @@ export function MySongsView({ navigate }: MySongsViewProps) {
         <Button variant="default" size="sm" onClick={doSearch}>{t('songs.search')}</Button>
         <Button size="sm" w={{ base: '100%', xs: 'auto' }} leftSection={<IconPlus size={16} aria-hidden />} onClick={() => navigate('song-edit')}>{t('songs.newSong')}</Button>
       </SearchRow>
-      <div className="song-grid">
+      <SimpleGrid className="song-grid" minColWidth="min(100%, 320px)" autoFlow="auto-fill" spacing={12}>
         {loaded && songs.length === 0 ? (
           <EmptyState
-            icon="&#127928;"
+            icon={<IconGuitarPick size={56} aria-hidden />}
             text={query ? t('songs.noMatches') : t('songs.noSongs')}
             action={!query ? { label: t('songs.addFirst'), onClick: () => navigate('song-edit') } : undefined}
           />
@@ -102,7 +102,7 @@ export function MySongsView({ navigate }: MySongsViewProps) {
             />
           ))
         )}
-      </div>
+      </SimpleGrid>
       <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
     </>
   );

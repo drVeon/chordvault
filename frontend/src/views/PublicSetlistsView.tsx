@@ -1,7 +1,7 @@
 import { SearchField } from '../components/SearchField';
 import { SearchRow } from '../components/SearchRow';
-import { Tabs, Button, TextInput, ActionIcon } from '@mantine/core';
-import { IconCalendar } from '@tabler/icons-react';
+import { Tabs, Button, TextInput, ActionIcon, SimpleGrid } from '@mantine/core';
+import { IconCalendar, IconSearch } from '@tabler/icons-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../context/I18nContext';
@@ -117,10 +117,10 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
         </>
       )}
       {loaded && setlists.length === 0 ? (
-        <EmptyState icon="&#128269;" text={t('setlist.noPublicSetlists')} />
+        <EmptyState icon={<IconSearch size={56} aria-hidden />} text={t('setlist.noPublicSetlists')} />
       ) : (
         <>
-          <div className="song-grid">
+          <SimpleGrid className="song-grid" minColWidth="min(100%, 320px)" autoFlow="auto-fill" spacing={12}>
             {setlists.map((sl) => (
               <SetlistCard
                 key={sl.id}
@@ -129,7 +129,7 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
                 showUsername
               />
             ))}
-          </div>
+          </SimpleGrid>
           <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
         </>
       )}

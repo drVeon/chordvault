@@ -1,7 +1,7 @@
 import { SearchField } from '../components/SearchField';
 import { SearchRow } from '../components/SearchRow';
-import { Tabs, Button, TextInput, ActionIcon } from '@mantine/core';
-import { IconCalendar, IconPlus } from '@tabler/icons-react';
+import { Tabs, Button, TextInput, ActionIcon, SimpleGrid } from '@mantine/core';
+import { IconCalendar, IconPlus, IconMusic } from '@tabler/icons-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
@@ -192,11 +192,11 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
           <TextInput label={<>To</>} type="date" flex={1} miw={0} value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
         </SearchRow>
       )}
-      <div className="song-grid">
+      <SimpleGrid className="song-grid" minColWidth="min(100%, 320px)" autoFlow="auto-fill" spacing={12}>
         {loaded && (
           activeTab === 'cloud' ? (
             setlists.length === 0 ? (
-              <EmptyState icon="&#127926;" text={t('setlist.noSetlists')} />
+              <EmptyState icon={<IconMusic size={56} aria-hidden />} text={t('setlist.noSetlists')} />
             ) : (
               setlists.map((sl) => (
                 <SetlistCard
@@ -209,7 +209,7 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
             )
           ) : (
             localSetlistsToRender.length === 0 ? (
-              <EmptyState icon="&#127926;" text={t('setlist.noSetlists')} />
+              <EmptyState icon={<IconMusic size={56} aria-hidden />} text={t('setlist.noSetlists')} />
             ) : (
               localSetlistsToRender.map((sl) => (
                 <SetlistCard
@@ -228,7 +228,7 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
             )
           )
         )}
-      </div>
+      </SimpleGrid>
       {activeTab === 'cloud' && (
         <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
       )}

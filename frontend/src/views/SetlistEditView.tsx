@@ -1,3 +1,4 @@
+import { IconMusic } from '@tabler/icons-react';
 import { Switch, Button, TextInput, Group } from '@mantine/core';
 import { useCopyNotification } from '../hooks/useCopyNotification';
 import { useForm } from '@mantine/form';
@@ -325,7 +326,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
       </div>
 
       {setlist.entries.length === 0 ? (
-        <EmptyState icon="&#127926;" text={t('setlist.noSongsYet')} />
+        <EmptyState icon={<IconMusic size={56} aria-hidden />} text={t('setlist.noSongsYet')} />
       ) : (
         <div className="setlist-entries" id="setlist-entries">
           {reorderedEntries.map((entry, idx) => (

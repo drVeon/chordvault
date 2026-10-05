@@ -1,7 +1,7 @@
 import { SearchField } from '../components/SearchField';
 import { SearchRow } from '../components/SearchRow';
-import { ActionIcon, Button, NativeSelect } from '@mantine/core';
-import { IconAdjustmentsHorizontal, IconPlus } from '@tabler/icons-react';
+import { ActionIcon, Button, NativeSelect, SimpleGrid } from '@mantine/core';
+import { IconAdjustmentsHorizontal, IconPlus, IconSearch } from '@tabler/icons-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
@@ -130,9 +130,9 @@ export function BrowseView({ navigate }: BrowseViewProps) {
               </NativeSelect>
             </div>
           )}
-          <div className="song-grid">
+          <SimpleGrid className="song-grid" minColWidth="min(100%, 320px)" autoFlow="auto-fill" spacing={12}>
             {loaded && songs.length === 0 ? (
-              <EmptyState icon="&#128269;" text={t('songs.noPublicSongs')} />
+              <EmptyState icon={<IconSearch size={56} aria-hidden />} text={t('songs.noPublicSongs')} />
             ) : (
               songs.map((s) => (
                 <SongCard
@@ -144,7 +144,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
                 />
               ))
             )}
-          </div>
+          </SimpleGrid>
           <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
         </>
       )}

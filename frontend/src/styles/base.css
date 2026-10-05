@@ -44,16 +44,6 @@ body {
   margin: 24px 0;
 }
 
-/* -- Empty State -------------------------- */
-.empty {
-  text-align: center;
-  padding: 80px 20px;
-  color: var(--muted);
-  grid-column: 1 / -1;
-}
-.empty-icon { font-size: 56px; margin-bottom: 16px; opacity: 0.3; }
-.empty-text { font-size: 17px; margin-bottom: 20px; font-weight: 400; }
-
 /* -- View Transitions -------------------- */
 @keyframes viewFadeIn {
   from { opacity: 0; transform: translateY(8px); }

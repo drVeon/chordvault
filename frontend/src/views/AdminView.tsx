@@ -1,4 +1,4 @@
-import { Badge, Paper, Switch, Button } from '@mantine/core';
+import { Badge, Paper, Switch, Button, SimpleGrid } from '@mantine/core';
 import { ListCard } from '../components/ListCard';
 import { useCopyNotification } from '../hooks/useCopyNotification';
 import { modals } from '@mantine/modals';
@@ -200,7 +200,7 @@ export function AdminView({ navigate }: AdminViewProps) {
 
       <h3 className="admin-section-title">{t('admin.users')}</h3>
 
-      <div className="song-grid" style={{ marginBottom: 28 }}>
+      <SimpleGrid className="song-grid" minColWidth="min(100%, 320px)" autoFlow="auto-fill" spacing={12} mb={28}>
         {users.map((u) => {
           const isSelf = u.id === currentId;
           const isTargetOwner = u.role === 'owner';
@@ -234,12 +234,12 @@ export function AdminView({ navigate }: AdminViewProps) {
             </div>
           );
         })}
-      </div>
+      </SimpleGrid>
 
       {stats.recentSongs.length > 0 && (
         <>
           <h3 className="admin-section-title">{t('admin.recentSongs')}</h3>
-          <div className="song-grid">
+          <SimpleGrid className="song-grid" minColWidth="min(100%, 320px)" autoFlow="auto-fill" spacing={12}>
             {stats.recentSongs.map((s) => (
               <ListCard
                 key={s.id}
@@ -250,14 +250,14 @@ export function AdminView({ navigate }: AdminViewProps) {
                 actions={<Button color="red" size="xs" className="btn btn-danger btn-sm" disabled={busy} onClick={(e) => { e.stopPropagation(); deleteSong(s.id, s.title); }}>{t('admin.delete')}</Button>}
               />
             ))}
-          </div>
+          </SimpleGrid>
         </>
       )}
 
       {corrections.length > 0 && (
         <>
           <h3 className="admin-section-title">Pending Corrections ({corrections.length})</h3>
-          <div className="song-grid">
+          <SimpleGrid className="song-grid" minColWidth="min(100%, 320px)" autoFlow="auto-fill" spacing={12}>
             {corrections.map((c) => (
               <ListCard
                 key={c.id}
@@ -268,7 +268,7 @@ export function AdminView({ navigate }: AdminViewProps) {
                 actions={<Badge color="yellow">pending</Badge>}
               />
             ))}
-          </div>
+          </SimpleGrid>
         </>
       )}
     </>
