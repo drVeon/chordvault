@@ -121,3 +121,22 @@ describe('SongEditView action bar', () => {
     expect(screen.queryByRole('button', { name: 'songEdit.deleteSong' })).toBeNull();
   });
 });
+
+it('connects tabs to persistent panels and preserves editor content when switching', async () => {
+  await renderEditor();
+  const edit = screen.getByRole('tab', { name: 'Edit' });
+  const preview = screen.getByRole('tab', { name: 'Preview' });
+  const panel = document.getElementById(edit.getAttribute('aria-controls')!);
+  expect(panel).not.toBeNull();
+  expect(panel).toHaveAttribute('aria-labelledby', edit.id);
+  const editor = screen.getByTestId('editor');
+  fireEvent.change(editor, { target: { value: '[C]恩典 Grace' } });
+  fireEvent.click(preview);
+  expect(preview).toHaveAttribute('aria-selected', 'true');
+  expect(document.getElementById(preview.getAttribute('aria-controls')!)).toHaveAttribute('aria-labelledby', preview.id);
+  expect(editor).not.toBeVisible();
+  fireEvent.click(edit);
+  expect(screen.getByTestId('editor')).toBe(editor);
+  expect(editor).toHaveValue('[C]恩典 Grace');
+  expect(editor).toBeVisible();
+});

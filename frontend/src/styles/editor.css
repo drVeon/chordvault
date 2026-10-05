@@ -10,6 +10,7 @@
 
 /* Break out of #app max-width on desktop for more editor room */
 @media (min-width: 768px) {
+  .editor-split > .mantine-Tabs-panel { display: block !important; }
   .editor-split {
     width: calc(100vw - 48px);
     max-width: 1200px;
@@ -73,9 +74,6 @@
   .editor-split > .editor-preview-wrap {
     flex: 1 1 auto;
     max-height: none;
-  }
-  .editor-hidden {
-    display: none;
   }
 }
 

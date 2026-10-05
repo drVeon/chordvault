@@ -207,22 +207,22 @@ modals.openConfirmModal({ children: t('songEdit.confirmDelete'), labels: { confi
             <Button variant="default" size="xs" className="btn btn-sm btn-ghost" onClick={ocr.open}>&#128247; Import from image or PDF</Button>
           </div>
         )}
-        <Tabs value={editorTab} onChange={(value) => { if (value === 'preview') { setEditorTab('preview'); setForceRender(n => n + 1); } else setEditorTab('edit'); }} className="editor-tabs">
-          <Tabs.List grow><Tabs.Tab value="edit">Edit</Tabs.Tab><Tabs.Tab value="preview">Preview</Tabs.Tab></Tabs.List>
-        </Tabs>
+        <Tabs value={editorTab} onChange={(value) => { if (value === 'preview') { setEditorTab('preview'); setForceRender(n => n + 1); } else setEditorTab('edit'); }} keepMounted keepMountedMode="display-none">
+          <Tabs.List grow className="editor-tabs"><Tabs.Tab value="edit">Edit</Tabs.Tab><Tabs.Tab value="preview">Preview</Tabs.Tab></Tabs.List>
         <div className="editor-split">
-          <div className={`cm-editor-wrap${editorTab === 'preview' ? ' editor-hidden' : ''}`} role="tabpanel">
+          <Tabs.Panel value="edit" className="cm-editor-wrap">
             <CodeMirrorEditor
               value={state.content}
               onChange={handleContentChange}
               darkMode={theme === 'dark'}
               placeholder={'Paste any format:\n\nChordPro:  [G]Let it [D]be\n\nOr chords over lyrics:\n  G        D\n  Let it be'}
             />
-          </div>
-          <div className={`editor-preview-wrap${editorTab === 'edit' ? ' editor-hidden' : ''}`} role="tabpanel">
+          </Tabs.Panel>
+          <Tabs.Panel value="preview" className="editor-preview-wrap">
             <EditorPreview content={state.content} forceRender={forceRender} />
-          </div>
+          </Tabs.Panel>
         </div>
+        </Tabs>
       </div>
         <OcrModal
           opened={ocrOpen}
