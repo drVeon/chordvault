@@ -1,3 +1,4 @@
+import { useDisclosure } from '@mantine/hooks';
 import { Badge, Tabs, Switch, Button, TextInput, useComputedColorScheme } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { useState, useEffect } from 'react';
@@ -28,7 +29,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
   const [visibility, setVisibility] = useState<'public' | 'private'>('public');
   const [saved, setSaved] = useState<{ content: string; visibility: 'public' | 'private' }>({ content: '', visibility: 'public' });
   const [preferredLanguages, setPreferredLanguages] = useState<string[]>([]);
-  const [ocrOpen, setOcrOpen] = useState(false);
+  const [ocrOpen, ocr] = useDisclosure(false);
   const [hasGeminiKey, setHasGeminiKey] = useState(false);
   const theme = useComputedColorScheme('dark');
   const [editorTab, setEditorTab] = useState<'edit' | 'preview'>('edit');
@@ -203,7 +204,7 @@ modals.openConfirmModal({ children: t('songEdit.confirmDelete'), labels: { confi
         </div>
         {user && (
           <div className="ocr-row">
-            <Button variant="default" size="xs" className="btn btn-sm btn-ghost" onClick={() => setOcrOpen(true)}>&#128247; Import from image or PDF</Button>
+            <Button variant="default" size="xs" className="btn btn-sm btn-ghost" onClick={ocr.open}>&#128247; Import from image or PDF</Button>
           </div>
         )}
         <Tabs value={editorTab} onChange={(value) => { if (value === 'preview') { setEditorTab('preview'); setForceRender(n => n + 1); } else setEditorTab('edit'); }} className="editor-tabs">
@@ -231,7 +232,7 @@ modals.openConfirmModal({ children: t('songEdit.confirmDelete'), labels: { confi
             if (lang && !extractDirective(c, 'x_language')) c = updateDirective(c, 'x_language', lang);
             setInitialContent(c);
           }}
-          onClose={() => setOcrOpen(false)}
+          onClose={ocr.close}
         />
     </>
   );

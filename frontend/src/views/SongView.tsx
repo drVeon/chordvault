@@ -1,3 +1,4 @@
+import { useDisclosure } from '@mantine/hooks';
 import { Badge, Paper, Button, NativeSelect, Group } from '@mantine/core';
 import { IconLock } from '@tabler/icons-react';
 import { modals } from '@mantine/modals';
@@ -31,7 +32,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const [song, setSong] = useState<Song | null>(null);
   const [versions, setVersions] = useState<SongVersion[]>([]);
   const [corrections, setCorrections] = useState<Correction[]>([]);
-  const [addToSetlistOpen, setAddToSetlistOpen] = useState(false);
+  const [addToSetlistOpen, addToSetlist] = useDisclosure(false);
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
@@ -167,7 +168,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
                 </Button>
               </>
             )}
-            <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => setAddToSetlistOpen(true)}>
+            <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={addToSetlist.open}>
               &#43; {t('songView.addToSetlist')}
             </Button>
           </div>
@@ -251,7 +252,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
 
       <AddToSetlistModal
         isOpen={addToSetlistOpen}
-        onClose={() => setAddToSetlistOpen(false)}
+        onClose={addToSetlist.close}
         songId={songId}
         songTitle={song?.title || ''}
         songArtist={song?.artist || ''}

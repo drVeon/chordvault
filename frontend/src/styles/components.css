@@ -135,7 +135,6 @@ input[type="search"]::-webkit-search-cancel-button {
 
 
 
-.tag-picker { display: flex; flex-wrap: wrap; gap: 6px; }
 .language-picker-dropdown { display: flex; flex-direction: column; gap: 4px; }
 .language-picker-code { color: var(--muted); margin-left: 8px; }
 

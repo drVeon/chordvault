@@ -1,6 +1,6 @@
 import { Button, Popover } from '@mantine/core';
 import { useState, useMemo, useEffect } from 'react';
-import { useDebouncedValue } from '@mantine/hooks';
+import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { renderChordPro, songHasKey } from '../lib/chords';
 import { ChordSheet } from './ChordSheet';
 import { KeyPicker } from './KeyPicker';
@@ -16,7 +16,7 @@ export function EditorPreview({ content, debounceMs = 300, forceRender }: Editor
   const [debouncedContent, , { flush }] = useDebouncedValue(content, debounceMs);
   const [targetKey, setTargetKey] = useState<string | null>(null);
   const [nashville, setNashville] = useState(false);
-  const [keyPickerVisible, setKeyPickerVisible] = useState(false);
+  const [keyPickerVisible, keyPicker] = useDisclosure(false);
 
   useEffect(() => {
     if (forceRender !== undefined) flush();
@@ -44,6 +44,7 @@ export function EditorPreview({ content, debounceMs = 300, forceRender }: Editor
   const handlePickKey = (pickedKey: string) => {
     if (!currentKey) return;
     setTargetKey(pickedKey);
+    keyPicker.close();
   };
 
   if (!debouncedContent.trim()) {
@@ -58,8 +59,8 @@ export function EditorPreview({ content, debounceMs = 300, forceRender }: Editor
     <div className="editor-preview">
       <div className="editor-preview-toolbar">
         {currentKey && (
-          <Popover opened={keyPickerVisible} onChange={setKeyPickerVisible} trapFocus returnFocus width="min(90vw, 440px)">
-          <Popover.Target><Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => setKeyPickerVisible(!keyPickerVisible)}>
+          <Popover opened={keyPickerVisible} onChange={(opened) => opened ? keyPicker.open() : keyPicker.close()} trapFocus returnFocus width="min(90vw, 440px)">
+          <Popover.Target><Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={keyPicker.toggle}>
             Key: {currentKey}
           </Button></Popover.Target>
           <Popover.Dropdown><KeyPicker currentKey={currentKey} onPickKey={handlePickKey} visible={keyPickerVisible} /></Popover.Dropdown>

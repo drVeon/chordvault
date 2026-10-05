@@ -1,4 +1,4 @@
-import { Chip } from '@mantine/core';
+import { Chip, Group } from '@mantine/core';
 import { PRESET_TAGS } from '../lib/constants';
 
 interface TagPickerProps {
@@ -8,6 +8,6 @@ interface TagPickerProps {
 
 export function TagPicker({ selected, onChange }: TagPickerProps) {
   return <Chip.Group multiple value={selected} onChange={onChange}>
-    <div className="tag-picker">{PRESET_TAGS.map((tag) => <Chip key={tag} value={tag} size="sm">{tag}</Chip>)}</div>
+    <Group gap={6}>{PRESET_TAGS.map((tag) => <Chip key={tag} value={tag} size="sm">{tag}</Chip>)}</Group>
   </Chip.Group>;
 }
