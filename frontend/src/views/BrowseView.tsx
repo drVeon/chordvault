@@ -1,6 +1,6 @@
 import { SearchField } from '../components/SearchField';
 import { SearchRow } from '../components/SearchRow';
-import { ActionIcon, Button, NativeSelect, SimpleGrid } from '@mantine/core';
+import { ActionIcon, Button, NativeSelect, SimpleGrid, Box, Title, Text, Group } from '@mantine/core';
 import { IconAdjustmentsHorizontal, IconPlus, IconSearch } from '@tabler/icons-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
@@ -92,15 +92,15 @@ export function BrowseView({ navigate }: BrowseViewProps) {
   return (
     <>
       {showHero ? (
-        <div className="hero">
-          <div className="hero-title">&#9833; ChordVault</div>
-          <div className="hero-tagline">{t('hero.tagline')}</div>
-          <div className="hero-cta">{t('hero.cta')}</div>
-          <div style={{ marginTop: 16, display: 'flex', gap: 12, justifyContent: 'center' }}>
+        <Box ta="center" px="md" pt={48} pb={36} mb="xs">
+          <Title order={1} size={42} c="var(--cv-brand)" mb="xs">&#9833; ChordVault</Title>
+          <Text size="lg" mb={6}>{t('hero.tagline')}</Text>
+          <Text size="sm" c="dimmed" maw={360} mx="auto">{t('hero.cta')}</Text>
+          <Group mt="md" gap="sm" justify="center">
             <Button className="btn" onClick={() => navigate('auth')}>{t('auth.signIn')}</Button>
             <Button variant="default" className="btn btn-ghost" onClick={() => navigate('about')}>Learn more</Button>
-          </div>
-        </div>
+          </Group>
+        </Box>
       ) : (
         <>
           <SearchRow>

@@ -1,4 +1,5 @@
 import { Progress, Modal, Button, FileInput, NativeSelect, TextInput, Textarea, Stack, Group, Text, Paper, Image } from '@mantine/core';
+import { useTimeout } from '@mantine/hooks';
 import { IconFileText } from '@tabler/icons-react';
 import { useModals } from '@mantine/modals';
 import { useState, useRef, useEffect } from 'react';
@@ -43,6 +44,7 @@ function OcrContent({ hasGeminiKey, onResult, onClose }: Omit<OcrModalProps, 'op
   const [file, setFile] = useState<File | null>(null);
   const previewReader = useRef<FileReader | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const { start: scrollToLatest } = useTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   const [preview, setPreview] = useState<string | null>(null);
   const [isPdf, setIsPdf] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -134,7 +136,7 @@ function OcrContent({ hasGeminiKey, onResult, onClose }: Omit<OcrModalProps, 'op
       if (!active.current) return;
       setResultText(result.text);
       setChatHistory([...newHistory, { role: 'model', text: result.text }]);
-      setTimeout(() => { if (active.current) chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, 100);
+      scrollToLatest();
     } catch (e) {
       if (!active.current) return;
       toast(`Fix failed: ${(e as Error).message}`, 'error');
@@ -193,14 +195,17 @@ function OcrContent({ hasGeminiKey, onResult, onClose }: Omit<OcrModalProps, 'op
       {resultText && (
         <>
           {hasCorrections && (
-            <div className="ocr-chat-history">
+            <Stack gap={4} mah={120} mb="xs" style={{ overflowY: 'auto' }}>
               {chatHistory.slice(1).map((m, i) => (
-                <div key={i} className={`ocr-chat-bubble ${m.role === 'user' ? 'ocr-chat-user' : 'ocr-chat-ai'}`}>
+                <Paper key={i} px="xs" py={6} radius="md" maw="85%" fz="xs"
+                  bg={m.role === 'user' ? 'var(--accent-bg)' : 'var(--surface2)'}
+                  c={m.role === 'user' ? 'var(--accent)' : 'dimmed'}
+                  style={{ alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', overflowWrap: 'anywhere' }}>
                   {m.role === 'user' ? m.text : '\u2713 Fix applied'}
-                </div>
+                </Paper>
               ))}
               <div ref={chatEndRef} />
-            </div>
+            </Stack>
           )}
           <Textarea
             label={hasCorrections ? 'Corrected result' : 'Extracted text'}

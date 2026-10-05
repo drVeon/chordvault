@@ -1,6 +1,6 @@
 import { SearchField } from '../components/SearchField';
 import { SearchRow } from '../components/SearchRow';
-import { Tabs, Button, TextInput, ActionIcon, SimpleGrid } from '@mantine/core';
+import { Tabs, Button, TextInput, ActionIcon, SimpleGrid, Group } from '@mantine/core';
 import { IconCalendar, IconSearch } from '@tabler/icons-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
@@ -91,9 +91,9 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
 
   return (
     <>
-      <div className="view-header">
+      <Group justify="space-between" mb="lg">
         <PageTitle className="view-title">{t('setlist.browseSetlists')}</PageTitle>
-      </div>
+      </Group>
       <Tabs variant="pills" value="public" onChange={(tab) => navigate(tab === 'public' ? 'public-setlists' : 'setlists')} className="setlist-tabs">
         <Tabs.List grow><Tabs.Tab value="mine">My Setlists</Tabs.Tab><Tabs.Tab value="public">Public Setlists</Tabs.Tab></Tabs.List>
       </Tabs>

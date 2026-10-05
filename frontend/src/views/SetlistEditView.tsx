@@ -1,5 +1,5 @@
 import { IconMusic } from '@tabler/icons-react';
-import { Switch, Button, TextInput, Group } from '@mantine/core';
+import { Switch, Button, TextInput, Group, Box } from '@mantine/core';
 import { useCopyNotification } from '../hooks/useCopyNotification';
 import { useForm } from '@mantine/form';
 import { modals } from '@mantine/modals';
@@ -281,10 +281,10 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
 
   return (
     <>
-      <div className="song-view-header">
-        <div className="song-view-nav">
+      <Box mb="lg">
+        <Group justify="space-between" mb="md">
           <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate(isEditable ? 'setlists' : 'public-setlists')}>&#8592; {t('songView.back')}</Button>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <Group gap="xs">
             {setlist.entries.length > 0 && (
               <Button size="xs" className="btn btn-sm" onClick={() => handleItemClick(0)}>{t('setlist.play')}</Button>
             )}
@@ -292,8 +292,8 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
               <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={copyShareLink}>{t('setlist.share')}</Button>
             )}
             {isEditable && <Button color="red" size="xs" className="btn btn-danger btn-sm" onClick={deleteSetlist}>{t('admin.delete')}</Button>}
-          </div>
-        </div>
+          </Group>
+        </Group>
         <div className="setlist-name-row">
           {!isEditable ? (
             <div className="setlist-name-input" style={{ border: 'none', background: 'none', padding: 0 }}>{setlist.name}</div>
@@ -323,7 +323,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
             </>
           )}
         </Group>
-      </div>
+      </Box>
 
       {setlist.entries.length === 0 ? (
         <EmptyState icon={<IconMusic size={56} aria-hidden />} text={t('setlist.noSongsYet')} />

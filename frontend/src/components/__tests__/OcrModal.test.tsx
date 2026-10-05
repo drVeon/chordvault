@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { OcrModal } from '../OcrModal';
@@ -61,4 +61,34 @@ it('extracts the replacement file, not the earlier selection', async () => {
   await userEvent.upload(input, new File(['replacement'], 'new.pdf', { type: 'application/pdf' }));
   await userEvent.click(screen.getByRole('button', { name: /Extract text/ }));
   await waitFor(() => expect(api).toHaveBeenCalledWith('POST', '/api/ocr/gemini', expect.objectContaining({ image: 'data:application/pdf;base64,cmVwbGFjZW1lbnQ=' })));
+});
+
+it('scrolls to a completed correction and cancels the pending scroll when closed', async () => {
+  api.mockImplementation((_method: string, path: string) => Promise.resolve(
+    path === '/api/settings/ocr-model' ? { model: 'test-model', models: [] }
+      : { text: '[G]Amazing grace', language: 'en' },
+  ));
+  const scroll = vi.mocked(HTMLElement.prototype.scrollIntoView);
+  scroll.mockClear();
+  const props = { hasGeminiKey: true, onResult: vi.fn(), onClose: vi.fn() };
+  const { rerender } = render(<OcrModal opened {...props} />);
+  await userEvent.upload(screen.getByLabelText('Image or PDF file upload'), new File(['pdf'], 'sheet.pdf', { type: 'application/pdf' }));
+  await userEvent.click(screen.getByRole('button', { name: /Extract text/ }));
+  await screen.findByLabelText('Extracted text');
+  await userEvent.type(screen.getByLabelText('Describe what to fix...'), 'Use G');
+  vi.useFakeTimers();
+  try {
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Fix' })); });
+    expect(screen.getByLabelText('Corrected result')).toHaveValue('[G]Amazing grace');
+    act(() => { vi.advanceTimersByTime(100); });
+    expect(scroll).toHaveBeenCalledWith({ behavior: 'smooth' });
+    scroll.mockClear();
+    fireEvent.change(screen.getByLabelText('Describe what to fix...'), { target: { value: 'Use C' } });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Fix' })); });
+    rerender(<OcrModal opened={false} {...props} />);
+    act(() => { vi.advanceTimersByTime(100); });
+    expect(scroll).not.toHaveBeenCalled();
+  } finally {
+    vi.useRealTimers();
+  }
 });

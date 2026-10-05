@@ -1,5 +1,5 @@
 import { useDisclosure } from '@mantine/hooks';
-import { Badge, Tabs, Switch, Button, TextInput, useComputedColorScheme } from '@mantine/core';
+import { Badge, Tabs, Switch, Button, TextInput, useComputedColorScheme, SimpleGrid, Stack, Group, Text, Box, Input } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
@@ -162,78 +162,61 @@ modals.openConfirmModal({ children: t('songEdit.confirmDelete'), labels: { confi
         onDelete={song && isOwner ? deleteSong : undefined}
         t={t}
       />
-      <div className="edit-cols">
-        <div className="field">
-
+      <Stack gap="sm">
+        <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="sm">
           <TextInput label={<>{t('songEdit.titleLabel')}</>} type="text" value={state.title} onChange={(e) => handleFieldChange('title', e.target.value, editor.setTitle)} placeholder={t('songEdit.titlePlaceholder')} />
-        </div>
-        <div className="field">
-
           <TextInput label={<>{t('songEdit.artistLabel')}</>} type="text" value={state.artist} onChange={(e) => handleFieldChange('artist', e.target.value, editor.setArtist)} placeholder={t('songEdit.artistPlaceholder')} />
-        </div>
-        <div className="field">
-
           <LanguagePicker value={state.language} onChange={handleLanguageChange} preferredLanguages={preferredLanguages} />
-        </div>
-        <div className="field">
-
           <TextInput label={<>BPM</>} type="number" value={state.bpm} onChange={(e) => handleFieldChange('tempo', e.target.value, editor.setBpm)} placeholder="e.g. 120" min="1" max="300" />
-        </div>
-      </div>
-      <div className="field">
-
+        </SimpleGrid>
         <TextInput label={<>YouTube URL</>} type="url" value={state.youtubeUrl} onChange={(e) => handleFieldChange('x_youtube', e.target.value, editor.setYoutubeUrl)} placeholder="https://youtube.com/watch?v=..." />
-      </div>
-      <div className="field">
-        <div className="mantine-InputWrapper-label">Tags</div>
-        <TagPicker selected={state.tags} onChange={handleTagsChange} />
-      </div>
-      <div className="field">
-        <Switch label={<>Public {visibility === 'private' && <span style={{ fontSize: 12, color: 'var(--muted)' }}>&#128274; Only you can see this song</span>}</>}
-              type="checkbox"
-              disabled={!isOwner}
-              checked={visibility === 'public'}
-              onChange={(e) => setVisibility(e.target.checked ? 'public' : 'private')}
-             />
-
-      </div>
-      <div className="field">
-        <div className="chordpro-hint-row">
-          <p className="chordpro-hint" dangerouslySetInnerHTML={{ __html: t('songEdit.chordproHint') + ' You can also paste chords-over-lyrics or Ultimate Guitar format — it will be auto-converted.' }} />
-          {state.formatBadge && <Badge size="md" h="auto" py={4} color={state.formatBadge.ok ? 'green' : 'orange'} styles={{ root: { flexShrink: state.formatBadge.ok ? 0 : 1 }, label: { whiteSpace: 'normal' } }}>{state.formatBadge.text}</Badge>}
-        </div>
-        {user && (
-          <div className="ocr-row">
-            <Button variant="default" size="xs" className="btn btn-sm btn-ghost" onClick={ocr.open}>&#128247; Import from image or PDF</Button>
-          </div>
-        )}
-        <Tabs value={editorTab} onChange={(value) => { if (value === 'preview') { setEditorTab('preview'); setForceRender(n => n + 1); } else setEditorTab('edit'); }} keepMounted keepMountedMode="display-none">
-          <Tabs.List grow className="editor-tabs"><Tabs.Tab value="edit">Edit</Tabs.Tab><Tabs.Tab value="preview">Preview</Tabs.Tab></Tabs.List>
-        <div className="editor-split">
-          <Tabs.Panel value="edit" className="cm-editor-wrap">
-            <CodeMirrorEditor
-              value={state.content}
-              onChange={handleContentChange}
-              darkMode={theme === 'dark'}
-              placeholder={'Paste any format:\n\nChordPro:  [G]Let it [D]be\n\nOr chords over lyrics:\n  G        D\n  Let it be'}
-            />
-          </Tabs.Panel>
-          <Tabs.Panel value="preview" className="editor-preview-wrap">
-            <EditorPreview content={state.content} forceRender={forceRender} />
-          </Tabs.Panel>
-        </div>
-        </Tabs>
-      </div>
-        <OcrModal
-          opened={ocrOpen}
-          hasGeminiKey={hasGeminiKey}
-          onResult={(text, lang) => {
-            let c = text;
-            if (lang && !extractDirective(c, 'x_language')) c = updateDirective(c, 'x_language', lang);
-            setInitialContent(c);
-          }}
-          onClose={ocr.close}
-        />
+        <Input.Wrapper label="Tags" labelElement="div">
+          <TagPicker label="Tags" selected={state.tags} onChange={handleTagsChange} />
+        </Input.Wrapper>
+        <Switch label={<>Public {visibility === 'private' && <Text span size="xs" c="dimmed">&#128274; Only you can see this song</Text>}</>}
+                type="checkbox"
+                disabled={!isOwner}
+                checked={visibility === 'public'}
+                onChange={(e) => setVisibility(e.target.checked ? 'public' : 'private')}
+               />
+        <Box>
+          <Group align="flex-start" justify="space-between" gap="xs" mb="xs">
+            <Text size="xs" c="dimmed" flex="1 1 220px" className="chordpro-hint" dangerouslySetInnerHTML={{ __html: t('songEdit.chordproHint') + ' You can also paste chords-over-lyrics or Ultimate Guitar format. It will be auto-converted.' }} />
+            {state.formatBadge && <Badge size="md" h="auto" py={4} color={state.formatBadge.ok ? 'green' : 'orange'} styles={{ root: { flexShrink: state.formatBadge.ok ? 0 : 1 }, label: { whiteSpace: 'normal' } }}>{state.formatBadge.text}</Badge>}
+          </Group>
+          {user && (
+            <Box mb="xs">
+              <Button variant="default" size="xs" className="btn btn-sm btn-ghost" onClick={ocr.open}>&#128247; Import from image or PDF</Button>
+            </Box>
+          )}
+          <Tabs value={editorTab} onChange={(value) => { if (value === 'preview') { setEditorTab('preview'); setForceRender(n => n + 1); } else setEditorTab('edit'); }} keepMounted keepMountedMode="display-none">
+            <Tabs.List grow className="editor-tabs"><Tabs.Tab value="edit">Edit</Tabs.Tab><Tabs.Tab value="preview">Preview</Tabs.Tab></Tabs.List>
+            <div className="editor-split">
+              <Tabs.Panel value="edit" className="cm-editor-wrap">
+                <CodeMirrorEditor
+                  value={state.content}
+                  onChange={handleContentChange}
+                  darkMode={theme === 'dark'}
+                  placeholder={'Paste any format:\n\nChordPro:  [G]Let it [D]be\n\nOr chords over lyrics:\n  G        D\n  Let it be'}
+                />
+              </Tabs.Panel>
+              <Tabs.Panel value="preview" className="editor-preview-wrap">
+                <EditorPreview content={state.content} forceRender={forceRender} />
+              </Tabs.Panel>
+            </div>
+          </Tabs>
+        </Box>
+      </Stack>
+      <OcrModal
+        opened={ocrOpen}
+        hasGeminiKey={hasGeminiKey}
+        onResult={(text, lang) => {
+          let c = text;
+          if (lang && !extractDirective(c, 'x_language')) c = updateDirective(c, 'x_language', lang);
+          setInitialContent(c);
+        }}
+        onClose={ocr.close}
+      />
     </>
   );
 }

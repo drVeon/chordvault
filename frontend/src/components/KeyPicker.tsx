@@ -1,4 +1,4 @@
-import { Button, Paper, SimpleGrid } from '@mantine/core';
+import { Button, Paper, SimpleGrid, Group, Text } from '@mantine/core';
 import { normalizeKey, ALL_KEYS, ALL_KEYS_MINOR } from '../lib/keys';
 
 interface KeyPickerProps {
@@ -25,7 +25,7 @@ export function KeyPicker({
   const keys = isMinor ? ALL_KEYS_MINOR : ALL_KEYS;
 
   return (
-    <Paper withBorder p="md" className="key-picker" id="key-picker" role="group" aria-label="Transpose key">
+    <Paper withBorder p="md" mb="sm" className="key-picker" id="key-picker" role="group" aria-label="Transpose key">
       <SimpleGrid cols={{ base: 4, sm: 6 }} spacing="xs">
         {keys.map((k) => (
           <Button
@@ -42,9 +42,9 @@ export function KeyPicker({
         ))}
       </SimpleGrid>
       {isModified && (
-        <div className="key-picker-actions">
-          <div className="key-picker-save-hint">Save this key?</div>
-          <div className="key-picker-btns">
+        <Group gap="xs" mt="sm">
+          <Text size="sm">Save this key?</Text>
+          <Group gap="xs">
             {onSaveOnline && (
               <Button size="xs" className="btn btn-sm btn-save-online" onClick={onSaveOnline}>
                 SAVE (Online)
@@ -55,8 +55,8 @@ export function KeyPicker({
                 Save (Local)
               </Button>
             )}
-          </div>
-        </div>
+          </Group>
+        </Group>
       )}
     </Paper>
   );

@@ -1,6 +1,6 @@
 import { SearchField } from '../components/SearchField';
 import { SearchRow } from '../components/SearchRow';
-import { Button, SimpleGrid } from '@mantine/core';
+import { Button, SimpleGrid, Group } from '@mantine/core';
 import { IconPlus, IconGuitarPick } from '@tabler/icons-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
@@ -82,9 +82,9 @@ export function MySongsView({ navigate }: MySongsViewProps) {
 
   return (
     <>
-      <div className="view-header">
+      <Group justify="space-between" mb="lg">
         <PageTitle className="view-title">{t('songs.mySongs')}</PageTitle>
-      </div>
+      </Group>
       <SearchRow>
         <SearchField label={t('songs.searchPlaceholder')} value={query} onChange={setQuery} onSearch={doSearch} onClear={handleClear} />
         <Button variant="default" size="sm" onClick={doSearch}>{t('songs.search')}</Button>

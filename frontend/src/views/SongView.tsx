@@ -1,5 +1,5 @@
 import { useDisclosure } from '@mantine/hooks';
-import { Badge, Paper, Button, NativeSelect, Group } from '@mantine/core';
+import { Badge, Paper, Button, NativeSelect, Group, Box, Text } from '@mantine/core';
 import { IconLock } from '@tabler/icons-react';
 import { modals } from '@mantine/modals';
 import { useState, useEffect, useMemo } from 'react';
@@ -147,12 +147,12 @@ export function SongView({ songId, navigate }: SongViewProps) {
 
   return (
     <div lang={song.language || undefined}>
-      <div className="song-view-header">
-        <div className="song-view-nav">
+      <Box mb="lg">
+        <Group justify="space-between" mb="md">
           <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => { location.hash = ''; navigate(user ? 'my-songs' : 'browse'); }}>
             &#8592; {t('songView.back')}
           </Button>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <Group gap="xs">
             {isOwner && (
               <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate('song-edit', { id: String(song.id) })}>
                 &#9998; {t('songView.edit')}
@@ -171,20 +171,20 @@ export function SongView({ songId, navigate }: SongViewProps) {
             <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={addToSetlist.open}>
               &#43; {t('songView.addToSetlist')}
             </Button>
-          </div>
-        </div>
+          </Group>
+        </Group>
         <PageTitle order={1} className="song-view-title">{song.title}</PageTitle>
-        {song.artist && <div className="song-view-artist">{song.artist}</div>}
-        <div className="song-view-meta">
+        {song.artist && <Text size="lg" c="dimmed" mt={4}>{song.artist}</Text>}
+        <Group gap="xs" mt="xs">
           {!isOwner && song.username && <span className="song-view-by">@{song.username}</span>}
           {song.bpm && <Badge>{song.bpm} bpm</Badge>}
           {song.language && <Badge title={languageName(song.language)}>{song.language.toUpperCase()}</Badge>}
           {isOwner && song.visibility === 'private' && <Badge leftSection={<IconLock size={14} aria-hidden />}>Private</Badge>}
           {versions.length > 1 && (
-            <div className="version-selector-container">
-              <span className="version-selector-label">Version</span>
+            <Group gap="xs" wrap="nowrap">
+              <Text component="label" htmlFor="song-version" size="xs" c="dimmed" fw={600}>Version</Text>
               <NativeSelect
-                className="version-select-compact"
+                id="song-version" size="xs"
                 value={songId}
                 onChange={(e) => navigate('song-view', { id: e.target.value })}
               >
@@ -194,10 +194,10 @@ export function SongView({ songId, navigate }: SongViewProps) {
                   </option>
                 ))}
               </NativeSelect>
-            </div>
+            </Group>
           )}
-        </div>
-      </div>
+        </Group>
+      </Box>
 
       <Toolbar
         currentKey={chord.currentKey}
@@ -225,10 +225,10 @@ export function SongView({ songId, navigate }: SongViewProps) {
       />
 
       {(song.tags || song.youtube_url) && (
-        <div className="song-view-meta song-view-meta-bottom">
+        <Group gap="xs" mt="xs">
           {song.tags && song.tags.split(',').map((tag) => <Badge key={tag}>{tag}</Badge>)}
           {song.youtube_url && <a href={song.youtube_url} target="_blank" rel="noopener" className="yt-link">&#9654; YouTube</a>}
-        </div>
+        </Group>
       )}
 
       {/* Corrections section */}
