@@ -52,3 +52,13 @@ it('clears the selected PDF and never extracts a stale file', async () => {
   expect(toast).toHaveBeenCalledWith('Please select a file first', 'error');
   expect(api.mock.calls.filter(([method]) => method === 'POST')).toHaveLength(0);
 });
+
+it('extracts the replacement file, not the earlier selection', async () => {
+  api.mockImplementation((method: string) => Promise.resolve(method === 'GET' ? { model: 'test-model', models: [] } : { text: '[C]Grace', language: 'en' }));
+  render(<OcrModal opened hasGeminiKey onResult={vi.fn()} onClose={vi.fn()} />);
+  const input = screen.getByLabelText('Image or PDF file upload');
+  await userEvent.upload(input, new File(['old'], 'old.pdf', { type: 'application/pdf' }));
+  await userEvent.upload(input, new File(['replacement'], 'new.pdf', { type: 'application/pdf' }));
+  await userEvent.click(screen.getByRole('button', { name: /Extract text/ }));
+  await waitFor(() => expect(api).toHaveBeenCalledWith('POST', '/api/ocr/gemini', expect.objectContaining({ image: 'data:application/pdf;base64,cmVwbGFjZW1lbnQ=' })));
+});

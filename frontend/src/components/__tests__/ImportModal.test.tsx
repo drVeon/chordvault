@@ -15,7 +15,9 @@ vi.mock('../../lib/api', () => ({
 }));
 vi.mock('../../hooks/useApi', () => ({ useApi: () => vi.fn() }));
 vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: { token: 'tok' } }) }));
-vi.mock('../../context/DemoContext', () => ({ useDemo: () => ({ demoMode: false }) }));
+const demo = vi.hoisted(() => ({ enabled: false }));
+vi.mock('../../context/DemoContext', () => ({ useDemo: () => ({ demoMode: demo.enabled }) }));
+afterEach(() => { demo.enabled = false; });
 vi.mock('../../lib/notifications', () => ({ showStatusNotification: vi.fn() }));
 
 function file(name: string, content: string) {
@@ -99,4 +101,14 @@ it('clearing the selected files disables import and allows selecting them again'
   expect(screen.getByTestId('import-start')).toBeDisabled();
   await userEvent.upload(screen.getByLabelText('ChordPro file upload'), chosen);
   expect(screen.getByTestId('import-start')).toBeEnabled();
+});
+
+it('truncates a demo selection to the existing import limit', async () => {
+  demo.enabled = true;
+  vi.mocked(importSongs).mockClear();
+  render(<ImportModal opened onClose={vi.fn()} onDone={vi.fn()} />);
+  await userEvent.upload(screen.getByLabelText('ChordPro file upload'), Array.from({ length: 25 }, (_, i) => file(`${i}.cho`, `[G]Song ${i}`)));
+  await userEvent.click(screen.getByTestId('import-start'));
+  await waitFor(() => expect(importSongs).toHaveBeenCalledTimes(1));
+  expect(vi.mocked(importSongs).mock.calls[0][0]).toHaveLength(20);
 });
