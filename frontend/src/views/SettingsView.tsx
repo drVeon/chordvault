@@ -27,7 +27,7 @@ export function SettingsView() {
   const [hasCustomPrompt, setHasCustomPrompt] = useState(false);
   const [promptMsg, setPromptMsg] = useState<{ text: string; color: string } | null>(null);
   const [ocrModel, setOcrModel] = useState(DEFAULT_GEMINI_MODEL);
-  const [modelList, setModelList] = useState<{ id: string; label: string; hint: string }[]>([]);
+  const [modelList, setModelList] = useState<{ id: string; label: string }[]>([]);
   const [modelMsg, setModelMsg] = useState<{ text: string; color: string } | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportMsg, setExportMsg] = useState<{ text: string; color: string } | null>(null);
@@ -53,7 +53,7 @@ export function SettingsView() {
 
   const loadOcrModel = useCallback(async () => {
     try {
-      const data = await apiCall<{ model: string; models: { id: string; label: string; hint: string }[] }>('GET', '/api/settings/ocr-model');
+      const data = await apiCall<{ model: string; models: { id: string; label: string }[] }>('GET', '/api/settings/ocr-model');
       setOcrModel(data.model);
       setModelList(data.models);
     } catch {}
@@ -227,7 +227,7 @@ export function SettingsView() {
                 onChange={(e) => saveOcrModel(e.target.value)}
               >
                 {modelList.map(m => (
-                  <option key={m.id} value={m.id}>{m.label} — {m.hint}</option>
+                  <option key={m.id} value={m.id}>{m.label}</option>
                 ))}
               </NativeSelect>
               {modelMsg && <Text size="sm" mt={4} c={modelMsg.color} role={modelMsg.color === 'var(--danger)' ? 'alert' : 'status'}>{modelMsg.text}</Text>}

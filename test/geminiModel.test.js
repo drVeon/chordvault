@@ -19,9 +19,9 @@ test('model ids are unique', () => {
   assert.equal(new Set(ids).size, ids.length);
 });
 
-test('every model has an id, label and hint', () => {
+test('every model has an id and label', () => {
   for (const m of GEMINI_MODELS) {
-    assert.ok(m.id && m.label && m.hint, `incomplete entry: ${JSON.stringify(m)}`);
+    assert.ok(m.id && m.label, `incomplete entry: ${JSON.stringify(m)}`);
   }
 });
 
