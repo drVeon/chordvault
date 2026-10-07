@@ -55,10 +55,10 @@ function OcrContent({ hasGeminiKey, onResult, onClose }: Omit<OcrModalProps, 'op
 
   // Model selection
   const [selectedModel, setSelectedModel] = useState(DEFAULT_GEMINI_MODEL);
-  const [models, setModels] = useState<{ id: string; label: string; hint: string }[]>([]);
+  const [models, setModels] = useState<{ id: string; label: string }[]>([]);
 
   useEffect(() => {
-    api<{ model: string; models: { id: string; label: string; hint: string }[] }>('GET', '/api/settings/ocr-model')
+    api<{ model: string; models: { id: string; label: string }[] }>('GET', '/api/settings/ocr-model')
       .then(data => { if (active.current) { setSelectedModel(data.model); setModels(data.models); } })
       .catch(() => {});
   }, [api]);
@@ -183,7 +183,7 @@ function OcrContent({ hasGeminiKey, onResult, onClose }: Omit<OcrModalProps, 'op
           )}
           {models.length > 0 && (
             <NativeSelect label="Model" value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} disabled={processing}>
-              {models.map(m => <option key={m.id} value={m.id}>{m.label}: {m.hint}</option>)}
+              {models.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
             </NativeSelect>
           )}
           <Button onClick={process} loading={processing} disabled={processing} fullWidth size="md">
@@ -216,7 +216,7 @@ function OcrContent({ hasGeminiKey, onResult, onClose }: Omit<OcrModalProps, 'op
           {detectedLang && <Text c="dimmed" fz={13}>Detected language: <strong>{detectedLang}</strong></Text>}
           {models.length > 0 && (
             <NativeSelect aria-label="Correction model" value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} disabled={refining} size="xs">
-              {models.map(m => <option key={m.id} value={m.id}>{m.label}: {m.hint}</option>)}
+              {models.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
             </NativeSelect>
           )}
           <Group gap={6} wrap="nowrap" align="flex-start">
