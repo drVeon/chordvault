@@ -114,6 +114,17 @@ describe('autoFit', () => {
     expect(autoFit().fontSize).toBeGreaterThan(0);
   });
 
+  it('does not mistake section-label spacing for wrapped music', () => {
+    const { wrap, output } = mountSheet({ singleColHeight: 200 });
+    output.innerHTML = '<div class="row"><div><h3 class="label">Verse</h3></div></div><div class="row"><div>Music</div></div>';
+    const [label, music] = output.querySelectorAll<HTMLElement>('.row');
+    label.getBoundingClientRect = () => ({ height: 32 }) as DOMRect;
+    label.children[0].getBoundingClientRect = () => ({ height: 18 }) as DOMRect;
+    music.children[0].getBoundingClientRect = () => ({ height: 50 }) as DOMRect;
+    music.getBoundingClientRect = () => ({ height: wrap.classList.contains('two-col') ? 100 : 50 }) as DOMRect;
+    expect(autoFit()).toEqual({ fontSize: 3, twoCol: false });
+  });
+
   it('never enlarges a song off the side of the screen', () => {
     // A line already close to the full width cannot survive being enlarged.
     mountSheet({ singleColHeight: 100, lineWidth: 950 });
@@ -172,6 +183,18 @@ describe('autoFit', () => {
   it('survives a sheet pushed entirely below the fold', () => {
     mountSheet({ sheetTop: 2000 });
     expect(autoFit()).toEqual({ fontSize: 0, twoCol: false });
+  });
+
+  it('keeps the last lines clear of the playback dock', () => {
+    mountSheet();
+    const dock = document.createElement('nav');
+    dock.className = 'playback-dock';
+    dock.getBoundingClientRect = () => ({ height: 80 }) as DOMRect;
+    document.body.appendChild(dock);
+
+    const { fontSize, twoCol } = autoFit();
+
+    expect(renderedHeight(fontSize, twoCol)).toBeLessThanOrEqual(768 - SHEET_TOP - 80 - 24);
   });
 
   it('returns a neutral layout when no sheet is mounted', () => {

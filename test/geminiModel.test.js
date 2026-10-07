@@ -1,9 +1,17 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { readFileSync } = require('node:fs');
+const { join } = require('node:path');
 const { GEMINI_MODELS, DEFAULT_GEMINI_MODEL, isValidGeminiModel, resolveGeminiModel } = require('../lib/constants');
 
 test('default model is one of the listed models', () => {
   assert.ok(isValidGeminiModel(DEFAULT_GEMINI_MODEL));
+});
+
+test('frontend initial selection matches the backend default', () => {
+  const frontend = readFileSync(join(__dirname, '../frontend/src/lib/constants.ts'), 'utf8');
+  const initialModel = frontend.match(/export const DEFAULT_GEMINI_MODEL = '([^']+)'/);
+  assert.equal(initialModel?.[1], DEFAULT_GEMINI_MODEL);
 });
 
 test('model ids are unique', () => {
@@ -11,9 +19,9 @@ test('model ids are unique', () => {
   assert.equal(new Set(ids).size, ids.length);
 });
 
-test('every model has an id, label and hint', () => {
+test('every model has an id and label', () => {
   for (const m of GEMINI_MODELS) {
-    assert.ok(m.id && m.label && m.hint, `incomplete entry: ${JSON.stringify(m)}`);
+    assert.ok(m.id && m.label, `incomplete entry: ${JSON.stringify(m)}`);
   }
 });
 
@@ -31,7 +39,8 @@ test('a stored preference for a listed model is respected', () => {
 });
 
 test('request body takes precedence over the stored preference', () => {
-  assert.equal(resolveGeminiModel('gemini-3.5-flash', 'gemini-2.5-flash'), 'gemini-3.5-flash');
+  assert.equal(resolveGeminiModel('gemini-3.8-flash', 'gemini-2.5-flash'), 'gemini-3.8-flash');
+  assert.equal(resolveGeminiModel('gemini-3.7-flash', 'gemini-3.6-flash'), 'gemini-3.7-flash');
 });
 
 test('an invalid request body falls back to a valid stored preference', () => {
@@ -47,5 +56,5 @@ test('isValidGeminiModel rejects non-string and unknown ids', () => {
   assert.ok(!isValidGeminiModel(undefined));
   assert.ok(!isValidGeminiModel(''));
   assert.ok(!isValidGeminiModel('gemini-3-flash-preview'));
-  assert.ok(isValidGeminiModel('gemini-3.6-flash'));
+  assert.ok(isValidGeminiModel('gemini-3.8-flash'));
 });

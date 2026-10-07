@@ -1,8 +1,9 @@
 import { PdfFormatter } from 'chordsheetjs/pdf';
+import type { jsPDF } from 'jspdf';
 
 export type PdfConfig = NonNullable<ConstructorParameters<typeof PdfFormatter>[0]>;
 
-type FontSpec = { name?: string; size?: number };
+type FontSpec = { name?: string; size?: number; color?: string | number };
 type StyledItem = { style?: FontSpec };
 
 // One step on ChordVault's -3..+5 scale is one point.
@@ -22,6 +23,7 @@ function buildFonts(fontName: string | null, delta: number) {
     if (fontName) spec.name = fontName;
     out[section] = spec;
   }
+  out.chord = { ...out.chord, size: out.text.size, color: '#8e3f3b' };
   return out;
 }
 
@@ -38,12 +40,33 @@ function restyle<T>(items: readonly T[], fontName: string | null, delta: number)
   });
 }
 
+function measureHeader(items: typeof defaults.layout.header.content, text: string[], doc: jsPDF) {
+  let height = 0;
+  const content = items.flatMap((item, index) => {
+    if (item.type !== 'text' || !text[index]) return [];
+    const { style } = item;
+    doc.setFont(style.name, style.style);
+    doc.setFontSize(style.size);
+    const margins = defaults.layout.global.margins;
+    const width = doc.internal.pageSize.getWidth() - margins.left - margins.right;
+    const lines = doc.splitTextToSize(text[index], width);
+    const position = { ...item.position, y: height + style.size, width };
+    height += lines.length * style.size * (style.lineHeight ?? 1.2) + 8;
+    return [{ ...item, position }];
+  });
+  return { height: height + 8, content };
+}
+
 export function buildPdfConfig({
   fontName,
   fontSize,
+  headerText,
+  doc,
 }: {
   fontName: string | null;
   fontSize: number;
+  headerText?: string[];
+  doc?: jsPDF;
 }): PdfConfig {
   // The stock templates assume metadata ChordVault often lacks and leave the
   // literal text behind when it is absent: "Key of G - BPM  - Time", and a bare
@@ -54,12 +77,16 @@ export function buildPdfConfig({
     if (template?.startsWith('By ')) return { ...item, template: '%{artist}' };
     return item;
   });
+  const styledHeader = restyle(header, fontName, fontSize);
+  const layoutHeader = doc && headerText
+    ? measureHeader(styledHeader, headerText, doc)
+    : { ...defaults.layout.header, content: styledHeader };
 
   return {
     normalizeChords: false,
     fonts: buildFonts(fontName, fontSize),
     layout: {
-      header: { ...defaults.layout.header, content: restyle(header, fontName, fontSize) },
+      header: layoutHeader,
       footer: { ...defaults.layout.footer, content: [] },
       chordDiagrams: { ...defaults.layout.chordDiagrams, enabled: false },
     },

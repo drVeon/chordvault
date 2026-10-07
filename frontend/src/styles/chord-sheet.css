@@ -1,166 +1,97 @@
 /* -- Chord Sheet -------------------------- */
 .chord-sheet-wrap {
-  background: var(--surface);
+  background: var(--raise);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 24px 32px;
-  box-shadow: var(--ui-shadow);
   overflow-x: auto;
   margin-top: 8px;
-  font-size: 18px; /* Base for relative units */
-
-  /* Hide scrollbar while maintaining functionality */
+  font-size: 18px;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
-
-.chord-sheet-wrap::-webkit-scrollbar {
-  display: none;
-}
+.chord-sheet-wrap::-webkit-scrollbar { display: none; }
+@media (max-width: 900px) { .chord-sheet-wrap { padding: 20px 16px; } }
+.chord-sheet-wrap { --font-scale: 1; }
 
 @media (min-width: 640px) {
   .chord-sheet-wrap.two-col > #chord-output {
     column-count: 2;
-    column-gap: 56px;
+    column-gap: 64px;
     column-rule: 1px solid var(--border);
-    /* height: 100% removed to allow vertical overflow detection */
   }
-
-  .chord-sheet-wrap.two-col .paragraph {
-    break-inside: avoid;
-  }
+  .chord-sheet-wrap.two-col .paragraph { break-inside: avoid; }
+}
+@media (min-width: 640px) and (max-width: 1023px) {
+  .chord-sheet-wrap.two-col > #chord-output { column-gap: 40px; }
 }
 
-/* ChordSheetJS output styles */
-.chord-sheet .paragraph {
-  margin-bottom: 0.4em;
-}
-
-.chord-sheet .row {
-  display: block;
-  white-space: pre-wrap;
-  line-height: 1.1;
-  margin-bottom: 0.8em;
-}
-
-.chord-sheet .column {
-  display: inline-flex;
-  flex-direction: column;
-  vertical-align: top;
-  flex-shrink: 0;
-  margin-right: 1px;
-}
-
-.chord-sheet-wrap { --font-scale: 1; }
+/* Chords sit directly on their lyric; pairs and sections are spaced apart. */
+.chord-sheet .paragraph { margin-bottom: 1.45em; }
+.chord-sheet .paragraph:last-child { margin-bottom: 0; }
+.chord-sheet .paragraph:has(.section-label, h3.label) { padding-top: 0.7em; }
+.chord-sheet .row { display: block; white-space: pre-wrap; line-height: 1.1; margin-bottom: 0.62em; }
+.chord-sheet .row:last-child { margin-bottom: 0; }
+.chord-sheet .column { display: inline-flex; flex-direction: column; vertical-align: top; flex-shrink: 0; margin-right: 1px; }
 
 .chord-sheet .chord {
-  font-family: var(--font-mono);
-  font-size: calc(0.77em * var(--font-scale)); /* 14px / 18px */
+  font-family: var(--font-chord);
+  font-size: calc(1em * var(--font-scale));
   font-weight: 600;
+  line-height: 1.12;
   color: var(--chord);
-  min-height: 1.2em;
+  min-height: 1.12em;
   display: block;
   white-space: pre;
-  letter-spacing: 0.03em;
+  letter-spacing: 0;
   padding-right: 0.4ch;
-  margin-bottom: 3px;
 }
 
 .chord-sheet .lyrics {
   font-family: var(--font-sans);
-  font-size: calc(1em * var(--font-scale)); /* 18px */
+  font-size: calc(1em * var(--font-scale));
+  font-weight: 400;
   color: var(--text);
   white-space: pre;
-  line-height: 1.5;
-  min-height: 1.5em;
+  line-height: 1.32;
+  min-height: 1.32em;
   display: block;
 }
 
-/* Chord-only rows (intros, instrumental breaks) emit empty lyric lines —
+/* Chord-only rows (intros, instrumental breaks) emit empty lyric lines;
    collapse them so they don't reserve a full blank line of height. */
-.chord-sheet .lyrics:empty {
-  min-height: 0;
-}
+.chord-sheet .lyrics:empty { min-height: 0; }
 
 .chord-sheet .comment,
 .chord-sheet .tag {
   color: var(--muted);
-  font-size: calc(0.72em * var(--font-scale)); /* 13px / 18px */
+  font-size: calc(0.72em * var(--font-scale));
   font-style: italic;
   margin: 8px 0 4px;
 }
 
-/* -- Section Labels (Badge System) -------------------------- */
-.chord-sheet .section-label,
-.chord-sheet h3.label {
-  /* Default Styles (Neutral/Subtle) */
-  --badge-bg-top: var(--surface2);
-  --badge-bg-bot: var(--surface2);
-  --badge-text:   var(--muted);
-  --badge-border: var(--border);
-
-  /* Missing variables defined here */
-  --badge-font-size: 11px;
-  --badge-font-weight: 600;
-  --badge-letter-spacing: 0.05em;
-  --badge-padding: 3px 10px;
-  --badge-radius: 20px;
-
-  font-family: var(--font-sans) !important;
-  font-size: var(--badge-font-size) !important;
-  font-weight: var(--badge-font-weight) !important;
-  text-transform: uppercase !important;
-  letter-spacing: var(--badge-letter-spacing) !important;
-  
-  color: var(--badge-text) !important;
-  background: linear-gradient(180deg, var(--badge-bg-top), var(--badge-bg-bot)) !important;
-  padding: var(--badge-padding) !important;
-  border-radius: var(--badge-radius) !important;
-  border: 1px solid var(--badge-border) !important;
-  
-  display: inline-block !important;
-  margin: 6px 0 4px !important;
+/* Section names: readable, neutral, on a hairline to the column edge. */
+.chord-sheet .section-label, .chord-sheet h3.label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 0.6em;
+  font-family: var(--font-sans);
+  font-size: calc(0.62em * var(--font-scale));
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--muted);
 }
+.chord-sheet .section-label::after, .chord-sheet h3.label::after { content: ""; flex: 1; height: 1px; background: var(--border); }
 
-/* Chorus Styles */
-.paragraph.chorus .section-label,
-.paragraph.chorus h3.label {
-  --badge-bg-top: var(--accent2);
-  --badge-bg-bot: var(--accent);
-  --badge-text:   #ffffff;
-  --badge-border: var(--accent);
-}
-
-/* Verse Styles (Subtle) */
-.paragraph.verse .section-label,
-.paragraph.verse h3.label {
-  --badge-bg-top: var(--surface2);
-  --badge-bg-bot: var(--surface2);
-  --badge-text:   var(--muted);
-  --badge-border: var(--border);
-  opacity: 1;
-}
-
-/* Section Highlighting */
+/* Chorus: a quiet band, pulled out so lyrics stay aligned with other sections. */
 .chord-sheet .paragraph.chorus {
-  background: linear-gradient(90deg, var(--accent-bg) 0%, transparent 40%);
-  border-left: 4px solid var(--accent);
-  padding: 12px 0 12px 28px;
-  margin-left: -32px;
-  border-radius: 8px; /* Premium rounded corners on all sides */
+  background: color-mix(in srgb, var(--band) 60%, transparent);
+  border-radius: 12px;
+  padding: 0.7em 0.55em 0.8em;
+  margin-inline: -0.55em;
 }
+.chord-sheet .paragraph.chorus .section-label, .chord-sheet .paragraph.chorus h3.label { color: var(--text); }
+.chord-sheet .paragraph.chorus .section-label::after, .chord-sheet .paragraph.chorus h3.label::after { background: var(--line-strong); }
 
-.chord-sheet .paragraph.bridge {
-  background: linear-gradient(90deg, var(--surface2) 0%, transparent 30%);
-  border-left: 3px dashed var(--muted);
-  padding: 12px 0 12px 24px;
-  margin-left: -28px;
-  border-radius: 8px;
-}
-
-.chord-sheet .paragraph.prechorus {
-  border-left: 2px dotted var(--accent-alt);
-  padding-left: 28px;
-  margin-left: -32px;
-  border-radius: 8px;
-}
+.chord-sheet .row:has(> h3.label) + .row:not(:has(.chord:not(:empty), .lyrics:not(:empty))) { display: none; }

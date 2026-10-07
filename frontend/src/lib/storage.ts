@@ -3,7 +3,6 @@ import { legacyTransposeToTargetKey } from './setlistKeys';
 
 const KEYS = {
   user: 'cv_user',
-  theme: 'cv_theme',
   fontsize: 'cv_fontsize',
   localSetlists: 'cv_local_setlists',
   setlistOverrides: 'cv_setlist_overrides',
@@ -22,14 +21,6 @@ export function setStoredUser(user: User): void {
 
 export function removeStoredUser(): void {
   localStorage.removeItem(KEYS.user);
-}
-
-export function getStoredTheme(): 'dark' | 'light' {
-  return localStorage.getItem(KEYS.theme) === 'light' ? 'light' : 'dark';
-}
-
-export function setStoredTheme(theme: 'dark' | 'light'): void {
-  localStorage.setItem(KEYS.theme, theme);
 }
 
 export function getStoredFontSize(): number {
@@ -106,22 +97,29 @@ export function migrateOverride(
   return { ...rest, target_key: legacyTransposeToTargetKey(content, transpose) };
 }
 
-export function getSessionItem(key: string): string | null {
-  try {
-    return sessionStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-export function setSessionItem(key: string, value: string): void {
-  try {
-    sessionStorage.setItem(key, value);
-  } catch {}
-}
-
-export function removeSessionItem(key: string): void {
+function removeSessionItem(key: string): void {
   try {
     sessionStorage.removeItem(key);
   } catch {}
+}
+
+export function clearSearchSession(): void {
+  [
+    'cv_browse_query',
+    'cv_browse_lang',
+    'cv_browse_show_filters',
+    'cv_browse_page',
+    'cv_mysongs_query',
+    'cv_mysongs_page',
+    'cv_publicsetlists_query',
+    'cv_publicsetlists_date_from',
+    'cv_publicsetlists_date_to',
+    'cv_publicsetlists_show_dates',
+    'cv_publicsetlists_page',
+    'cv_setlists_query',
+    'cv_setlists_date_from',
+    'cv_setlists_date_to',
+    'cv_setlists_show_dates',
+    'cv_setlists_page',
+  ].forEach(removeSessionItem);
 }

@@ -5,6 +5,7 @@ import { useSetlistPlayer } from '../../hooks/useSetlistPlayer';
 
 // ─── Mocks ──────────────────────────────────────────────────────────
 
+vi.mock('../../hooks/usePlaybackLayout', () => ({ usePlaybackLayout: () => 'tablet' }));
 vi.mock('../../lib/chords', async () => {
   const actual = await vi.importActual('../../lib/chords');
   return {
@@ -30,8 +31,8 @@ vi.mock('../../context/I18nContext', () => ({
   useI18n: () => ({ t: (k: string) => k }),
 }));
 
-vi.mock('../../context/ToastContext', () => ({
-  useToast: () => vi.fn(),
+vi.mock('../../lib/notifications', () => ({
+  showStatusNotification: vi.fn(),
 }));
 
 vi.mock('../../hooks/useSwipe', () => ({

@@ -1,58 +1,35 @@
 :root {
-  /* -- Core Palette (Claude Dark) -- */
-  --bg:           #1a1a1a;
-  --surface:      #242424;
-  --surface2:     #303030;
-  --border:       #333333;
-  --text:         #e0e0e0;
-  --muted:        #8b8b93;
-  --accent:       #d49a46;
-  --accent2:      #e8a846;
-  --accent-alt:   #5b5b66;
-  --danger:       #ef4444;
-  --success:      #22c55e;
-  --chord:        #d49a46;
-  
-  /* -- Semantic UI Variables (The "Single Source of Truth") -- */
-  --ui-header-bg:    var(--bg);
-  --ui-card-bg:      var(--surface);
-  --ui-modal-bg:     var(--surface);
-  --ui-overlay:      rgba(0,0,0,0.75);
-  --ui-shadow:       0 4px 20px rgba(0,0,0,0.4);
-  --accent-bg:       rgba(212,154,70,0.12);
-  --accent-rgb:      212, 154, 70;
-
-  /* -- Typography System -- */
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "PingFang TC", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans TC", sans-serif;
-  --font-serif: 'Crimson Pro', Georgia, "Times New Roman", "PingFang TC", "Microsoft YaHei", serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
-
-  /* -- Badge System -- */
+  --bg: var(--mantine-color-body);
+  --surface: var(--cv-surface);
+  --surface2: var(--cv-surface-secondary);
+  --bg-alt: var(--surface2);
+  --border: var(--cv-border);
+  --band: var(--cv-band);
+  --ctrl: var(--cv-ctrl);
+  --ctrl-hover: var(--cv-ctrl-hover);
+  --line-strong: var(--cv-line-strong);
+  --raise: var(--cv-raise);
+  --selected: var(--cv-selected);
+  --selected-text: var(--cv-selected-text);
+  --text: var(--mantine-color-text);
+  --muted: var(--mantine-color-dimmed);
+  --accent: var(--mantine-primary-color-light-color);
+  --accent2: var(--mantine-primary-color-filled);
+  --accent-alt: var(--mantine-color-dimmed);
+  --accent-bg: var(--mantine-primary-color-light);
+  --chord: var(--cv-chord);
+  --chord-tint: color-mix(in srgb, var(--cv-chord) 8%, transparent);
+  --danger: var(--mantine-color-red-6);
+  --success: var(--mantine-color-green-6);
+  --ui-header-bg: var(--band);
+  --ui-card-bg: var(--raise);
+  --ui-modal-bg: var(--raise);
+  --ui-shadow: none;
+  --shadow-lift: 0 6px 18px rgba(29, 27, 25, 0.1);
+  --font-sans: "Source Sans 3 Variable", "Noto Sans TC Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: var(--font-sans);
+  --font-chord: var(--font-sans);
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Consolas, monospace;
   --badge-radius: 20px;
   --radius: 10px;
-}
-
-:root[data-theme="light"] {
-  /* -- Core Palette (Claude Light) -- */
-  --bg:           #f9f8f6;
-  --surface:      #ffffff;
-  --surface2:     #f0eee9;
-  --border:       #e8e6e1;
-  --text:         #2a2a2a;
-  --muted:        #71717a;
-  --accent:       #c77322;
-  --accent2:      #da7823;
-  --accent-alt:   #a1a1aa;
-  --danger:       #dc2626;
-  --success:      #16a34a;
-  --chord:        #c77322;
-
-  /* -- Semantic UI Variables -- */
-  --ui-header-bg:    var(--bg);
-  --ui-card-bg:      var(--surface);
-  --ui-modal-bg:     var(--surface);
-  --ui-overlay:      rgba(0,0,0,0.3);
-  --ui-shadow:       0 4px 20px rgba(0,0,0,0.06);
-  --accent-bg:       rgba(199,115,34,0.08);
-  --accent-rgb:      199, 115, 34;
 }

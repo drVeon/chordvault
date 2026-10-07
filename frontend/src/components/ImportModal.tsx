@@ -1,13 +1,16 @@
-import { useState } from 'react';
-import { createPortal } from 'react-dom';
+import { Modal, Button, FileInput, Stack, Text } from '@mantine/core';
+import { modals, useModals } from '@mantine/modals';
+import { useFocusReturn } from '@mantine/hooks';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useDemo } from '../context/DemoContext';
-import { useToast } from '../context/ToastContext';
+import { showStatusNotification as toast } from '../lib/notifications';
 import { importSongs, ApiError, type ImportResult } from '../lib/api';
 import { fileToSong, chunkSongs } from '../lib/import';
 import { IMPORT_ACCEPT, IMPORT_CONFIRM_FILE_COUNT, DEMO_MAX_IMPORT } from '../lib/constants';
 
 interface ImportModalProps {
+  opened: boolean;
   onClose: () => void;
   onDone: () => void;
 }
@@ -29,18 +32,31 @@ function readText(file: File): Promise<string> {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export function ImportModal({ onClose, onDone }: ImportModalProps) {
+export function ImportModal({ opened, onClose, onDone }: ImportModalProps) {
+  const modalManager = useModals();
+  useFocusReturn({ opened });
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { if (!opened) setBusy(false); }, [opened]);
+  const close = () => { if (!busy) onClose(); };
+  return (
+    <Modal opened={opened} onClose={close} title="Import ChordPro files" returnFocus={false} trapFocus={modalManager.modals.length === 0} closeOnEscape={!busy && modalManager.modals.length === 0} closeOnClickOutside={!busy && modalManager.modals.length === 0} closeButtonProps={{ disabled: busy }}>
+      {opened && <ImportContent busy={busy} setBusy={setBusy} onClose={close} onDone={onDone} />}
+    </Modal>
+  );
+}
+
+function ImportContent({ busy, setBusy, onClose, onDone }: Omit<ImportModalProps, 'opened'> & { busy: boolean; setBusy: (busy: boolean) => void }) {
+  const active = useRef(true);
+  useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
   const { user } = useAuth();
   const { demoMode } = useDemo();
-  const toast = useToast();
   const [files, setFiles] = useState<File[]>([]);
-  const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [total, setTotal] = useState(0);
   const [summary, setSummary] = useState<Summary | null>(null);
 
-  const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let picked = Array.from(e.target.files ?? []);
+  const handleFiles = (selected: File[]) => {
+    let picked = selected;
     if (demoMode && picked.length > DEMO_MAX_IMPORT) picked = picked.slice(0, DEMO_MAX_IMPORT);
     setFiles(picked);
     setSummary(null);
@@ -53,6 +69,7 @@ export function ImportModal({ onClose, onDone }: ImportModalProps) {
       } catch (e) {
         if (e instanceof ApiError && e.status === 429 && attempt < 3) {
           await sleep(1500);
+          if (!active.current) throw e;
           continue;
         }
         throw e;
@@ -60,14 +77,17 @@ export function ImportModal({ onClose, onDone }: ImportModalProps) {
     }
   }
 
-  const start = async () => {
-    if (files.length === 0) return;
-    if (!demoMode && files.length > IMPORT_CONFIRM_FILE_COUNT &&
-        !confirm(`You selected ${files.length} files. Import all of them?`)) return;
+  const start = async (confirmed = false) => {
+    if (busy || files.length === 0) return;
+    if (!confirmed && !demoMode && files.length > IMPORT_CONFIRM_FILE_COUNT) {
+      modals.openConfirmModal({ children: `You selected ${files.length} files. Import all of them?`, labels: { confirm: 'Import', cancel: 'Cancel' }, onConfirm: () => { void start(true); } });
+      return;
+    }
 
     setBusy(true);
     try {
       const texts = await Promise.all(files.map(readText));
+      if (!active.current) return;
       const songs = texts.map((t, i) => fileToSong(files[i].name, t));
       const batches = chunkSongs(songs);
 
@@ -78,6 +98,7 @@ export function ImportModal({ onClose, onDone }: ImportModalProps) {
 
       for (const batch of batches) {
         const res = await postBatchWithRetry(batch);
+        if (!active.current) return;
         agg.imported += res.imported;
         for (const s of res.skipped) agg.skipped.push({ filename: files[offset + s.index].name });
         for (const er of res.errors) agg.errors.push({ filename: files[offset + er.index].name, error: er.error });
@@ -87,65 +108,51 @@ export function ImportModal({ onClose, onDone }: ImportModalProps) {
       setSummary(agg);
       onDone();
     } catch (e) {
-      toast((e as Error).message, 'error');
+      if (active.current) toast((e as Error).message, 'error');
     } finally {
-      setBusy(false);
+      if (active.current) setBusy(false);
     }
   };
 
-  return createPortal(
-    <div className="modal-backdrop" data-overlay onClick={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }}>
-      <div className="ocr-card">
-        <div className="view-header" style={{ marginBottom: 16 }}>
-          <h3 className="view-title">Import ChordPro files</h3>
-          <button className="btn btn-ghost btn-sm" onClick={onClose} disabled={busy}>&#10005;</button>
-        </div>
-
-        {!summary && (
-          <>
-            <div className="field">
-              <label>Select ChordPro files</label>
-              <input
-                data-testid="import-file-input"
-                type="file"
-                multiple
-                accept={IMPORT_ACCEPT}
-                onChange={handleFiles}
-                disabled={busy}
-                style={{ fontSize: 14, padding: 8 }}
-              />
-            </div>
-            {demoMode && (
-              <div className="muted-text" style={{ marginBottom: 12 }}>
-                Demo mode: only the first {DEMO_MAX_IMPORT} songs will be imported.
-              </div>
-            )}
-            {files.length > 0 && <div className="muted-text" style={{ marginBottom: 12 }}>{files.length} file(s) selected</div>}
-            {busy && <div className="muted-text" style={{ marginBottom: 12 }}>Importing {progress} / {total}…</div>}
-            <button className="btn btn-primary" data-testid="import-start" onClick={start} disabled={busy || files.length === 0}>
-              {busy ? 'Importing…' : 'Import'}
-            </button>
-          </>
-        )}
-
-        {summary && (
-          <div data-testid="import-summary">
-            <p>
-              <strong>{summary.imported}</strong> imported ·{' '}
-              <strong>{summary.skipped.length}</strong> already in your library ·{' '}
-              <strong>{summary.errors.length}</strong> errors
-            </p>
-            {summary.errors.length > 0 && (
-              <details>
-                <summary>Skipped with errors ({summary.errors.length})</summary>
-                <ul>{summary.errors.map((er, i) => <li key={i}>{er.filename} — {er.error}</li>)}</ul>
-              </details>
-            )}
-            <button className="btn" onClick={onClose}>Done</button>
-          </div>
-        )}
-      </div>
-    </div>,
-    document.body,
+  return (
+    <Stack gap={12}>
+      {!summary && (
+        <>
+          <FileInput
+            label="Select ChordPro files"
+            multiple
+            value={files}
+            onChange={handleFiles}
+            accept={IMPORT_ACCEPT}
+            disabled={busy}
+            clearable
+            clearButtonProps={{ 'aria-label': 'Clear selected files', disabled: busy }}
+            fileInputProps={{ 'aria-label': 'ChordPro file upload' }}
+          />
+          {demoMode && <Text c="dimmed" fz={13}>Demo mode: only the first {DEMO_MAX_IMPORT} songs will be imported.</Text>}
+          {files.length > 0 && <Text c="dimmed" fz={13}>{files.length} file(s) selected</Text>}
+          {busy && <Text c="dimmed" fz={13} role="status">Importing {progress} / {total}…</Text>}
+          <Button data-testid="import-start" onClick={() => start()} loading={busy} disabled={busy || files.length === 0}>
+            {busy ? 'Importing…' : 'Import'}
+          </Button>
+        </>
+      )}
+      {summary && (
+        <Stack gap={12} data-testid="import-summary">
+          <Text>
+            <strong>{summary.imported}</strong> imported ·{' '}
+            <strong>{summary.skipped.length}</strong> already in your library ·{' '}
+            <strong>{summary.errors.length}</strong> errors
+          </Text>
+          {summary.errors.length > 0 && (
+            <details>
+              <summary>Skipped with errors ({summary.errors.length})</summary>
+              <ul>{summary.errors.map((er, i) => <li key={i}>{er.filename}: {er.error}</li>)}</ul>
+            </details>
+          )}
+          <Button onClick={onClose}>Done</Button>
+        </Stack>
+      )}
+    </Stack>
   );
 }

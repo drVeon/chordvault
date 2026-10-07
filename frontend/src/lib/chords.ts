@@ -202,13 +202,23 @@ export function ensureKeyDirective(content: string): string {
   return content;
 }
 
+/** Text of a comment line, or null. ChordSheetJS 18 sends `{comment: x}` as a Tag on a plain line. */
+function commentText(l: ChordSheetJS.Line): string | null {
+  const firstItem = l.items[0];
+  if (firstItem instanceof ChordSheetJS.Tag && firstItem.isComment()) return firstItem.value || '';
+  if (l.type !== 'comment') return null;
+  return (firstItem && 'content' in firstItem ? (firstItem as ChordSheetJS.Comment).content :
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (firstItem && 'lyrics' in firstItem ? (firstItem as any).lyrics : '')) || '';
+}
+
 class ResponsiveHtmlFormatter {
   format(song: ChordSheetJS.Song): string {
     return song.paragraphs.map(p => this.renderParagraph(p)).join('');
   }
 
   private renderParagraph(p: ChordSheetJS.Paragraph): string {
-    
+
     let content = p.lines.map(l => this.renderLine(l)).join('');
     let detectedType = p.type;
 
@@ -231,11 +241,11 @@ class ResponsiveHtmlFormatter {
     // 1. Type is known (not none/indeterminate)
     // 2. We haven't already rendered a label badge in this paragraph
     // 3. The paragraph actually has content (prevents empty "Indeterminate" badges for metadata)
-    const hasRenderableContent = p.lines.some(l => 
+    const hasRenderableContent = p.lines.some(l =>
       l.items.some(it => ('lyrics' in it && it.lyrics?.trim()) || ('chords' in it && it.chords?.trim()))
     );
 
-    if (detectedType !== 'none' && detectedType !== 'indeterminate' && 
+    if (detectedType !== 'none' && detectedType !== 'indeterminate' &&
         !content.includes('class="label"') && hasRenderableContent) {
       const typeLabel = detectedType.charAt(0).toUpperCase() + detectedType.slice(1);
       content = `<div class="row"><h3 class="label">${escHtml(typeLabel)}</h3></div>` + content;
@@ -246,17 +256,13 @@ class ResponsiveHtmlFormatter {
 
   private renderLine(l: ChordSheetJS.Line): string {
 
-    if (l.type === 'comment') {
-      const firstItem = l.items[0];
-      const content = (firstItem && 'content' in firstItem ? (firstItem as ChordSheetJS.Comment).content : 
-                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                     (firstItem && 'lyrics' in firstItem ? (firstItem as any).lyrics : '')) || '';
-      
-      if (SECTION_LABEL_RE.test(content.trim())) {
-        const cleanLabel = content.trim().replace(/[[\]:]/g, '');
+    const comment = commentText(l);
+    if (comment !== null) {
+      if (SECTION_LABEL_RE.test(comment.trim())) {
+        const cleanLabel = comment.trim().replace(/[[\]:]/g, '');
         return `<div class="row"><h3 class="label">${escHtml(cleanLabel)}</h3></div>`;
       }
-      return `<div class="comment">${escHtml(content)}</div>`;
+      return `<div class="comment">${escHtml(comment)}</div>`;
     }
 
     // Check for section labels on normal lyric lines or bracketed chords
@@ -295,7 +301,7 @@ class ResponsiveHtmlFormatter {
 
     return chunks.map((chunk: string) => {
       const isSpace = /\s+/.test(chunk);
-      
+
       // If we've already placed the chord for this item, and this is a space,
       // output it as raw text. To prevent ugly wrapping between multiple spaces,
       // we ensure this raw text chunk is an unbreakable unit.
@@ -308,7 +314,7 @@ class ResponsiveHtmlFormatter {
       const rawChord = chordPlaced ? '' : (it.chords || '');
       const currentChord = normalizeChord(rawChord);
       chordPlaced = true;
-      
+
       const chords = `<span class="chord">${escHtml(currentChord)}</span>`;
       const lyricText = escHtml(chunk);
       return `<span class="column">${chords}<span class="lyrics">${lyricText}</span></span>`;
@@ -467,6 +473,11 @@ function documentTop(output: Element): number {
   return output.getBoundingClientRect().top + window.scrollY;
 }
 
+/** The playback dock is fixed over the bottom of the screen, so its height is not usable. */
+function dockHeight(): number {
+  return document.querySelector('.playback-dock')?.getBoundingClientRect().height ?? 0;
+}
+
 /**
  * Height the sheet may occupy: the space it actually has where it sits, with the
  * page scrolled to the top. Budgeting a whole screen instead (on the grounds
@@ -475,7 +486,7 @@ function documentTop(output: Element): number {
  * the wrap, which grows to its own content and so always "fits".
  */
 function availableHeight(output: Element): number {
-  return viewportHeight() - documentTop(output) - FIT_MARGIN;
+  return viewportHeight() - documentTop(output) - dockHeight() - FIT_MARGIN;
 }
 
 function fitsVertically(output: Element): boolean {
@@ -499,6 +510,7 @@ function fitsHorizontally(wrap: Element): boolean {
  */
 function wrapsChordLines(output: Element): boolean {
   for (const row of output.querySelectorAll('.row')) {
+    if (row.querySelector('.section-label, h3.label')) continue;
     const pairs = [...row.children];
     if (!pairs.length) continue;
     const tallestPair = Math.max(...pairs.map((pair) => pair.getBoundingClientRect().height));

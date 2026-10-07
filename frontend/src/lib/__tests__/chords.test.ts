@@ -229,7 +229,7 @@ describe('renderChordPro sections', () => {
   it('recognizes Pre-Chorus with or without hyphen', () => {
     const html1 = renderChordPro('Pre-Chorus\n[G]Lyrics');
     expect(html1).toContain('class="paragraph prechorus"');
-    
+
     const html2 = renderChordPro('PreChorus\n[G]Lyrics');
     expect(html2).toContain('class="paragraph prechorus"');
   });
@@ -416,5 +416,20 @@ describe('getOriginalKey', () => {
   it('returns empty when absent or not a key name', () => {
     expect(getOriginalKey('{key: G}\n[G]x')).toBe('');
     expect(getOriginalKey('{x_original_key: A major}')).toBe('');
+  });
+});
+
+describe('comment directives (ChordSheetJS 18 sends them as tags)', () => {
+  it('shows {comment: Intro} as a section label', () => {
+    const html = renderChordPro('{key: G}\n{comment: Intro}\n[G] [D] [Em] [C]\n\n{start_of_verse}\n[G]Amazing grace\n{end_of_verse}');
+    expect(html).toContain('<h3 class="label">Intro</h3>');
+  });
+
+  it('shows the {c: ...} short form too', () => {
+    expect(renderChordPro('{key: G}\n{c: Intro}\n[G] [D]')).toContain('<h3 class="label">Intro</h3>');
+  });
+
+  it('keeps other comments as comment text', () => {
+    expect(renderChordPro('{key: G}\n{comment: Play softly}\n[G]Grace')).toContain('<div class="comment">Play softly</div>');
   });
 });

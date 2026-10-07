@@ -1,10 +1,14 @@
+import { Progress, Modal, Button, FileInput, NativeSelect, TextInput, Textarea, Stack, Group, Text, Paper, Image } from '@mantine/core';
+import { useTimeout } from '@mantine/hooks';
+import { IconFileText } from '@tabler/icons-react';
+import { useModals } from '@mantine/modals';
 import { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { useApi } from '../hooks/useApi';
-import { useToast } from '../context/ToastContext';
+import { showStatusNotification as toast } from '../lib/notifications';
 import { DEFAULT_GEMINI_MODEL } from '../lib/constants';
 
 interface OcrModalProps {
+  opened: boolean;
   hasGeminiKey: boolean;
   onResult: (text: string, language?: string | null) => void;
   onClose: () => void;
@@ -24,11 +28,23 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
+export function OcrModal({ opened, hasGeminiKey, onResult, onClose }: OcrModalProps) {
+  const modalManager = useModals();
+  return (
+    <Modal opened={opened} onClose={onClose} title="Import from image or PDF" trapFocus={modalManager.modals.length === 0} closeOnEscape={modalManager.modals.length === 0} closeOnClickOutside={modalManager.modals.length === 0}>
+      {opened && <OcrContent hasGeminiKey={hasGeminiKey} onResult={onResult} onClose={onClose} />}
+    </Modal>
+  );
+}
+
+function OcrContent({ hasGeminiKey, onResult, onClose }: Omit<OcrModalProps, 'opened'>) {
+  const active = useRef(true);
+  useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
   const api = useApi();
-  const toast = useToast();
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const previewReader = useRef<FileReader | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const { start: scrollToLatest } = useTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   const [preview, setPreview] = useState<string | null>(null);
   const [isPdf, setIsPdf] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -39,11 +55,11 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
 
   // Model selection
   const [selectedModel, setSelectedModel] = useState(DEFAULT_GEMINI_MODEL);
-  const [models, setModels] = useState<{ id: string; label: string; hint: string }[]>([]);
+  const [models, setModels] = useState<{ id: string; label: string }[]>([]);
 
   useEffect(() => {
-    api<{ model: string; models: { id: string; label: string; hint: string }[] }>('GET', '/api/settings/ocr-model')
-      .then(data => { setSelectedModel(data.model); setModels(data.models); })
+    api<{ model: string; models: { id: string; label: string }[] }>('GET', '/api/settings/ocr-model')
+      .then(data => { if (active.current) { setSelectedModel(data.model); setModels(data.models); } })
       .catch(() => {});
   }, [api]);
 
@@ -52,26 +68,30 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
   const [fixInput, setFixInput] = useState('');
   const [refining, setRefining] = useState(false);
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const pdf = file.type === 'application/pdf';
-    setIsPdf(pdf);
-    if (pdf) {
-      setPreview(file.name);
-    } else {
-      const reader = new FileReader();
-      reader.onload = (ev) => setPreview(ev.target?.result as string);
-      reader.readAsDataURL(file);
-    }
-    // Reset state on new file
+  const handleFile = (selected: File | null) => {
+    previewReader.current?.abort();
+    previewReader.current = null;
+    setFile(selected);
+    setPreview(null);
+    setIsPdf(selected?.type === 'application/pdf');
     setResultText('');
     setChatHistory([]);
     setImageBase64(null);
+    setDetectedLang(null);
+    setProgress(0);
+    if (!selected) return;
+    if (selected.type === 'application/pdf') {
+      setPreview(selected.name);
+    } else {
+      const reader = new FileReader();
+      previewReader.current = reader;
+      reader.onload = () => { if (active.current && previewReader.current === reader) setPreview(reader.result as string); };
+      reader.readAsDataURL(selected);
+    }
   };
 
   const process = async () => {
-    const file = fileRef.current?.files?.[0];
+    if (processing) return;
     if (!file) { toast('Please select a file first', 'error'); return; }
     if (!hasGeminiKey) { toast('Please set up your Gemini API key in Settings first', 'error'); return; }
 
@@ -81,23 +101,25 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
     try {
       setProgress(10);
       const base64 = await fileToBase64(file);
+      if (!active.current) return;
       setImageBase64(base64);
       setProgress(30);
       const result = await api<{ text: string; language: string | null }>('POST', '/api/ocr/gemini', { image: base64, model: selectedModel });
+      if (!active.current) return;
       setProgress(100);
       setResultText(result.text);
       setDetectedLang(result.language);
       // Seed chat history with the initial model response
       setChatHistory([{ role: 'model', text: result.text }]);
     } catch (e) {
-      toast(`OCR failed: ${(e as Error).message}`, 'error');
+      if (active.current) toast(`OCR failed: ${(e as Error).message}`, 'error');
     }
-    setProcessing(false);
+    if (active.current) setProcessing(false);
   };
 
   const sendFix = async () => {
     const msg = fixInput.trim();
-    if (!msg || !imageBase64) return;
+    if (refining || !msg || !imageBase64) return;
 
     setRefining(true);
     setFixInput('');
@@ -111,15 +133,17 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
         message: msg,
         model: selectedModel,
       });
+      if (!active.current) return;
       setResultText(result.text);
       setChatHistory([...newHistory, { role: 'model', text: result.text }]);
-      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      scrollToLatest();
     } catch (e) {
+      if (!active.current) return;
       toast(`Fix failed: ${(e as Error).message}`, 'error');
       // Remove the user message on failure
       setChatHistory(chatHistory);
     }
-    setRefining(false);
+    if (active.current) setRefining(false);
   };
 
   const useResult = () => {
@@ -130,135 +154,87 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
 
   const hasCorrections = chatHistory.filter(m => m.role === 'user').length > 0;
 
-  return createPortal(
-    <div className="modal-backdrop" data-overlay onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="ocr-card">
-        <div className="view-header" style={{ marginBottom: 16 }}>
-          <h3 className="view-title">Import from image or PDF</h3>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>&#10005;</button>
-        </div>
-
-        {/* File picker — hide after extraction to save space */}
-        {!resultText && (
-          <>
-            <div className="field">
-              <label>Select image or PDF</label>
-              <input type="file" ref={fileRef} accept="image/*,application/pdf" onChange={handleFile} style={{ fontSize: 14, padding: 8 }} />
-            </div>
-            {preview && (
-              <div style={{ marginBottom: 14 }}>
-                {isPdf ? (
-                  <div className="muted-text" style={{ padding: 12, background: 'var(--surface2)', borderRadius: 8 }}>
-                    &#128196; {preview}
-                  </div>
-                ) : (
-                  <img src={preview} className="ocr-preview" alt="Preview" />
-                )}
-              </div>
-            )}
-            {!hasGeminiKey && (
-              <div className="muted-text" style={{ marginBottom: 12, padding: 10, background: 'var(--surface)', borderRadius: 8 }}>
-                Requires a Gemini API key. Set one up in Settings.
-              </div>
-            )}
-            {models.length > 0 && (
-              <div className="field" style={{ marginBottom: 12 }}>
-                <label>Model</label>
-                <select
-                  value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value)}
-                  style={{ fontSize: 14, padding: '8px 12px' }}
-                >
-                  {models.map(m => (
-                    <option key={m.id} value={m.id}>{m.label} — {m.hint}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-            <button className="btn" onClick={process} disabled={processing} style={{ width: '100%', padding: '12px 22px', fontSize: 15 }}>
-              {processing ? 'Processing...' : '\u2728 Extract text'}
-            </button>
-            {(processing || progress > 0) && (
-              <div style={{ marginTop: 12 }}>
-                <div className="ocr-progress-bar">
-                  <div className="ocr-progress-fill" style={{ width: `${progress}%` }} />
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Result + conversation */}
-        {resultText && (
-          <div style={{ marginTop: resultText ? 0 : 14 }}>
-            {/* Correction history */}
-            {hasCorrections && (
-              <div className="ocr-chat-history">
-                {chatHistory.slice(1).map((m, i) => (
-                  <div key={i} className={`ocr-chat-bubble ${m.role === 'user' ? 'ocr-chat-user' : 'ocr-chat-ai'}`}>
-                    {m.role === 'user' ? m.text : '\u2713 Fix applied'}
-                  </div>
-                ))}
-                <div ref={chatEndRef} />
-              </div>
-            )}
-
-            <label className="muted-text flex-align-center" style={{ fontSize: 12, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>
-              {hasCorrections ? 'Corrected result' : 'Extracted text'}
-              {hasCorrections && <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 400, textTransform: 'none' }}>({chatHistory.filter(m => m.role === 'user').length} fix{chatHistory.filter(m => m.role === 'user').length > 1 ? 'es' : ''} applied)</span>}
-            </label>
-            <textarea className="ocr-result" readOnly value={resultText} />
-            {detectedLang && (
-              <div className="muted-text" style={{ marginTop: 6 }}>
-                Detected language: <strong>{detectedLang}</strong>
-              </div>
-            )}
-
-            {/* Chat input for corrections */}
-            {models.length > 0 && (
-              <div style={{ marginBottom: 8 }}>
-                <select
-                  value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value)}
-                  style={{ fontSize: 12, padding: '4px 8px', color: 'var(--muted)' }}
-                >
-                  {models.map(m => (
-                    <option key={m.id} value={m.id}>{m.label} — {m.hint}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-            <div className="ocr-fix-row">
-              <input
-                type="text"
-                className="ocr-fix-input"
-                placeholder="Describe what to fix..."
-                value={fixInput}
-                onChange={(e) => setFixInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendFix(); } }}
-                disabled={refining}
-              />
-              <button
-                className="btn btn-sm"
-                onClick={sendFix}
-                disabled={refining || !fixInput.trim()}
-              >
-                {refining ? '...' : 'Fix'}
-              </button>
-            </div>
-            <div className="muted-text" style={{ fontSize: 12, marginTop: 4 }}>
-              e.g. "move the G chord to the next word" or "verse 2 should be Am not Em"
-            </div>
-
-            {/* Action buttons */}
-            <div className="flex-row" style={{ marginTop: 12 }}>
-              <button className="btn" onClick={useResult}>Use this</button>
-              <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>,
-    document.body
+  return (
+    <Stack gap={12}>
+      {/* Hide file selection after extraction to leave room for corrections. */}
+      {!resultText && (
+        <>
+          <FileInput
+            label="Select image or PDF"
+            value={file}
+            onChange={handleFile}
+            accept="image/*,application/pdf"
+            disabled={processing}
+            clearable
+            clearButtonProps={{ 'aria-label': 'Clear selected file', disabled: processing }}
+            fileInputProps={{ 'aria-label': 'Image or PDF file upload' }}
+          />
+          {preview && (isPdf ? (
+            <Paper p={12} bg="var(--surface2)" radius="md">
+              <Group gap={6} wrap="nowrap"><IconFileText size={18} aria-hidden /><Text c="dimmed" fz={13} style={{ overflowWrap: 'anywhere' }}>{preview}</Text></Group>
+            </Paper>
+          ) : (
+            <Image src={preview} alt="Preview" mah={200} w="auto" maw="100%" fit="contain" radius="md" style={{ border: '1px solid var(--border)' }} />
+          ))}
+          {!hasGeminiKey && (
+            <Paper p={10} bg="var(--surface)" radius="md">
+              <Text c="dimmed" fz={13}>Requires a Gemini API key. Set one up in Settings.</Text>
+            </Paper>
+          )}
+          {models.length > 0 && (
+            <NativeSelect label="Model" value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} disabled={processing}>
+              {models.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+            </NativeSelect>
+          )}
+          <Button onClick={process} loading={processing} disabled={processing} fullWidth size="md">
+            {processing ? 'Processing...' : '\u2728 Extract text'}
+          </Button>
+          {(processing || progress > 0) && <Progress value={progress} aria-label="OCR progress" />}
+        </>
+      )}
+      {resultText && (
+        <>
+          {hasCorrections && (
+            <Stack gap={4} mah={120} mb="xs" style={{ overflowY: 'auto' }}>
+              {chatHistory.slice(1).map((m, i) => (
+                <Paper key={i} px="xs" py={6} radius="md" maw="85%" fz="xs"
+                  bg={m.role === 'user' ? 'var(--accent-bg)' : 'var(--surface2)'}
+                  c={m.role === 'user' ? 'var(--accent)' : 'dimmed'}
+                  style={{ alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', overflowWrap: 'anywhere' }}>
+                  {m.role === 'user' ? m.text : '\u2713 Fix applied'}
+                </Paper>
+              ))}
+              <div ref={chatEndRef} />
+            </Stack>
+          )}
+          <Textarea
+            label={hasCorrections ? 'Corrected result' : 'Extracted text'}
+            description={hasCorrections ? `${chatHistory.filter(m => m.role === 'user').length} fixes applied` : undefined}
+            readOnly value={resultText}
+            styles={{ input: { minHeight: 200, maxHeight: 300, fontFamily: 'var(--font-mono)', fontSize: 12, lineHeight: 1.6 } }}
+          />
+          {detectedLang && <Text c="dimmed" fz={13}>Detected language: <strong>{detectedLang}</strong></Text>}
+          {models.length > 0 && (
+            <NativeSelect aria-label="Correction model" value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} disabled={refining} size="xs">
+              {models.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+            </NativeSelect>
+          )}
+          <Group gap={6} wrap="nowrap" align="flex-start">
+            <TextInput aria-label="Describe what to fix..." flex={1} miw={0}
+              placeholder="Describe what to fix..." value={fixInput}
+              onChange={(e) => setFixInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendFix(); } }}
+              disabled={refining}
+            />
+            <Button onClick={sendFix} loading={refining} disabled={refining || !fixInput.trim()}>Fix</Button>
+          </Group>
+          <Text c="dimmed" fz={12}>e.g. "move the G chord to the next word" or "verse 2 should be Am not Em"</Text>
+          <Group gap={8}>
+            <Button onClick={useResult}>Use this</Button>
+            <Button variant="default" onClick={onClose}>Cancel</Button>
+          </Group>
+        </>
+      )}
+    </Stack>
   );
 }

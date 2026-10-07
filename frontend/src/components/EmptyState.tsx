@@ -1,19 +1,27 @@
+import { Button, EmptyState as MantineEmptyState } from '@mantine/core';
+import type { ReactNode } from 'react';
+
 interface EmptyStateProps {
-  icon: string;
-  text: string;
+  icon?: ReactNode;
+  text: ReactNode;
   action?: { label: string; onClick: () => void };
 }
 
 export function EmptyState({ icon, text, action }: EmptyStateProps) {
   return (
-    <div className="empty">
-      <div className="empty-icon" dangerouslySetInnerHTML={{ __html: icon }} />
-      <div className="empty-text">{text}</div>
+    <MantineEmptyState
+      icon={icon}
+      description={text}
+      py={80}
+      px={20}
+      style={{ gridColumn: '1 / -1' }}
+      styles={{ indicator: { opacity: 0.3, width: 56, height: 56 }, description: { fontSize: 17, fontWeight: 400 }, actions: { marginTop: 20 } }}
+    >
       {action && (
-        <button className="btn" onClick={action.onClick}>
-          {action.label}
-        </button>
+        <MantineEmptyState.Actions>
+          <Button onClick={action.onClick}>{action.label}</Button>
+        </MantineEmptyState.Actions>
       )}
-    </div>
+    </MantineEmptyState>
   );
 }

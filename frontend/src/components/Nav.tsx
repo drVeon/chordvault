@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { ActionIcon, Button, Group, Menu, Text, UnstyledButton, useComputedColorScheme, useMantineColorScheme, useMatches } from '@mantine/core';
+import { IconMenu2, IconMoon, IconSun } from '@tabler/icons-react';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import logoSvg from '../assets/logo.svg?raw';
 
 interface NavProps {
@@ -10,93 +10,40 @@ interface NavProps {
 
 export function Nav({ view, navigate }: NavProps) {
   const { user, isAdmin, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const onClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-    document.addEventListener('click', onClick);
-    return () => document.removeEventListener('click', onClick);
-  }, []);
-
-  // Use the actual HTML entities from original: ☼ (9788) for dark, ☾ (9790) for light
-  const themeIconHtml = theme === 'light' ? '&#9790;' : '&#9788;';
-
-  const songsBtnActive = view === 'browse' ? ' active' : '';
-  const setlistBtnActive = ['setlists', 'setlist-edit', 'setlist-play', 'public-setlists'].includes(view) ? ' active' : '';
-
+  const theme = useComputedColorScheme('dark');
+  const { toggleColorScheme } = useMantineColorScheme();
+  // Phone-only menu items are rendered, not CSS-hidden: Mantine's menu arrow keys stop on hidden items.
+  const phone = useMatches({ base: true, xs: false }, { getInitialValueInEffect: false });
+  const setlistsActive = ['setlists', 'setlist-edit', 'setlist-play', 'public-setlists'].includes(view);
   return (
-    <nav id="nav">
-      <div className="nav-brand" onClick={() => navigate('browse')}><span className="nav-logo" dangerouslySetInnerHTML={{ __html: logoSvg }} /> ChordVault</div>
-      <div className="nav-links" id="nav-links">
-        <button
-          className="nav-btn nav-icon"
-          onClick={toggleTheme}
-          title="Toggle theme"
-          dangerouslySetInnerHTML={{ __html: themeIconHtml }}
-        />
-        <button
-          className={`nav-btn${songsBtnActive}`}
-          onClick={() => navigate('browse')}
-        >
-          Songs
-        </button>
-
-        {!user ? (
-          <>
-            <button
-              className={`nav-btn${setlistBtnActive}`}
-              onClick={() => navigate('public-setlists')}
-            >
-              Setlists
-            </button>
-            <button
-              className={`nav-btn nav-signin${view === 'auth' ? ' active' : ''}`}
-              onClick={() => navigate('auth')}
-            >
-              Sign in
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              className={`nav-btn${setlistBtnActive}`}
-              onClick={() => navigate('setlists')}
-            >
-              Setlists
-            </button>
-            {isAdmin && (
-              <button
-                className={`nav-btn${view === 'admin' ? ' active' : ''}`}
-                onClick={() => navigate('admin')}
-              >
-                Admin
-              </button>
-            )}
-            <div className="nav-menu-wrap" ref={menuRef}>
-              <button
-                className={`nav-btn nav-icon${view === 'settings' || view === 'my-songs' ? ' active' : ''}`}
-                onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
-                id="nav-menu-btn"
-                title="Menu"
-              >
-                &#9776;
-              </button>
-              <div className={`nav-dropdown${menuOpen ? ' open' : ''}`} id="nav-dropdown">
-                <button className="nav-dropdown-item" onClick={() => { navigate('my-songs'); setMenuOpen(false); }}>My Songs</button>
-                <button className="nav-dropdown-item" onClick={() => { navigate('settings'); setMenuOpen(false); }}>Settings</button>
-                <hr className="nav-dropdown-divider" />
-                <button className="nav-dropdown-item" onClick={() => { logout(); setMenuOpen(false); navigate('browse'); }}>Sign out</button>
-              </div>
-            </div>
-          </>
+    <Group component="nav" id="nav" justify="space-between" wrap="nowrap" gap="xs" pos="relative" mih={64} px={{ base: 12, sm: 24 }} py={6} bg="var(--cv-band)" style={{ zIndex: 100 }}>
+      <UnstyledButton className="nav-brand" aria-label="ChordVault home" onClick={() => navigate('browse')}>
+        <span className="nav-logo" dangerouslySetInnerHTML={{ __html: logoSvg }} />
+        <Text span inherit className="nav-brand-text" visibleFrom="xs">ChordVault</Text>
+      </UnstyledButton>
+      <Group className="nav-links" id="nav-links" gap={4} wrap="nowrap" justify="flex-end" miw={0}>
+        <ActionIcon visibleFrom={user ? 'xs' : undefined} onClick={() => toggleColorScheme()} title="Toggle theme" aria-label="Toggle theme">{theme === 'light' ? <IconMoon size={20} aria-hidden /> : <IconSun size={20} aria-hidden />}</ActionIcon>
+        <Button variant={view === 'browse' ? 'default' : 'subtle'} onClick={() => navigate('browse')}>Songs</Button>
+        <Button variant={setlistsActive ? 'default' : 'subtle'} onClick={() => navigate(user ? 'setlists' : 'public-setlists')}>Setlists</Button>
+        {isAdmin && <Button visibleFrom="xs" variant={view === 'admin' ? 'default' : 'subtle'} onClick={() => navigate('admin')}>Admin</Button>}
+        {!user ? <Button variant={view === 'auth' ? 'default' : 'subtle'} onClick={() => navigate('auth')}>Sign in</Button> : (
+          <Menu position="bottom-end" shadow="sm">
+            <Menu.Target><ActionIcon id="nav-menu-btn" title="Menu" aria-label="Account menu"><IconMenu2 size={20} aria-hidden /></ActionIcon></Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item onClick={() => navigate('my-songs')}>My Songs</Menu.Item>
+              <Menu.Item onClick={() => navigate('settings')}>Settings</Menu.Item>
+              {phone && isAdmin && <Menu.Item onClick={() => navigate('admin')}>Admin</Menu.Item>}
+              {phone && (
+                <Menu.Item leftSection={theme === 'light' ? <IconMoon size={16} aria-hidden /> : <IconSun size={16} aria-hidden />} onClick={() => toggleColorScheme()}>
+                  {theme === 'light' ? 'Dark theme' : 'Light theme'}
+                </Menu.Item>
+              )}
+              <Menu.Divider />
+              <Menu.Item onClick={() => { logout(); navigate('browse'); }}>Sign out</Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
         )}
-      </div>
-    </nav>
+      </Group>
+    </Group>
   );
 }

@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react';
-import { KeyPicker } from './KeyPicker';
+import { ActionIcon, Divider, Group } from '@mantine/core';
+import { IconDownload, IconRestore } from '@tabler/icons-react';
+import type { ReactNode } from 'react';
+import { SetlistDefaultsButton } from './SetlistDefaultsButton';
+import { ColumnsToggle, FitButton, KeyGroup, TextSizeGroup } from './ToolbarControls';
 
-interface ToolbarProps {
+export interface ToolbarProps {
   currentKey: string;
   originalKey?: string;
   nashville: boolean;
@@ -17,128 +20,31 @@ interface ToolbarProps {
   onSaveOnline?: () => void;
   onSaveLocal?: () => void;
   onExportPdf?: () => void;
-  onToggleSettings?: () => void;
   isModified?: boolean;
   overrides?: { num?: boolean; twoCol?: boolean; font?: boolean };
-  settingsActive?: boolean;
+  settingsPanel?: ReactNode;
   renderKey?: number | string;
+  canReset?: boolean;
 }
 
-export function Toolbar({
-  currentKey,
-  originalKey,
-  nashville,
-  nashvilleDisabled,
-  onNashvilleChange,
-  twoCol,
-  onTwoColToggle,
-  fontSize,
-  onFontChange,
-  onReset,
-  onPickKey,
-  onAutoFit,
-  onSaveOnline,
-  onSaveLocal,
-  onExportPdf,
-  onToggleSettings,
-  isModified,
-  overrides,
-  settingsActive,
-  renderKey,
-}: ToolbarProps) {
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const ov = overrides || {};
-  const isDefault = fontSize === 0 && !twoCol;
-
-  useEffect(() => {
-    setPickerOpen(false);
-  }, [renderKey]);
-
+export function Toolbar({ dense, ...props }: ToolbarProps & { dense?: boolean }) {
+  const { twoCol, fontSize, onReset, onAutoFit, onExportPdf, settingsPanel, canReset = fontSize !== 0 || twoCol, overrides = {} } = props;
   return (
-    <>
-      <div className="transpose-bar">
-        <button
-          className={`key-current${nashville ? ' disabled' : ''}`}
-          id="key-display"
-          onClick={() => setPickerOpen((v) => !v)}
-        >
-          KEY {currentKey || '?'}
-        </button>
-        <label className={`number-toggle${ov.num ? ' overridden' : ''}`} id="nashville-toggle">
-          <input
-            type="checkbox"
-            checked={nashville}
-            disabled={nashvilleDisabled}
-            onChange={(e) => onNashvilleChange(e.target.checked)}
-          />
-          <span>123</span>
-        </label>
-        <button
-          className={`transpose-btn col-toggle${twoCol ? ' active' : ''}${ov.twoCol ? ' overridden' : ''}`}
-          onClick={onTwoColToggle}
-          title={twoCol ? 'Single column' : 'Multi-column'}
-        >
-          &#124;&#124;
-        </button>
-        <button
-          className={`transpose-btn font-btn${ov.font ? ' overridden' : ''}`}
-          onClick={() => onFontChange(-1)}
-        >
-          A&#8722;
-        </button>
-        <button
-          className={`transpose-btn font-btn${ov.font ? ' overridden' : ''}`}
-          onClick={() => onFontChange(1)}
-        >
-          A+
-        </button>
-        <span className="toolbar-divider" />
-        {onAutoFit && (
-          <button
-            className={"transpose-btn font-btn autofit-btn"}
-            onClick={onAutoFit}
-            title="Auto-fit for this screen (one-time)"
-          >
-            FIT
-          </button>
-        )}
-        <span className="toolbar-spacer" />
-        {onExportPdf && (
-          <button
-            className="transpose-btn font-btn pdf-btn"
-            onClick={onExportPdf}
-            title="Export as PDF"
-          >
-            PDF
-          </button>
-        )}
-        {onToggleSettings && (
-          <button
-            className={`transpose-btn font-btn gear-btn${settingsActive ? ' active' : ''}`}
-            onClick={onToggleSettings}
-            title="Settings"
-          >
-            &#9881;
-          </button>
-        )}
-        <button
-          className="transpose-btn font-btn font-reset"
-          onClick={onReset}
-          disabled={isDefault}
-          title="Reset font and columns"
-        >
-          &#8634;
-        </button>
-      </div>
-      <KeyPicker
-        currentKey={currentKey}
-        originalKey={originalKey}
-        onPickKey={onPickKey}
-        visible={pickerOpen}
-        isModified={isModified}
-        onSaveOnline={onSaveOnline ? () => { onSaveOnline?.(); setPickerOpen(false); } : undefined}
-        onSaveLocal={onSaveLocal ? () => { onSaveLocal?.(); setPickerOpen(false); } : undefined}
-      />
-    </>
+    <Group className="transpose-bar" role="group" aria-label="Display" gap="xs">
+      <KeyGroup {...props} dense={dense} numOverridden={overrides.num} />
+      <TextSizeGroup dense={dense} onFontChange={props.onFontChange} overridden={overrides.font} />
+      {onAutoFit && <FitButton dense={dense} onAutoFit={onAutoFit} />}
+      <ColumnsToggle twoCol={twoCol} onTwoColToggle={props.onTwoColToggle} overridden={overrides.twoCol} />
+      <Divider orientation="vertical" mx={4} />
+      {onExportPdf && (
+        <ActionIcon variant="subtle" size="input-md" aria-label="Export PDF" title="Export as PDF" onClick={onExportPdf}>
+          <IconDownload size={20} aria-hidden />
+        </ActionIcon>
+      )}
+      {settingsPanel && <SetlistDefaultsButton panel={settingsPanel} />}
+      <ActionIcon variant="subtle" size="input-md" aria-label="Reset font and columns" title="Reset font and columns" onClick={onReset} disabled={!canReset}>
+        <IconRestore size={20} aria-hidden />
+      </ActionIcon>
+    </Group>
   );
 }

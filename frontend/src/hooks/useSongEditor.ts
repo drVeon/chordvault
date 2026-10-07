@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { useDebouncedCallback } from '@mantine/hooks';
 import { extractDirective, updateDirective, detectFormat, getOriginalKey } from '../lib/chords';
 
 export interface SongEditorState {
@@ -10,7 +11,7 @@ export interface SongEditorState {
   originalKey: string;
   tags: string[];
   language: string;
-  formatBadge: { text: string; cls: string } | null;
+  formatBadge: { text: string; ok: boolean } | null;
 }
 
 export function useSongEditor(initialContent: string = '') {
@@ -22,15 +23,14 @@ export function useSongEditor(initialContent: string = '') {
   const [originalKey, setOriginalKey] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [language, setLanguage] = useState('');
-  const [formatBadge, setFormatBadge] = useState<{ text: string; cls: string } | null>(null);
+  const [formatBadge, setFormatBadge] = useState<{ text: string; ok: boolean } | null>(null);
 
   const syncSource = useRef<'editor' | 'field' | null>(null);
-  const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const updateBadge = useCallback((text: string) => {
     const fmt = detectFormat(text);
-    if (fmt) setFormatBadge({ text: fmt, cls: 'format-ok' });
-    else if (text?.trim()) setFormatBadge({ text: 'No chords detected — add chords in [brackets] e.g. [G]lyrics', cls: 'format-warn' });
+    if (fmt) setFormatBadge({ text: fmt, ok: true });
+    else if (text?.trim()) setFormatBadge({ text: 'No chords detected — add chords in [brackets] e.g. [G]lyrics', ok: false });
     else setFormatBadge(null);
   }, []);
 
@@ -47,47 +47,48 @@ export function useSongEditor(initialContent: string = '') {
     updateBadge(text);
   }, [updateBadge]);
 
+  const scheduleSync = useDebouncedCallback(syncContentToFields, 150);
+
   const setInitialContent = useCallback((text: string) => {
+    scheduleSync.cancel();
     setContent(text);
     syncContentToFields(text);
-  }, [syncContentToFields]);
+  }, [syncContentToFields, scheduleSync]);
 
   const handleContentChange = useCallback((text: string) => {
     setContent(text);
     updateBadge(text);
     if (syncSource.current === 'field') return;
-    if (syncTimer.current) clearTimeout(syncTimer.current);
-    syncTimer.current = setTimeout(() => {
-      syncSource.current = 'editor';
-      syncContentToFields(text);
-      syncSource.current = null;
-    }, 150);
-  }, [syncContentToFields, updateBadge]);
+    scheduleSync(text);
+  }, [scheduleSync, updateBadge]);
 
   const handleFieldChange = useCallback((directive: string, value: string, setter: (v: string) => void) => {
+    scheduleSync.cancel();
     setter(value);
     if (syncSource.current === 'editor') return;
     syncSource.current = 'field';
     setContent(prev => updateDirective(prev, directive, value || null));
     syncSource.current = null;
-  }, []);
+  }, [scheduleSync]);
 
   const handleTagsChange = useCallback((newTags: string[]) => {
+    scheduleSync.cancel();
     setTags(newTags);
     if (syncSource.current === 'editor') return;
     syncSource.current = 'field';
     const val = newTags.length > 0 ? newTags.join(',') : null;
     setContent(prev => updateDirective(prev, 'x_tags', val));
     syncSource.current = null;
-  }, []);
+  }, [scheduleSync]);
 
   const handleLanguageChange = useCallback((lang: string) => {
+    scheduleSync.cancel();
     setLanguage(lang);
     if (syncSource.current === 'editor') return;
     syncSource.current = 'field';
     setContent(prev => updateDirective(prev, 'x_language', lang || null));
     syncSource.current = null;
-  }, []);
+  }, [scheduleSync]);
 
   return {
     state: { title, artist, content, youtubeUrl, bpm, originalKey, tags, language, formatBadge },

@@ -1,15 +1,19 @@
-import { useState, useEffect, useCallback } from 'react';
+import { SearchField } from '../components/SearchField';
+import { SearchRow } from '../components/SearchRow';
+import { ActionIcon, Button, NativeSelect, SimpleGrid, Box, Title, Text, Group } from '@mantine/core';
+import { IconAdjustmentsHorizontal, IconPlus, IconSearch } from '@tabler/icons-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
-import { useToast } from '../context/ToastContext';
+import { showStatusNotification as toast } from '../lib/notifications';
 import { SongCard } from '../components/SongCard';
 import { EmptyState } from '../components/EmptyState';
 import { Pagination } from '../components/Pagination';
-import { TagFilter } from '../components/TagFilter';
 import type { SongListItem } from '../types';
 import { LANGUAGES } from '../lib/languages';
-import { getSessionItem, setSessionItem } from '../lib/storage';
+import { useSearchSessionValue, searchPage } from '../hooks/useSearchSessionValue';
+import { TagFilter } from '../components/TagFilter';
 
 interface BrowseViewProps {
   navigate: (view: string, params?: Record<string, string>) => void;
@@ -19,18 +23,25 @@ export function BrowseView({ navigate }: BrowseViewProps) {
   const api = useApi();
   const { user } = useAuth();
   const { t } = useI18n();
-  const toast = useToast();
   const [songs, setSongs] = useState<SongListItem[]>([]);
-  const [query, setQuery] = useState(() => getSessionItem('cv_browse_query') || '');
-  const [langFilter, setLangFilter] = useState(() => getSessionItem('cv_browse_lang') || '');
-  const [tagFilter, setTagFilter] = useState(() => getSessionItem('cv_browse_tag') || '');
-  const [showFilters, setShowFilters] = useState(() => getSessionItem('cv_browse_show_filters') === 'true');
+  const [savedQuery, saveQuery] = useSearchSessionValue('cv_browse_query');
+  const [query, setQuery] = useState(savedQuery);
+  const [savedLangFilter, saveLangFilter] = useSearchSessionValue('cv_browse_lang');
+  const [langFilter, setLangFilter] = useState(savedLangFilter);
+  const [savedTagFilter, saveTagFilter] = useSearchSessionValue('cv_browse_tag');
+  const [tagFilter, setTagFilter] = useState(savedTagFilter);
+  const [savedShowFilters, saveShowFilters] = useSearchSessionValue('cv_browse_show_filters', 'false');
+  const showFilters = savedShowFilters === 'true';
   const [loaded, setLoaded] = useState(false);
-  const [page, setPage] = useState(() => {
-    const saved = getSessionItem('cv_browse_page');
-    return saved ? parseInt(saved, 10) : 1;
-  });
+  const [savedPage, savePage] = useSearchSessionValue('cv_browse_page', '1');
+  const [page, setPage] = useState(() => searchPage(savedPage));
   const [totalPages, setTotalPages] = useState(1);
+
+  const active = useRef(false);
+  useEffect(() => {
+    active.current = true;
+    return () => { active.current = false; };
+  }, []);
 
   const load = useCallback(async (q = '', lang = '', tag = '', targetPage = 1) => {
     try {
@@ -42,7 +53,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
       params.push(`page=${targetPage}`);
       params.push(`limit=20`);
       url += '?' + params.join('&');
-      
+
       interface PaginatedSongsResponse {
         songs: SongListItem[];
         total: number;
@@ -51,17 +62,18 @@ export function BrowseView({ navigate }: BrowseViewProps) {
         totalPages: number;
       }
       const data = await api<PaginatedSongsResponse>('GET', url);
+      if (!active.current) return;
       setSongs(data.songs);
       setPage(data.page);
       setTotalPages(data.totalPages);
       setLoaded(true);
-      
-      setSessionItem('cv_browse_query', q);
-      setSessionItem('cv_browse_lang', lang);
-      setSessionItem('cv_browse_tag', tag);
-      setSessionItem('cv_browse_page', String(data.page));
-    } catch (e) { toast((e as Error).message, 'error'); }
-  }, [api, toast]);
+
+      saveQuery(q);
+      saveLangFilter(lang);
+      saveTagFilter(tag);
+      savePage(String(data.page));
+    } catch (e) { if (active.current) toast((e as Error).message, 'error'); }
+  }, [api, saveQuery, saveLangFilter, saveTagFilter, savePage]);
 
   useEffect(() => {
     load(query, langFilter, tagFilter, page);
@@ -77,10 +89,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
 
   const changeTag = (tag: string) => {
     setTagFilter(tag);
-    if (tag) {
-      setShowFilters(true);
-      setSessionItem('cv_browse_show_filters', 'true');
-    }
+    if (tag) saveShowFilters('true');
     load(query, langFilter, tag, 1);
   };
 
@@ -94,56 +103,42 @@ export function BrowseView({ navigate }: BrowseViewProps) {
   return (
     <>
       {showHero ? (
-        <div className="hero">
-          <div className="hero-title">&#9833; ChordVault</div>
-          <div className="hero-tagline">{t('hero.tagline')}</div>
-          <div className="hero-cta">{t('hero.cta')}</div>
-          <div style={{ marginTop: 16, display: 'flex', gap: 12, justifyContent: 'center' }}>
-            <button className="btn" onClick={() => navigate('auth')}>{t('auth.signIn')}</button>
-            <button className="btn btn-ghost" onClick={() => navigate('about')}>Learn more</button>
-          </div>
-        </div>
+        <Box ta="center" px="md" pt={48} pb={36} mb="xs">
+          <Title order={1} size={42} c="var(--cv-brand)" mb="xs">&#9833; ChordVault</Title>
+          <Text size="lg" mb={6}>{t('hero.tagline')}</Text>
+          <Text size="sm" c="dimmed" maw={360} mx="auto">{t('hero.cta')}</Text>
+          <Group mt="md" gap="sm" justify="center">
+            <Button className="btn" onClick={() => navigate('auth')}>{t('auth.signIn')}</Button>
+            <Button variant="default" className="btn btn-ghost" onClick={() => navigate('about')}>Learn more</Button>
+          </Group>
+        </Box>
       ) : (
         <>
-          <div className="search-row">
-            <div className="search-input-wrapper">
-              <input
-                type="search"
-                placeholder={t('songs.searchPlaceholder')}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') doSearch(); }}
-              />
-              {query && (
-                <button
-                  className="search-clear-btn"
-                  onClick={handleClear}
-                  title="Clear search"
-                >
-                  &times;
-                </button>
-              )}
-            </div>
-            <button className="btn btn-ghost btn-sm" onClick={doSearch}>{t('songs.search')}</button>
-            <button
-              className={`btn btn-ghost btn-sm${showFilters || langFilter || tagFilter ? ' active' : ''}`}
+          <SearchRow>
+            <SearchField label={t('songs.searchPlaceholder')} value={query} onChange={setQuery} onSearch={doSearch} onClear={handleClear} />
+            <Button variant="default" size="sm" onClick={doSearch}>{t('songs.search')}</Button>
+            <ActionIcon
+              size="input-sm"
+              variant={showFilters || langFilter || tagFilter ? 'filled' : 'default'}
+              aria-label="Filters"
+              aria-pressed={showFilters}
+              title="Filters"
               onClick={() => {
                 const next = !showFilters;
-                setShowFilters(next);
-                setSessionItem('cv_browse_show_filters', String(next));
+                saveShowFilters(String(next));
               }}
-              title="Filters"
             >
-              &#9776;
-            </button>
+              <IconAdjustmentsHorizontal size={18} aria-hidden />
+            </ActionIcon>
             {user && (
-              <button className="btn btn-sm" onClick={() => navigate('song-edit')}>&#43; New Song</button>
+              <Button size="sm" w={{ base: '100%', xs: 'auto' }} leftSection={<IconPlus size={16} aria-hidden />} onClick={() => navigate('song-edit')}>New Song</Button>
             )}
-          </div>
+          </SearchRow>
           {showFilters && (
             <div className="search-filters">
-              <select
+              <NativeSelect
                 className="language-filter"
+                aria-label="Filter by language"
                 value={langFilter}
                 onChange={(e) => { setLangFilter(e.target.value); load(query, e.target.value, tagFilter, 1); }}
               >
@@ -151,13 +146,13 @@ export function BrowseView({ navigate }: BrowseViewProps) {
                 {LANGUAGES.map(l => (
                   <option key={l.code} value={l.code}>{l.name}</option>
                 ))}
-              </select>
+              </NativeSelect>
               <TagFilter selected={tagFilter} onChange={changeTag} />
             </div>
           )}
-          <div className="song-grid">
+          <SimpleGrid className="song-grid" minColWidth="min(100%, 320px)" autoFlow="auto-fill" spacing={12}>
             {loaded && songs.length === 0 ? (
-              <EmptyState icon="&#128269;" text={t('songs.noPublicSongs')} />
+              <EmptyState icon={<IconSearch size={56} aria-hidden />} text={t('songs.noPublicSongs')} />
             ) : (
               songs.map((s) => (
                 <SongCard
@@ -170,7 +165,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
                 />
               ))
             )}
-          </div>
+          </SimpleGrid>
           <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
         </>
       )}

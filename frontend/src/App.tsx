@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useWindowEvent } from '@mantine/hooks';
 import { useAuth } from './context/AuthContext';
 import { useDemo } from './context/DemoContext';
 import { Nav } from './components/Nav';
 import { DemoBanner } from './components/DemoBanner';
-import { Toast } from './components/Toast';
 
 import { BrowseView } from './views/BrowseView';
 import { MySongsView } from './views/MySongsView';
@@ -64,6 +64,7 @@ function parseHash(): Route {
 export function App() {
   const { user } = useAuth();
   const { setDemoMode } = useDemo();
+  const listIdentity = user?.id ?? 'guest';
   const [route, setRoute] = useState<Route>(() => parseHash());
   const [animClass, setAnimClass] = useState('');
 
@@ -73,38 +74,18 @@ export function App() {
     }).catch(() => {});
   }, [setDemoMode]);
 
-  // Auto-scroll to top when any overlay appears
-  useEffect(() => {
-    const observer = new MutationObserver((mutations) => {
-      for (const m of mutations) {
-        for (const node of m.addedNodes) {
-          if (node instanceof HTMLElement && node.hasAttribute('data-overlay')) {
-            window.scrollTo(0, 0);
-            return;
-          }
-        }
-      }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, []);
-
   // Listen for hash changes
-  useEffect(() => {
-    const onHashChange = () => {
-      const newRoute = parseHash();
-      setRoute((prev) => {
-        const isSameView = prev.view === newRoute.view;
-        const isSameParams =
-          Object.keys(prev.params).length === Object.keys(newRoute.params).length &&
-          Object.keys(prev.params).every((k) => prev.params[k] === newRoute.params[k]);
+  useWindowEvent('hashchange', () => {
+    const newRoute = parseHash();
+    setRoute((prev) => {
+      const isSameView = prev.view === newRoute.view;
+      const isSameParams =
+        Object.keys(prev.params).length === Object.keys(newRoute.params).length &&
+        Object.keys(prev.params).every((k) => prev.params[k] === newRoute.params[k]);
 
-        return isSameView && isSameParams ? prev : newRoute;
-      });
-    };
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
-  }, []);
+      return isSameView && isSameParams ? prev : newRoute;
+    });
+  });
 
   const navigate = useCallback((view: string, params: Record<string, string> = {}) => {
     // Trigger animation
@@ -137,46 +118,47 @@ export function App() {
 
     switch (view) {
       case 'browse':
-        return <BrowseView navigate={navigate} />;
+        return <BrowseView key={listIdentity} navigate={navigate} />;
       case 'my-songs':
-        return user ? <MySongsView navigate={navigate} /> : <BrowseView navigate={navigate} />;
+        return user ? <MySongsView key={listIdentity} navigate={navigate} /> : <BrowseView key={listIdentity} navigate={navigate} />;
       case 'song-view':
-        return params.id ? <SongView songId={parseInt(params.id)} navigate={navigate} /> : <BrowseView navigate={navigate} />;
+        return params.id ? <SongView songId={parseInt(params.id)} navigate={navigate} /> : <BrowseView key={listIdentity} navigate={navigate} />;
       case 'song-edit':
         return <SongEditView songId={params.id ? parseInt(params.id) : undefined} navigate={navigate} />;
       case 'correction':
-        return params.id ? <CorrectionView songId={parseInt(params.id)} navigate={navigate} /> : <BrowseView navigate={navigate} />;
+        return params.id ? <CorrectionView songId={parseInt(params.id)} navigate={navigate} /> : <BrowseView key={listIdentity} navigate={navigate} />;
       case 'auth':
         return <AuthView navigate={navigate} />;
       case 'setlists':
-        return <SetlistsView navigate={navigate} />;
+        return <SetlistsView key={listIdentity} navigate={navigate} />;
       case 'public-setlists':
-        return <PublicSetlistsView navigate={navigate} />;
+        return <PublicSetlistsView key={listIdentity} navigate={navigate} />;
       case 'setlist-edit':
         return params.id ? (
           <SetlistEditView
             setlistId={params.id.startsWith('local_') ? params.id : parseInt(params.id)}
             navigate={navigate}
           />
-        ) : <SetlistsView navigate={navigate} />;
+        ) : <SetlistsView key={listIdentity} navigate={navigate} />;
       case 'setlist-play': {
         if (params._setlist) {
           // Local setlist play with pre-loaded data
           try {
             const sl = JSON.parse(params._setlist) as Setlist;
             const initialIdx = params.index ? parseInt(params.index) : undefined;
-            return <SetlistPlayView setlistId={sl.id} isLocal initialSetlist={sl} initialIndex={initialIdx} navigate={navigate} />;
+            return <SetlistPlayView key={sl.id} setlistId={sl.id} isLocal initialSetlist={sl} initialIndex={initialIdx} navigate={navigate} />;
           } catch { /* fall through */ }
         }
         const initialIdx = params.index ? parseInt(params.index) : undefined;
         return params.id ? (
           <SetlistPlayView
+            key={params.id}
             setlistId={params.id.startsWith('local_') ? params.id : parseInt(params.id)}
             isLocal={!!params.local || params.id.startsWith('local_')}
             initialIndex={initialIdx}
             navigate={navigate}
           />
-        ) : <SetlistsView navigate={navigate} />;
+        ) : <SetlistsView key={listIdentity} navigate={navigate} />;
       }
       case 'admin':
         return <AdminView navigate={navigate} />;
@@ -185,7 +167,7 @@ export function App() {
       case 'about':
         return <AboutView navigate={navigate} />;
       default:
-        return <BrowseView navigate={navigate} />;
+        return <BrowseView key={listIdentity} navigate={navigate} />;
     }
   };
 
@@ -196,7 +178,6 @@ export function App() {
       <main id="app" className={animClass}>
         {renderView()}
       </main>
-      <Toast />
     </>
   );
 }

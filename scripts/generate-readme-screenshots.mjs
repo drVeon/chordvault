@@ -1,74 +1,79 @@
-import { chromium } from 'playwright';
-import { existsSync, mkdirSync } from 'fs';
+import { createRequire } from 'node:module';
+import { mkdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { setTimeout } from 'node:timers/promises';
 
-const BASE = 'http://localhost:5173';
-const OUTPUT_DIR = 'docs/screenshots';
+const { chromium } = createRequire(new URL('../frontend/package.json', import.meta.url))('playwright');
+const base = process.env.CV_SCREENSHOT_BASE || 'http://127.0.0.1:3108';
+const songId = process.env.CV_SCREENSHOT_SONG_ID;
+const setlistId = process.env.CV_SCREENSHOT_SETLIST_ID;
+if (!songId || !setlistId) throw new Error('Set CV_SCREENSHOT_SONG_ID and CV_SCREENSHOT_SETLIST_ID to public sample records in the disposable local instance.');
+const output = fileURLToPath(new URL('../docs/screenshots/', import.meta.url));
+mkdirSync(output, { recursive: true });
+const browser = await chromium.launch({ channel: process.env.CV_SCREENSHOT_BROWSER_CHANNEL });
 
-if (!existsSync(OUTPUT_DIR)) {
-  mkdirSync(OUTPUT_DIR, { recursive: true });
+const DESKTOP = { width: 1280, height: 900 };
+const PHONE = { width: 390, height: 844 };
+const TABLET = { width: 768, height: 1024 };
+
+/** Signs in as the seeded demo account so pages behind the account can be shown. */
+async function signIn() {
+  const res = await fetch(`${base}/api/auth/login`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: 'demo', password: 'demopass123' }),
+  });
+  if (!res.ok) throw new Error(`Sign-in failed: ${res.status}`);
+  const { token, id, username, role } = await res.json();
+  return { token, id, username, role };
 }
 
-console.log('Launching browser...');
-const browser = await chromium.launch();
+async function capture(filename, route, scheme, { viewport = DESKTOP, user = null, open = null } = {}) {
+  // Fresh contexts share the server's five-second burst window.
+  await setTimeout(5100);
+  const touch = viewport.width < 1024;
+  const context = await browser.newContext({ viewport, isMobile: touch, hasTouch: touch, reducedMotion: 'reduce' });
+  await context.addInitScript(([theme, account]) => {
+    localStorage.setItem('cv_theme', theme);
+    localStorage.setItem('cv_fontsize', '0');
+    if (account) localStorage.setItem('cv_user', JSON.stringify(account));
+  }, [scheme, user]);
+  const page = await context.newPage();
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto(`${base}/${route}`);
+  await page.locator(`html[data-mantine-color-scheme="${scheme}"]`).waitFor();
+  await page.locator(route ? '.chord-sheet .lyrics:not(:empty)' : '.song-card').first().waitFor();
+  if (open) await open(page);
+  await page.evaluate(() => document.fonts.ready);
+  if (route.includes('/play/')) await page.getByRole('button', { name: 'Fit', exact: true }).click();
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  if (errors.length) throw new Error(errors.join('\n'));
+  await page.screenshot({ path: `${output}${filename}`, fullPage: !route.includes('/play/') });
+  console.log(`Captured ${filename} (${scheme}, ${viewport.width}x${viewport.height})`);
+  await context.close();
+}
+
+const openSetlists = async (page) => {
+  await page.getByRole('button', { name: 'Setlists', exact: true }).click();
+  await page.locator('.setlist-card').first().waitFor();
+};
+const singleColumn = page => page.getByRole('button', { name: 'Multi-column layout' }).click();
+const openEditor = async (page) => {
+  await page.getByRole('button', { name: /Edit$/ }).first().click();
+  await page.locator('.editor-preview-wrap .lyrics:not(:empty)').first().waitFor();
+};
 
 try {
-  console.log('Capturing desktop screenshots...');
-  const dCtx = await browser.newContext({
-    viewport: { width: 1280, height: 900 }
-  });
-  const d = await dCtx.newPage();
-
-  // Log console and errors
-  d.on('console', msg => console.log('  [Browser Log]:', msg.text()));
-  d.on('pageerror', err => console.error('  [Browser Error]:', err));
-
-  // 1. Browse view
-  console.log('  Navigating to browse page...');
-  await d.goto(BASE);
-  await d.waitForSelector('.song-card', { timeout: 5000 });
-  await d.waitForTimeout(1500);
-  console.log('  Capturing browse.png...');
-  await d.screenshot({ path: `${OUTPUT_DIR}/browse.png` });
-
-  // 2. Song view (dark mode)
-  console.log('  Navigating directly to first song page (ID 1)...');
-  await d.goto(`${BASE}/#song/1`);
-  await d.waitForSelector('.chord-sheet', { timeout: 5000 });
-  await d.waitForTimeout(1500);
-  console.log('  Capturing song-view.png...');
-  await d.screenshot({ path: `${OUTPUT_DIR}/song-view.png`, fullPage: true });
-
-  // 3. Song view (light mode)
-  console.log('  Switching to light theme...');
-  const themeBtn = d.locator('button[title="Toggle theme"]').first();
-  await themeBtn.click();
-  await d.waitForSelector('html[data-theme="light"]', { timeout: 2000 });
-  await d.waitForTimeout(1500);
-  console.log('  Capturing song-view-light.png...');
-  await d.screenshot({ path: `${OUTPUT_DIR}/song-view-light.png`, fullPage: true });
-
-  // ── MOBILE CONTEXT ──────────────────────────────────────────────────
-  console.log('Capturing mobile screenshots...');
-  const mCtx = await browser.newContext({
-    viewport: { width: 390, height: 844 },
-    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1'
-  });
-  const m = await mCtx.newPage();
-  m.on('console', msg => console.log('  [Mobile Browser Log]:', msg.text()));
-  m.on('pageerror', err => console.error('  [Mobile Browser Error]:', err));
-
-  // 4. Mobile song view
-  console.log('  Navigating directly to song page on mobile...');
-  await m.goto(`${BASE}/#song/1`);
-  await m.waitForSelector('.chord-sheet', { timeout: 5000 });
-  await m.waitForTimeout(1500);
-  console.log('  Capturing mobile-song-view.png...');
-  await m.screenshot({ path: `${OUTPUT_DIR}/mobile-song-view.png`, fullPage: true });
-
-  console.log('All screenshots captured successfully!');
-} catch (err) {
-  console.error('Error capturing screenshots:', err);
-  process.exit(1);
+  const user = await signIn();
+  await capture('browse.png', '', 'dark');
+  await capture('song-view.png', `#song/${songId}`, 'dark', { open: singleColumn });
+  await capture('song-view-light.png', `#song/${songId}`, 'light', { open: singleColumn });
+  await capture('mobile-song-view.png', `#song/${songId}`, 'light', { viewport: PHONE });
+  await capture('setlist-play.png', `#setlist/${setlistId}/play/0`, 'dark');
+  await capture('setlist-play-light.png', `#setlist/${setlistId}/play/0`, 'light');
+  await capture('tablet-setlist-play.png', `#setlist/${setlistId}/play/0`, 'light', { viewport: TABLET });
+  await capture('setlists.png', '', 'light', { user, open: openSetlists });
+  await capture('song-editor.png', `#song/${songId}`, 'dark', { user, open: openEditor });
 } finally {
   await browser.close();
 }

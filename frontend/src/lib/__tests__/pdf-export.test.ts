@@ -11,7 +11,7 @@ const FONT = resolve(process.cwd(), 'src/assets/NotoSansTC.ttf');
 // Pull the drawn text back out of the PDF. Text is written as Identity-H glyph
 // ids, so it has to be mapped back through the font's ToUnicode CMap — which is
 // exactly what a PDF reader does when you select and copy.
-function textOf(bytes: Uint8Array): string {
+function textRuns(bytes: Uint8Array) {
   const buf = Buffer.from(bytes);
   const raw = buf.toString('latin1');
   const streams: string[] = [];
@@ -39,17 +39,25 @@ function textOf(bytes: Uint8Array): string {
           map[i.toString(16).padStart(4, '0')] = String.fromCodePoint(uni + i - from);
       }
   }
-  return [...streams.join('').matchAll(/<([0-9a-fA-F]+)>\s*Tj/g)]
-    .map((x) => (x[1].match(/..../g) ?? []).map((g) => map[g.toLowerCase()] ?? '').join(''))
-    .join('');
+  return [...streams.join('').matchAll(/BT([\s\S]*?)ET/g)].map((block) => {
+    const fontSize = Number(block[1].match(/\/F\d+ ([\d.]+) Tf/)?.[1]);
+    const position = block[1].match(/([-\d.]+) ([-\d.]+) Td/);
+    const text = [...block[1].matchAll(/<([0-9a-fA-F]+)>\s*Tj/g)]
+      .map((x) => (x[1].match(/..../g) ?? []).map((g) => map[g.toLowerCase()] ?? '').join(''))
+      .join('');
+    return { text, fontSize, x: Number(position?.[1]), y: Number(position?.[2]) };
+  });
 }
+
+const textOf = (bytes: Uint8Array) => textRuns(bytes).map((run) => run.text).join('');
 
 let capturedBlob: Blob;
 const lastPdf = async () => new Uint8Array(await capturedBlob.arrayBuffer());
 
 beforeAll(() => {
-  const font = readFileSync(FONT);
-  vi.stubGlobal('fetch', async () => new Response(font));
+  vi.stubGlobal('fetch', async (url: string) => new Response(readFileSync(
+    url.includes('Semibold') ? FONT.replace('.ttf', '-Semibold.ttf') : FONT,
+  )));
   // jsdom has no object URLs and won't follow a download, so intercept the blob.
   // Patch the statics only — replacing the whole URL global breaks `new URL()`.
   URL.createObjectURL = (blob: Blob) => {
@@ -65,6 +73,25 @@ const song = (content: string, title = 'T') => ({ title, artist: 'A', content, b
 const opts = { transpose: 0, nashville: false, fontSize: 0 };
 
 describe('exportSongPdf', () => {
+  it('keeps a wrapped bilingual title above metadata and the first chord', async () => {
+    const title = '奇異恩典 Amazing Grace — 恩典與盼望 Grace and Hope';
+    const content = `{title: ${title}}\n{artist: Traditional}\n{key: C}\n[C]奇異恩典，何等甘甜，[G]我罪已得[F]赦免\n`;
+    await exportSongPdf(song(content, title), { ...opts, fontSize: 2 });
+    const bytes = await lastPdf();
+    const runs = textRuns(bytes);
+    const key = runs.find((run) => run.text === 'Key of C')!;
+    const artist = runs.find((run) => run.text === 'Traditional')!;
+    const chord = runs.find((run) => run.text === 'C')!;
+    const titleRuns = runs.filter((run) => run.fontSize === 26);
+    expect(titleRuns.map((run) => run.text).join(' ')).toBe(title);
+    expect(Math.min(...titleRuns.map((run) => run.y)) - key.y).toBeGreaterThanOrEqual(20);
+    expect(key.y - artist.y).toBeGreaterThanOrEqual(14);
+    expect(artist.y - chord.y).toBeGreaterThanOrEqual(14);
+    const lyrics = runs.find((run) => run.text.includes('奇異恩典，何等甘甜'))!;
+    expect(chord.fontSize / lyrics.fontSize).toBeCloseTo(1);
+    expect(await pageCount(bytes)).toBe(1);
+  });
+
   it('writes English lyrics as real text', async () => {
     await exportSongPdf(song('{key: G}\n[G]Amazing grace how [C]sweet the sound\n'), opts);
     expect(textOf(await lastPdf())).toContain('Amazing grace how');

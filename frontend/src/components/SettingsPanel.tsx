@@ -1,3 +1,6 @@
+import { ActionIcon, Button, Group, Stack, Switch, Text } from '@mantine/core';
+import { IconRestore } from '@tabler/icons-react';
+
 interface SettingsPanelProps {
   nashville: boolean;
   onNashvilleChange: (val: boolean) => void;
@@ -22,44 +25,25 @@ export function SettingsPanel({
   onFontReset,
 }: SettingsPanelProps) {
   return (
-    <div className="sl-options-panel">
-      <div className="sl-options-title">Setlist defaults (all songs)</div>
-      <label className="sl-option">
-        <span>Number notation</span>
-        <span className="toggle">
-          <input type="checkbox" checked={nashville} onChange={(e) => onNashvilleChange(e.target.checked)} />
-          <span className="toggle-slider" />
-        </span>
-      </label>
-      <label className="sl-option">
-        <span>Hide YouTube</span>
-        <span className="toggle">
-          <input type="checkbox" checked={hideYt} onChange={(e) => onHideYtChange(e.target.checked)} />
-          <span className="toggle-slider" />
-        </span>
-      </label>
-      <label className="sl-option">
-        <span>Multi-column layout</span>
-        <span className="toggle">
-          <input type="checkbox" checked={twoCol} onChange={(e) => onTwoColChange(e.target.checked)} />
-          <span className="toggle-slider" />
-        </span>
-      </label>
-      <div className="sl-option">
-        <span>Font size</span>
-        <div className="sl-font-btns">
-          <button className="btn btn-ghost btn-sm" onClick={() => onFontChange(-1)}>A&#8722;</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => onFontChange(1)}>A+</button>
-          <button
-            className={`btn btn-ghost btn-sm${fontSize === 0 ? ' disabled' : ''}`}
-            onClick={onFontReset}
-            disabled={fontSize === 0}
-            title="Reset"
-          >
-            &#8634;
-          </button>
-        </div>
-      </div>
-    </div>
+    <>
+      <Text size="sm" fw={600} c="dimmed" mb="md">Setlist defaults for all songs</Text>
+      <Stack gap="md">
+        <Switch labelPosition="left" label="Number notation" checked={nashville} onChange={(e) => onNashvilleChange(e.target.checked)} styles={{ body: { justifyContent: 'space-between' } }} />
+        <Switch labelPosition="left" label="Hide YouTube" checked={hideYt} onChange={(e) => onHideYtChange(e.target.checked)} styles={{ body: { justifyContent: 'space-between' } }} />
+        <Switch labelPosition="left" label="Multi-column layout" checked={twoCol} onChange={(e) => onTwoColChange(e.target.checked)} styles={{ body: { justifyContent: 'space-between' } }} />
+        <Group justify="space-between" wrap="nowrap">
+          <Text size="sm">Font size</Text>
+          <Group gap={6} wrap="nowrap">
+            <Button.Group>
+              <Button size="md" px="sm" aria-label="Decrease default font size" onClick={() => onFontChange(-1)}>A&#8722;</Button>
+              <Button size="md" px="sm" aria-label="Increase default font size" onClick={() => onFontChange(1)}>A+</Button>
+            </Button.Group>
+            <ActionIcon size="input-md" aria-label="Reset default font size" title="Reset" disabled={fontSize === 0} onClick={onFontReset}>
+              <IconRestore size={18} aria-hidden />
+            </ActionIcon>
+          </Group>
+        </Group>
+      </Stack>
+    </>
   );
 }

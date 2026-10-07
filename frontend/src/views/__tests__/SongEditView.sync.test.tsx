@@ -39,7 +39,6 @@ const mockUser = { id: 1, username: 'testuser', role: 'owner', token: 'fake' };
 const mockLogin = vi.fn();
 const mockLogout = vi.fn();
 const mockToast = vi.fn();
-const mockToggleTheme = vi.fn();
 const mockT = (key: string) => key;
 const mockTReplace = (key: string) => key;
 
@@ -59,13 +58,10 @@ vi.mock('../../context/I18nContext', () => ({
   }),
 }));
 
-vi.mock('../../context/ToastContext', () => ({
-  useToast: () => mockToast,
+vi.mock('../../lib/notifications', () => ({
+  showStatusNotification: (...args: unknown[]) => mockToast(...args),
 }));
 
-vi.mock('../../context/ThemeContext', () => ({
-  useTheme: () => ({ theme: 'dark', toggleTheme: mockToggleTheme }),
-}));
 
 // ─── Tests ──────────────────────────────────────────────────────────
 
@@ -104,6 +100,42 @@ describe('SongEditView two-way sync', () => {
   function getBpmInput(): HTMLInputElement {
     return screen.getByPlaceholderText('e.g. 120') as HTMLInputElement;
   }
+
+  it('saves the latest source before metadata parsing has completed', async () => {
+    await renderEditor();
+    fireEvent.change(getEditor(), { target: { value: '{title: Latest}\n{x_language: en}\n[G]Latest lyrics' } });
+    fireEvent.click(screen.getByRole('button', { name: 'songEdit.save' }));
+    await waitFor(() => expect(mockApiCall).toHaveBeenCalledWith('POST', '/api/songs', expect.objectContaining({ content: expect.stringContaining('{title: Latest}') })));
+  });
+
+  it('saves a version from the latest source before the parser debounce', async () => {
+    mockApiCall.mockImplementation((method: string, path: string) => {
+      if (method === 'GET' && path === '/api/songs/1') return Promise.resolve({ id: 1, user_id: 1, title: 'Original', content: '{title: Original}\n{x_language: en}\n[G]Original', visibility: 'public' });
+      if (path === '/api/settings/languages') return Promise.resolve({ languages: [] });
+      return Promise.resolve({ id: 2 });
+    });
+    render(<SongEditView songId={1} navigate={navigate} />);
+    await waitFor(() => expect(getEditor().value).toContain('Original'));
+    fireEvent.change(getEditor(), { target: { value: '{title: Version latest}\n{x_language: en}\n[C]Version lyrics' } });
+    fireEvent.click(screen.getByRole('button', { name: 'songEdit.moreActions' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'songEdit.saveAsNewVersion' }));
+    await waitFor(() => expect(mockApiCall).toHaveBeenCalledWith('POST', '/api/songs/1/version', expect.objectContaining({ content: expect.stringContaining('{title: Version latest}') })));
+  });
+
+  it('opens a deletion confirmation and performs no write when canceled', async () => {
+    mockApiCall.mockImplementation((method: string, path: string) => {
+      if (method === 'GET' && path === '/api/songs/1') return Promise.resolve({ id: 1, user_id: 1, content: '{title: Original}\n{x_language: en}\n[G]Original', visibility: 'public' });
+      if (path === '/api/settings/languages') return Promise.resolve({ languages: [] });
+      return Promise.resolve({});
+    });
+    render(<SongEditView songId={1} navigate={navigate} />);
+    await waitFor(() => expect(getEditor().value).toContain('Original'));
+    fireEvent.click(screen.getByRole('button', { name: 'songEdit.moreActions' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'songEdit.deleteSong' }));
+    expect(await screen.findByRole('dialog')).toHaveTextContent('songEdit.confirmDelete');
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(mockApiCall.mock.calls.filter(call => call[0] === 'DELETE')).toHaveLength(0);
+  });
 
   // ─── Field → Editor sync ──────────────────────────────────────
 

@@ -1,13 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
+import { SearchField } from '../components/SearchField';
+import { SearchRow } from '../components/SearchRow';
+import { Button, SimpleGrid, Group } from '@mantine/core';
+import { IconPlus, IconGuitarPick } from '@tabler/icons-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../context/I18nContext';
-import { useToast } from '../context/ToastContext';
+import { showStatusNotification as toast } from '../lib/notifications';
 import { SongCard } from '../components/SongCard';
 import { EmptyState } from '../components/EmptyState';
 import { Pagination } from '../components/Pagination';
-import { TagFilter } from '../components/TagFilter';
 import type { SongListItem } from '../types';
-import { getSessionItem, setSessionItem } from '../lib/storage';
+import { useSearchSessionValue, searchPage } from '../hooks/useSearchSessionValue';
+import { PageTitle } from '../components/PageTitle';
+import { TagFilter } from '../components/TagFilter';
 
 interface MySongsViewProps {
   navigate: (view: string, params?: Record<string, string>) => void;
@@ -16,16 +21,21 @@ interface MySongsViewProps {
 export function MySongsView({ navigate }: MySongsViewProps) {
   const api = useApi();
   const { t } = useI18n();
-  const toast = useToast();
   const [songs, setSongs] = useState<SongListItem[]>([]);
-  const [query, setQuery] = useState(() => getSessionItem('cv_mysongs_query') || '');
-  const [tagFilter, setTagFilter] = useState(() => getSessionItem('cv_mysongs_tag') || '');
+  const [savedQuery, saveQuery] = useSearchSessionValue('cv_mysongs_query');
+  const [query, setQuery] = useState(savedQuery);
+  const [savedTag, saveTag] = useSearchSessionValue('cv_mysongs_tag');
+  const [tagFilter, setTagFilter] = useState(savedTag);
   const [loaded, setLoaded] = useState(false);
-  const [page, setPage] = useState(() => {
-    const saved = getSessionItem('cv_mysongs_page');
-    return saved ? parseInt(saved, 10) : 1;
-  });
+  const [savedPage, savePage] = useSearchSessionValue('cv_mysongs_page', '1');
+  const [page, setPage] = useState(() => searchPage(savedPage));
   const [totalPages, setTotalPages] = useState(1);
+
+  const active = useRef(false);
+  useEffect(() => {
+    active.current = true;
+    return () => { active.current = false; };
+  }, []);
 
   const load = useCallback((q = '', tag = '', targetPage = 1) => {
     let url = '/api/songs';
@@ -35,7 +45,7 @@ export function MySongsView({ navigate }: MySongsViewProps) {
     params.push(`page=${targetPage}`);
     params.push(`limit=20`);
     url += '?' + params.join('&');
-    
+
     interface PaginatedSongsResponse {
       songs: SongListItem[];
       total: number;
@@ -46,16 +56,17 @@ export function MySongsView({ navigate }: MySongsViewProps) {
 
     api<PaginatedSongsResponse>('GET', url)
       .then((data) => {
+        if (!active.current) return;
         setSongs(data.songs);
         setPage(data.page);
         setTotalPages(data.totalPages);
         setLoaded(true);
-        setSessionItem('cv_mysongs_query', q);
-        setSessionItem('cv_mysongs_tag', tag);
-        setSessionItem('cv_mysongs_page', String(data.page));
+        saveQuery(q);
+        saveTag(tag);
+        savePage(String(data.page));
       })
-      .catch((e) => toast(e.message, 'error'));
-  }, [api, toast]);
+      .catch((e) => { if (active.current) toast(e.message, 'error'); });
+  }, [api, saveQuery, saveTag, savePage]);
 
   useEffect(() => {
     load(query, tagFilter, page);
@@ -81,38 +92,21 @@ export function MySongsView({ navigate }: MySongsViewProps) {
 
   return (
     <>
-      <div className="view-header">
-        <h2 className="view-title">{t('songs.mySongs')}</h2>
-      </div>
-      <div className="search-row">
-        <div className="search-input-wrapper">
-          <input
-            type="search"
-            placeholder={t('songs.searchPlaceholder')}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') doSearch(); }}
-          />
-          {query && (
-            <button
-              className="search-clear-btn"
-              onClick={handleClear}
-              title="Clear search"
-            >
-              &times;
-            </button>
-          )}
-        </div>
-        <button className="btn btn-ghost btn-sm" onClick={doSearch}>{t('songs.search')}</button>
-        <button className="btn btn-sm" onClick={() => navigate('song-edit')}>{t('songs.newSong')}</button>
-      </div>
+      <Group justify="space-between" mb="lg">
+        <PageTitle className="view-title">{t('songs.mySongs')}</PageTitle>
+      </Group>
+      <SearchRow>
+        <SearchField label={t('songs.searchPlaceholder')} value={query} onChange={setQuery} onSearch={doSearch} onClear={handleClear} />
+        <Button variant="default" size="sm" onClick={doSearch}>{t('songs.search')}</Button>
+        <Button size="sm" w={{ base: '100%', xs: 'auto' }} leftSection={<IconPlus size={16} aria-hidden />} onClick={() => navigate('song-edit')}>{t('songs.newSong')}</Button>
+      </SearchRow>
       <div className="search-filters">
         <TagFilter selected={tagFilter} onChange={changeTag} />
       </div>
-      <div className="song-grid">
+      <SimpleGrid className="song-grid" minColWidth="min(100%, 320px)" autoFlow="auto-fill" spacing={12}>
         {loaded && songs.length === 0 ? (
           <EmptyState
-            icon="&#127928;"
+            icon={<IconGuitarPick size={56} aria-hidden />}
             text={query || tagFilter ? t('songs.noMatches') : t('songs.noSongs')}
             action={!query && !tagFilter ? { label: t('songs.addFirst'), onClick: () => navigate('song-edit') } : undefined}
           />
@@ -128,7 +122,7 @@ export function MySongsView({ navigate }: MySongsViewProps) {
             />
           ))
         )}
-      </div>
+      </SimpleGrid>
       <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
     </>
   );

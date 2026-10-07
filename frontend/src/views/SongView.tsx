@@ -1,8 +1,12 @@
+import { useDisclosure } from '@mantine/hooks';
+import { Badge, Paper, Button, NativeSelect, Group, Box, Text } from '@mantine/core';
+import { IconLock } from '@tabler/icons-react';
+import { modals } from '@mantine/modals';
 import { useState, useEffect, useMemo } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
-import { useToast } from '../context/ToastContext';
+import { showStatusNotification as toast } from '../lib/notifications';
 import { useChordRenderer } from '../hooks/useChordRenderer';
 import { useFontScale } from '../hooks/useFontScale';
 import { useTwoCol } from '../hooks/useTwoCol';
@@ -14,6 +18,7 @@ import { AddToSetlistModal } from '../components/AddToSetlistModal';
 import { renderChordPro, songHasKey, autoFit, getOriginalKey, getSongKey } from '../lib/chords';
 import { languageName } from '../lib/languages';
 import type { Song, SongVersion, Correction } from '../types';
+import { PageTitle } from '../components/PageTitle';
 
 interface SongViewProps {
   songId: number;
@@ -24,11 +29,10 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const apiCall = useApi();
   const { user } = useAuth();
   const { t } = useI18n();
-  const toast = useToast();
   const [song, setSong] = useState<Song | null>(null);
   const [versions, setVersions] = useState<SongVersion[]>([]);
   const [corrections, setCorrections] = useState<Correction[]>([]);
-  const [addToSetlistOpen, setAddToSetlistOpen] = useState(false);
+  const [addToSetlistOpen, addToSetlist] = useDisclosure(false);
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
@@ -39,7 +43,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
         location.hash = `#song/${songId}`;
       })
       .catch((e) => { toast(e.message, 'error'); navigate(user ? 'my-songs' : 'browse'); });
-  }, [songId, apiCall, navigate, toast, user]);
+  }, [songId, apiCall, navigate, user]);
 
   useEffect(() => {
     if (!song) return;
@@ -122,7 +126,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
 
 
   const approveCorrection = async (id: number) => {
-    if (!confirm('Apply this correction? The original song content will be updated.')) return;
+    modals.openConfirmModal({ children: 'Apply this correction? The original song content will be updated.', labels: { confirm: 'Confirm', cancel: 'Cancel' }, onConfirm: async () => {
     try {
       await apiCall('PUT', `/api/corrections/${id}/approve`);
       toast('Correction approved', 'success');
@@ -130,60 +134,64 @@ export function SongView({ songId, navigate }: SongViewProps) {
       const data = await apiCall<Song>('GET', `/api/songs/${songId}`);
       setSong(data);
     } catch (e) { toast((e as Error).message, 'error'); }
-  };
+
+} });
+};
 
   const rejectCorrection = async (id: number) => {
-    if (!confirm('Reject and delete this correction?')) return;
+    modals.openConfirmModal({ children: 'Reject and delete this correction?', labels: { confirm: 'Confirm', cancel: 'Cancel' }, onConfirm: async () => {
     try {
       await apiCall('DELETE', `/api/corrections/${id}`);
       toast('Correction rejected', 'success');
       setCorrections((prev) => prev.filter((c) => c.id !== id));
     } catch (e) { toast((e as Error).message, 'error'); }
-  };
+
+} });
+};
 
   if (!song) return <Loading />;
 
   return (
     <div lang={song.language || undefined}>
-      <div className="song-view-header">
-        <div className="song-view-nav">
-          <button className="btn btn-ghost btn-sm" onClick={() => navigate(user ? 'my-songs' : 'browse')}>
+      <Box mb="lg">
+        <Group justify="space-between" mb="md">
+          <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate(user ? 'my-songs' : 'browse')}>
             &#8592; {t('songView.back')}
-          </button>
-          <div style={{ display: 'flex', gap: 8 }}>
+          </Button>
+          <Group gap="xs">
             {isOwner && (
-              <button className="btn btn-ghost btn-sm" onClick={() => navigate('song-edit', { id: String(song.id) })}>
+              <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate('song-edit', { id: String(song.id) })}>
                 &#9998; {t('songView.edit')}
-              </button>
+              </Button>
             )}
             {user && !isOwner && song.visibility !== 'private' && (
               <>
-                <button className="btn btn-ghost btn-sm" onClick={() => navigate('song-edit', { id: String(song.id) })}>
+                <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate('song-edit', { id: String(song.id) })}>
                   &#43; Create Version
-                </button>
-                <button className="btn btn-ghost btn-sm" onClick={() => navigate('correction', { id: String(song.id) })}>
+                </Button>
+                <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate('correction', { id: String(song.id) })}>
                   &#9998; Correction
-                </button>
+                </Button>
               </>
             )}
-            <button className="btn btn-ghost btn-sm" onClick={() => setAddToSetlistOpen(true)}>
+            <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={addToSetlist.open}>
               &#43; {t('songView.addToSetlist')}
-            </button>
-          </div>
-        </div>
-        <h1 className="song-view-title">{song.title}</h1>
-        {song.artist && <div className="song-view-artist">{song.artist}</div>}
-        <div className="song-view-meta">
+            </Button>
+          </Group>
+        </Group>
+        <PageTitle order={1} className="song-view-title">{song.title}</PageTitle>
+        {song.artist && <Text size="lg" c="dimmed" mt={4}>{song.artist}</Text>}
+        <Group gap="xs" mt="xs">
           {!isOwner && song.username && <span className="song-view-by">@{song.username}</span>}
-          {showOriginalKey && <span className="badge badge-key badge-key-original" title="Original key">Original {originalKey}</span>}
-          {song.bpm && <span className="badge badge-bpm">{song.bpm} bpm</span>}
-          {song.language && <span className="badge badge-lang" title={languageName(song.language)}>{song.language.toUpperCase()}</span>}
-          {isOwner && song.visibility === 'private' && <span className="badge badge-private">&#128274; Private</span>}
+          {showOriginalKey && <Badge variant="outline" className="badge-key-original" title="Original key">Original {originalKey}</Badge>}
+          {song.bpm && <Badge>{song.bpm} bpm</Badge>}
+          {song.language && <Badge title={languageName(song.language)}>{song.language.toUpperCase()}</Badge>}
+          {isOwner && song.visibility === 'private' && <Badge leftSection={<IconLock size={14} aria-hidden />}>Private</Badge>}
           {versions.length > 1 && (
-            <div className="version-selector-container">
-              <span className="version-selector-label">Version</span>
-              <select
-                className="version-select-compact"
+            <Group gap="xs" wrap="nowrap">
+              <Text component="label" htmlFor="song-version" size="xs" c="dimmed" fw={600}>Version</Text>
+              <NativeSelect
+                id="song-version" size="xs"
                 value={songId}
                 onChange={(e) => navigate('song-view', { id: e.target.value })}
               >
@@ -192,11 +200,11 @@ export function SongView({ songId, navigate }: SongViewProps) {
                     {idx + 1} (@{v.username}) {v.youtube_url ? '▶' : ''}
                   </option>
                 ))}
-              </select>
-            </div>
+              </NativeSelect>
+            </Group>
           )}
-        </div>
-      </div>
+        </Group>
+      </Box>
 
       <Toolbar
         currentKey={chord.currentKey}
@@ -208,8 +216,8 @@ export function SongView({ songId, navigate }: SongViewProps) {
         onTwoColToggle={twoColState.toggleTwoCol}
         fontSize={fontScale.fontSize}
         onFontChange={fontScale.changeFontSize}
-        onReset={() => { 
-          fontScale.resetFontSize(); 
+        onReset={() => {
+          fontScale.resetFontSize();
           twoColState.setTwoColTo(false);
         }}
         onPickKey={chord.pickKey}
@@ -218,17 +226,17 @@ export function SongView({ songId, navigate }: SongViewProps) {
         renderKey={songId}
       />
 
-      <ChordSheet 
-        html={renderedHtml} 
-        twoCol={twoColState.twoCol} 
-        fontSize={fontScale.fontSize} 
+      <ChordSheet
+        html={renderedHtml}
+        twoCol={twoColState.twoCol}
+        fontSize={fontScale.fontSize}
       />
 
       {(song.tags || song.youtube_url) && (
-        <div className="song-view-meta song-view-meta-bottom">
-          {song.tags && song.tags.split(',').map((tag) => <span key={tag} className="badge badge-tag">{tag}</span>)}
+        <Group gap="xs" mt="xs">
+          {song.tags && song.tags.split(',').map((tag) => <Badge key={tag}>{tag}</Badge>)}
           {song.youtube_url && <a href={song.youtube_url} target="_blank" rel="noopener" className="yt-link">&#9654; YouTube</a>}
-        </div>
+        </Group>
       )}
 
       {/* Corrections section */}
@@ -236,23 +244,23 @@ export function SongView({ songId, navigate }: SongViewProps) {
         <div className="corrections-section">
           <h3 className="admin-section-title">Pending Corrections ({corrections.length})</h3>
           {corrections.map((c) => (
-            <div key={c.id} className="correction-card">
-              <div className="correction-card-header">
+            <Paper withBorder key={c.id} className="correction-card" bg="var(--ui-card-bg)" radius={12} p={16} mb={12} shadow="sm">
+              <Group justify="space-between" gap={8} mb={12} c="dimmed" fz={13}>
                 <span>@{c.username} &middot; {new Date(c.created_at).toLocaleDateString()}</span>
-                <div className="correction-actions">
-                  <button className="btn btn-sm" onClick={() => approveCorrection(c.id)}>Approve</button>
-                  <button className="btn btn-danger btn-sm" onClick={() => rejectCorrection(c.id)}>Reject</button>
-                </div>
-              </div>
+                <Group gap={8}>
+                  <Button size="xs" className="btn btn-sm" onClick={() => approveCorrection(c.id)}>Approve</Button>
+                  <Button color="red" size="xs" className="btn btn-danger btn-sm" onClick={() => rejectCorrection(c.id)}>Reject</Button>
+                </Group>
+              </Group>
               <div className="correction-preview" dangerouslySetInnerHTML={{ __html: renderChordPro(c.content, 0, false) }} />
-            </div>
+            </Paper>
           ))}
         </div>
       )}
 
       <AddToSetlistModal
         isOpen={addToSetlistOpen}
-        onClose={() => setAddToSetlistOpen(false)}
+        onClose={addToSetlist.close}
         songId={songId}
         songTitle={song?.title || ''}
         songArtist={song?.artist || ''}

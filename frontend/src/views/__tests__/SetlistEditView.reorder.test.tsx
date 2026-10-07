@@ -18,7 +18,7 @@ const { mockApiCall, mockToast, t } = vi.hoisted(() => ({
 vi.mock('../../hooks/useApi', () => ({ useApi: () => mockApiCall }));
 vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: null }) }));
 vi.mock('../../context/I18nContext', () => ({ useI18n: () => ({ t }) }));
-vi.mock('../../context/ToastContext', () => ({ useToast: () => mockToast }));
+vi.mock('../../lib/notifications', () => ({ showStatusNotification: (...args: unknown[]) => mockToast(...args) }));
 
 const STORED = [
   { song_id: 1, title: 'Alpha', artist: '', transpose: 2, nashville: 0 },

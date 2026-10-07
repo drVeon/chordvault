@@ -69,8 +69,7 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     const isAdmin = isAdminRole(req.user.role);
     const date = new Date().toISOString().slice(0, 10);
     const zip = new yazl.ZipFile();
-    res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', `attachment; filename="chordvault-export-${date}.zip"`);
+    res.attachment(`chordvault-export-${date}.zip`);
     zip.outputStream.on('error', (err) => {
       console.error('Export zip error:', err.message);
       res.destroy(err);

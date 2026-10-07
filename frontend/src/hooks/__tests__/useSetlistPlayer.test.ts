@@ -15,8 +15,8 @@ vi.mock('../../context/AuthContext', () => ({
   useAuth: () => ({ user: mockUser }),
 }));
 
-vi.mock('../../context/ToastContext', () => ({
-  useToast: () => mockToast,
+vi.mock('../../lib/notifications', () => ({
+  showStatusNotification: (...args: unknown[]) => mockToast(...args),
 }));
 
 vi.mock('../../lib/storage', async () => {
@@ -60,6 +60,36 @@ describe('useSetlistPlayer Hook', () => {
     vi.clearAllMocks();
     mockApiCall.mockReset();
     mockGetOverrides.mockReturnValue({});
+  });
+
+  it('uses the current index for hash navigation and removes the listener on unmount', async () => {
+    const onNavigate = vi.fn();
+    const entries = [0, 1, 2].map(i => ({ ...mockSetlist.entries[0], entry_id: `entry_${i}` }));
+    mockApiCall.mockResolvedValue({ ...mockSetlist, entries });
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    const { result, unmount } = renderHook(() => useSetlistPlayer({ setlistId: 1, navigate, onNavigate }));
+    await waitFor(() => expect(result.current.setlist).not.toBeNull());
+    const changeHash = (hash: string) => act(() => {
+      history.replaceState(null, '', hash);
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    });
+    try {
+      changeHash('#setlist/1/play/2');
+      expect(result.current.index).toBe(2);
+      changeHash('#setlist/1/play/1');
+      expect(result.current.index).toBe(1);
+      onNavigate.mockClear();
+      changeHash('#setlist/1/play/1');
+      expect(onNavigate).not.toHaveBeenCalled();
+      changeHash('#setlist/1/play/99');
+      expect(result.current.index).toBe(1);
+      expect(location.hash).toBe('#setlist/1/play/1');
+      unmount();
+      changeHash('#setlist/1/play/2');
+      expect(onNavigate).not.toHaveBeenCalled();
+    } finally {
+      history.replaceState(null, '', '/');
+    }
   });
 
   it('forces font, two_col to null and nashville to 0 on setlist load to protect against legacy values', async () => {

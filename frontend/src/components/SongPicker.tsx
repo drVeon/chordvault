@@ -1,14 +1,30 @@
+import { Badge, Flex, Modal, Button, NativeSelect, TextInput, SimpleGrid, Group, Text } from '@mantine/core';
+import { EmptyState } from './EmptyState';
+import { ListCard } from './ListCard';
+import { SearchRow } from './SearchRow';
+import { useModals } from '@mantine/modals';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../context/I18nContext';
 import type { SongListItem, SongVersion } from '../types';
 
 interface SongPickerProps {
+  opened: boolean;
   onPick: (song: SongListItem) => void;
   onClose: () => void;
 }
 
-export function SongPicker({ onPick, onClose }: SongPickerProps) {
+export function SongPicker({ opened, onPick, onClose }: SongPickerProps) {
+  const modalManager = useModals();
+  const { t } = useI18n();
+  return (
+    <Modal opened={opened} onClose={onClose} title={t('setlist.pickSong')} trapFocus={modalManager.modals.length === 0} closeOnEscape={modalManager.modals.length === 0} closeOnClickOutside={modalManager.modals.length === 0}>
+      {opened && <SongPickerContent onPick={onPick} />}
+    </Modal>
+  );
+}
+
+function SongPickerContent({ onPick }: Pick<SongPickerProps, 'onPick'>) {
   const api = useApi();
   const { t } = useI18n();
   const [songs, setSongs] = useState<SongListItem[]>([]);
@@ -47,51 +63,49 @@ export function SongPicker({ onPick, onClose }: SongPickerProps) {
   };
 
   return (
-    <div className="modal-backdrop" data-overlay onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="setlist-add-content">
-        <div className="view-header">
-          <h3 className="view-title">{t('setlist.pickSong')}</h3>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>&#10005;</button>
-        </div>
-        <div className="search-row" style={{ marginBottom: 8 }}>
-          <input
+    <>
+
+
+        <SearchRow mb={8}>
+          <TextInput aria-label={t('songs.searchPlaceholder')}
+            flex={3}
+            miw={0}
             type="search"
             placeholder={t('songs.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') load(search); }}
-            autoFocus
+            data-autofocus
           />
-          <button className="btn btn-ghost btn-sm" onClick={() => load(search)}>Search</button>
-        </div>
-        <div className="song-grid">
+          <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => load(search)}>Search</Button>
+        </SearchRow>
+        <SimpleGrid className="song-grid" minColWidth="min(100%, 320px)" autoFlow="auto-fill" spacing={12}>
           {songs.length === 0 ? (
-            <div className="empty"><div className="empty-text">{t('songs.noPublicSongs')}</div></div>
+            <EmptyState text={t('songs.noPublicSongs')} />
           ) : songs.map((s) => (
             <div key={s.id} className="song-picker-item" style={{ display: 'contents' }}>
-              <div className="song-card" onClick={() => handleCardClick(s)} style={expandedId === s.id ? { borderColor: 'var(--accent)', boxShadow: '0 0 0 1px var(--accent)' } : {}}>
-                <div className="song-card-info">
-                  <div className="song-card-title">{s.title}</div>
-                  <div className="song-card-meta">
-                    {s.artist || ''}
-                    {s.version_count && s.version_count > 1 && (
-                      <span className="badge badge-tag" style={{ marginLeft: 8, background: 'var(--accent-alt)', color: 'white', fontSize: 10 }}>
-                        {s.version_count} Versions
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <ListCard
+                className="mantine-focus-auto"
+                title={s.title}
+                meta={<>
+                  {s.artist || ''}
+                  {(s.version_count ?? 0) > 1 && (
+                    <Badge variant="filled" ml={8}>{s.version_count} Versions</Badge>
+                  )}
+                </>}
+                onClick={() => { void handleCardClick(s); }}
+                style={expandedId === s.id ? { borderColor: 'var(--accent)', boxShadow: '0 0 0 1px var(--accent)' } : undefined}
+              />
               {expandedId === s.id && (
-                <div className="song-card version-list-card" style={{ gridColumn: '1 / -1', marginTop: -12, padding: '12px 16px', borderTopLeftRadius: 0, borderTopRightRadius: 0, background: 'var(--bg-alt)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Flex className="song-card version-list-card" align="center" justify="space-between" wrap="wrap" gap={12} px={16} py={12} mt={-12} style={{ gridColumn: '1 / -1', borderTopLeftRadius: 0, borderTopRightRadius: 0, background: 'var(--bg-alt)' }}>
                   {loadingVersions ? (
                     <div style={{ padding: 8, color: 'var(--muted)', fontSize: 13 }}>Loading versions...</div>
                   ) : (
                     <>
-                      <div className="version-selector-container" style={{ background: 'var(--surface)' }}>
-                        <span className="version-selector-label">Version</span>
-                        <select
-                          className="version-select-compact"
+                      <Group gap="xs" wrap="nowrap" maw="100%">
+                        <Text component="label" htmlFor={`picker-version-${s.id}`} size="xs" c="dimmed" fw={600}>Version</Text>
+                        <NativeSelect
+                          id={`picker-version-${s.id}`} size="xs" miw={0}
                           onChange={(e) => {
                             const vId = parseInt(e.target.value);
                             const v = versions.find(ver => ver.id === vId);
@@ -105,19 +119,19 @@ export function SongPicker({ onPick, onClose }: SongPickerProps) {
                               {idx + 1} (@{v.username}) {v.youtube_url ? '▶' : ''}
                             </option>
                           ))}
-                        </select>
-                      </div>
+                        </NativeSelect>
+                      </Group>
                       <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500 }}>
                         {versions.length} {t('setlist.versions').toLowerCase()}
                       </div>
                     </>
                   )}
-                </div>
+                </Flex>
               )}
             </div>
           ))}
-        </div>
-      </div>
-    </div>
+        </SimpleGrid>
+
+    </>
   );
 }

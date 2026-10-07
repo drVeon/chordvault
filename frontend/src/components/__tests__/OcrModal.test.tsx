@@ -1,0 +1,94 @@
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
+import { OcrModal } from '../OcrModal';
+
+const { api, toast } = vi.hoisted(() => ({ api: vi.fn(), toast: vi.fn() }));
+vi.mock('../../hooks/useApi', () => ({ useApi: () => api }));
+vi.mock('../../lib/notifications', () => ({ showStatusNotification: toast }));
+
+beforeEach(() => {
+  api.mockReset();
+  toast.mockReset();
+  api.mockResolvedValue({ model: 'test-model', models: [] });
+});
+
+it('loads only while open, restores focus, and ignores a closed extraction failure after reopening', async () => {
+  let rejectExtraction!: (error: Error) => void;
+  api.mockImplementation((method: string) => method === 'GET'
+    ? Promise.resolve({ model: 'test-model', models: [] })
+    : new Promise((_, reject) => { rejectExtraction = reject; }));
+  function Harness() {
+    const [opened, setOpened] = useState(false);
+    return <><button onClick={() => setOpened(true)}>Open OCR</button><OcrModal opened={opened} hasGeminiKey onResult={vi.fn()} onClose={() => setOpened(false)} /></>;
+  }
+  render(<Harness />);
+  expect(api).not.toHaveBeenCalled();
+  const opener = screen.getByRole('button', { name: 'Open OCR' });
+  await userEvent.click(opener);
+  await userEvent.upload(screen.getByLabelText('Image or PDF file upload'), new File(['image'], 'sheet.png', { type: 'image/png' }));
+  await userEvent.click(screen.getByRole('button', { name: /Extract text/ }));
+  await waitFor(() => expect(api).toHaveBeenCalledWith('POST', '/api/ocr/gemini', expect.objectContaining({ model: 'test-model' })));
+  expect(screen.getByRole('button', { name: 'Clear selected file' })).toBeDisabled();
+  await userEvent.click(screen.getByRole('button', { name: 'Clear selected file' }));
+  expect((screen.getByLabelText('Image or PDF file upload') as HTMLInputElement).files).toHaveLength(1);
+  await userEvent.keyboard('{Escape}');
+  await waitFor(() => expect(opener).toHaveFocus());
+  await userEvent.click(opener);
+  expect((screen.getByLabelText('Image or PDF file upload') as HTMLInputElement).files).toHaveLength(0);
+  expect(screen.getByRole('button', { name: /Extract text/ })).toBeEnabled();
+  await act(async () => { rejectExtraction(new Error('Old request failed')); });
+  expect(toast).not.toHaveBeenCalled();
+  expect(api.mock.calls.filter(([method]) => method === 'GET')).toHaveLength(2);
+});
+
+it('clears the selected PDF and never extracts a stale file', async () => {
+  render(<OcrModal opened hasGeminiKey onResult={vi.fn()} onClose={vi.fn()} />);
+  const input = screen.getByLabelText('Image or PDF file upload');
+  await userEvent.upload(input, new File(['pdf'], 'sheet.pdf', { type: 'application/pdf' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Clear selected file' }));
+  expect(screen.queryByText(/sheet.pdf/)).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: /Extract text/ }));
+  expect(toast).toHaveBeenCalledWith('Please select a file first', 'error');
+  expect(api.mock.calls.filter(([method]) => method === 'POST')).toHaveLength(0);
+});
+
+it('extracts the replacement file, not the earlier selection', async () => {
+  api.mockImplementation((method: string) => Promise.resolve(method === 'GET' ? { model: 'test-model', models: [] } : { text: '[C]Grace', language: 'en' }));
+  render(<OcrModal opened hasGeminiKey onResult={vi.fn()} onClose={vi.fn()} />);
+  const input = screen.getByLabelText('Image or PDF file upload');
+  await userEvent.upload(input, new File(['old'], 'old.pdf', { type: 'application/pdf' }));
+  await userEvent.upload(input, new File(['replacement'], 'new.pdf', { type: 'application/pdf' }));
+  await userEvent.click(screen.getByRole('button', { name: /Extract text/ }));
+  await waitFor(() => expect(api).toHaveBeenCalledWith('POST', '/api/ocr/gemini', expect.objectContaining({ image: 'data:application/pdf;base64,cmVwbGFjZW1lbnQ=' })));
+});
+
+it('scrolls to a completed correction and cancels the pending scroll when closed', async () => {
+  api.mockImplementation((_method: string, path: string) => Promise.resolve(
+    path === '/api/settings/ocr-model' ? { model: 'test-model', models: [] }
+      : { text: '[G]Amazing grace', language: 'en' },
+  ));
+  const scroll = vi.mocked(HTMLElement.prototype.scrollIntoView);
+  scroll.mockClear();
+  const props = { hasGeminiKey: true, onResult: vi.fn(), onClose: vi.fn() };
+  const { rerender } = render(<OcrModal opened {...props} />);
+  await userEvent.upload(screen.getByLabelText('Image or PDF file upload'), new File(['pdf'], 'sheet.pdf', { type: 'application/pdf' }));
+  await userEvent.click(screen.getByRole('button', { name: /Extract text/ }));
+  await screen.findByLabelText('Extracted text');
+  await userEvent.type(screen.getByLabelText('Describe what to fix...'), 'Use G');
+  vi.useFakeTimers();
+  try {
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Fix' })); });
+    expect(screen.getByLabelText('Corrected result')).toHaveValue('[G]Amazing grace');
+    act(() => { vi.advanceTimersByTime(100); });
+    expect(scroll).toHaveBeenCalledWith({ behavior: 'smooth' });
+    scroll.mockClear();
+    fireEvent.change(screen.getByLabelText('Describe what to fix...'), { target: { value: 'Use C' } });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Fix' })); });
+    rerender(<OcrModal opened={false} {...props} />);
+    act(() => { vi.advanceTimersByTime(100); });
+    expect(scroll).not.toHaveBeenCalled();
+  } finally {
+    vi.useRealTimers();
+  }
+});

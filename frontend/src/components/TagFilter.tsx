@@ -1,3 +1,4 @@
+import { NativeSelect } from '@mantine/core';
 import { PRESET_TAGS } from '../lib/constants';
 
 interface TagFilterProps {
@@ -11,7 +12,7 @@ export function TagFilter({ selected, onChange }: TagFilterProps) {
   const tags = selected && !PRESET_TAGS.includes(selected) ? [...PRESET_TAGS, selected].sort() : PRESET_TAGS;
 
   return (
-    <select
+    <NativeSelect
       className="language-filter tag-filter"
       aria-label="Filter by tag"
       value={selected}
@@ -21,6 +22,6 @@ export function TagFilter({ selected, onChange }: TagFilterProps) {
       {tags.map((tag) => (
         <option key={tag} value={tag}>{tag}</option>
       ))}
-    </select>
+    </NativeSelect>
   );
 }

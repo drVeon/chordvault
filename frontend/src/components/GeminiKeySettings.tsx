@@ -1,3 +1,4 @@
+import { Button, PasswordInput, Stack, Group, Badge, Alert } from '@mantine/core';
 import { useCallback, useEffect, useState } from 'react';
 import { useApi } from '../hooks/useApi';
 
@@ -5,6 +6,7 @@ export function GeminiKeySettings() {
   const apiCall = useApi();
   const [hasKey, setHasKey] = useState<boolean | null>(null);
   const [geminiKey, setGeminiKey] = useState('');
+  const [pending, setPending] = useState<'save' | 'remove' | null>(null);
   const [message, setMessage] = useState<{ text: string; color: string } | null>(null);
 
   const loadStatus = useCallback(async () => {
@@ -13,7 +15,7 @@ export function GeminiKeySettings() {
       setHasKey(data.hasKey);
     } catch {
       setHasKey(null);
-      setMessage({ text: 'Could not check key status', color: 'var(--danger)' });
+      setMessage({ text: 'Could not check key status', color: 'red' });
     }
   }, [apiCall]);
 
@@ -22,40 +24,48 @@ export function GeminiKeySettings() {
   }, [loadStatus]);
 
   const saveKey = async () => {
+    if (pending) return;
     setMessage(null);
     if (!geminiKey.trim()) {
-      setMessage({ text: 'Enter an API key', color: 'var(--danger)' });
+      setMessage({ text: 'Enter an API key', color: 'red' });
       return;
     }
+    setPending('save');
     try {
       await apiCall('PUT', '/api/settings/gemini-key', { api_key: geminiKey.trim() });
       setHasKey(true);
       setGeminiKey('');
-      setMessage({ text: hasKey ? 'Key replaced' : 'Key saved', color: 'var(--success)' });
+      setMessage({ text: hasKey ? 'Key replaced' : 'Key saved', color: 'green' });
     } catch (error) {
-      setMessage({ text: (error as Error).message, color: 'var(--danger)' });
+      setMessage({ text: (error as Error).message, color: 'red' });
+    } finally {
+      setPending(null);
     }
   };
 
   const removeKey = async () => {
+    if (pending) return;
+    setPending('remove');
     try {
       await apiCall('DELETE', '/api/settings/gemini-key');
       setHasKey(false);
       setGeminiKey('');
-      setMessage({ text: 'Key removed', color: 'var(--success)' });
+      setMessage({ text: 'Key removed', color: 'green' });
     } catch (error) {
-      setMessage({ text: (error as Error).message, color: 'var(--danger)' });
+      setMessage({ text: (error as Error).message, color: 'red' });
+    } finally {
+      setPending(null);
     }
   };
 
   return (
-    <div className="auth-card">
-      <div className={`gemini-key-status${hasKey ? ' configured' : ''}`} role="status">
+    <Stack gap="sm">
+      <div role="status" aria-live="polite">
+        <Badge color={hasKey ? 'green' : 'gray'}>
         {hasKey === null ? 'Checking key status…' : hasKey ? '✓ Key configured' : 'No key configured'}
+        </Badge>
       </div>
-      <div className="field">
-        <label htmlFor="gemini-api-key">{hasKey ? 'Replace Gemini API Key' : 'Gemini API Key'}</label>
-        <input
+              <PasswordInput label={<>{hasKey ? 'Replace Gemini API Key' : 'Gemini API Key'}</>}
           id="gemini-api-key"
           type="password"
           value={geminiKey}
@@ -63,22 +73,21 @@ export function GeminiKeySettings() {
           placeholder={hasKey ? '•••••••••••• (saved key)' : 'Paste your Gemini API key here'}
           autoComplete="off"
         />
-      </div>
-      <div className="flex-row">
-        <button className="btn btn-sm" onClick={saveKey}>
+      <Group gap={8}>
+        <Button size="xs" className="btn btn-sm" onClick={saveKey} loading={pending === 'save'} disabled={pending === 'remove'}>
           {hasKey ? 'Replace Key' : 'Save Key'}
-        </button>
+        </Button>
         {hasKey && (
-          <button className="btn btn-danger btn-sm" onClick={removeKey}>
+          <Button color="red" size="xs" className="btn btn-danger btn-sm" onClick={removeKey} loading={pending === 'remove'} disabled={pending === 'save'}>
             Remove Key
-          </button>
+          </Button>
         )}
-      </div>
+      </Group>
       {message && (
-        <div className="field-message" style={{ color: message.color }}>
+        <Alert color={message.color} role={message.color === 'red' ? 'alert' : 'status'}>
           {message.text}
-        </div>
+        </Alert>
       )}
-    </div>
+    </Stack>
   );
 }

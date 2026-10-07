@@ -1,7 +1,7 @@
+import { Button, useComputedColorScheme, Group, Title, Text, Paper } from '@mantine/core';
 import { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
-import { useToast } from '../context/ToastContext';
-import { useTheme } from '../context/ThemeContext';
+import { showStatusNotification as toast } from '../lib/notifications';
 import { CodeMirrorEditor } from '../components/CodeMirrorEditor';
 import { detectFormat, toChordPro, ensureKeyDirective } from '../lib/chords';
 import type { Song } from '../types';
@@ -13,15 +13,14 @@ interface CorrectionViewProps {
 
 export function CorrectionView({ songId, navigate }: CorrectionViewProps) {
   const apiCall = useApi();
-  const toast = useToast();
-  const { theme } = useTheme();
+  const theme = useComputedColorScheme('dark');
   const [content, setContent] = useState('');
 
   useEffect(() => {
     apiCall<Song>('GET', `/api/songs/${songId}`)
       .then((s) => setContent(s.content))
       .catch((e) => { toast(e.message, 'error'); navigate('browse'); });
-  }, [songId, apiCall, navigate, toast]);
+  }, [songId, apiCall, navigate]);
 
   const submit = async () => {
     const trimmed = content.trim();
@@ -39,24 +38,22 @@ export function CorrectionView({ songId, navigate }: CorrectionViewProps) {
 
   return (
     <>
-      <div className="edit-header">
-        <button className="btn btn-ghost btn-sm" onClick={() => navigate('song-view', { id: String(songId) })}>&#8592; Cancel</button>
-        <h2>Submit Correction</h2>
-        <button className="btn btn-sm" onClick={submit}>Submit</button>
-      </div>
-      <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 12 }}>
+      <Group mb="lg">
+        <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate('song-view', { id: String(songId) })}>&#8592; Cancel</Button>
+        <Title order={2} size="h3" flex="1 1 160px">Submit Correction</Title>
+        <Button size="xs" className="btn btn-sm" onClick={submit}>Submit</Button>
+      </Group>
+      <Text size="sm" c="dimmed" mb="sm">
         Edit the chords below. Your correction will be reviewed by the song owner before being applied.
-      </p>
-      <div className="field">
-        <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+      </Text>
+      <Paper withBorder radius="md" mb="sm" style={{ overflow: 'hidden' }}>
           <CodeMirrorEditor
             value={content}
             onChange={setContent}
             darkMode={theme === 'dark'}
             placeholder="Corrected chord sheet..."
           />
-        </div>
-      </div>
+      </Paper>
     </>
   );
 }
