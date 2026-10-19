@@ -1,47 +1,49 @@
+import { useOffline, useOfflineActivity } from '../context/OfflineContext';
 import { Button, useComputedColorScheme, Group, Title, Text, Paper } from '@mantine/core';
+import { BackButton } from '../components/BackButton';
 import { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import { showStatusNotification as toast } from '../lib/notifications';
+import { notifyError } from '../lib/errors';
 import { CodeMirrorEditor } from '../components/CodeMirrorEditor';
-import { detectFormat, toChordPro, ensureKeyDirective } from '../lib/chords';
+import { requirePreparedSong } from '../lib/songSubmit';
 import type { Song } from '../types';
+import type { Navigate } from '../lib/routes';
 
 interface CorrectionViewProps {
   songId: number;
-  navigate: (view: string, params?: Record<string, string>) => void;
+  navigate: Navigate;
 }
 
 export function CorrectionView({ songId, navigate }: CorrectionViewProps) {
   const apiCall = useApi();
+  const { readOnly } = useOffline();
+  useOfflineActivity(true);
   const theme = useComputedColorScheme('dark');
   const [content, setContent] = useState('');
 
   useEffect(() => {
     apiCall<Song>('GET', `/api/songs/${songId}`)
       .then((s) => setContent(s.content))
-      .catch((e) => { toast(e.message, 'error'); navigate('browse'); });
+      .catch((e) => { notifyError(e); navigate('browse', {}, { leave: true }); });
   }, [songId, apiCall, navigate]);
 
   const submit = async () => {
-    const trimmed = content.trim();
-    if (!trimmed) { toast('Content is required', 'error'); return; }
-    if (trimmed.length > 100000) { toast('Content too large', 'error'); return; }
-    if (!detectFormat(trimmed)) { toast('No chords detected. Add chords (e.g. [C], [G]) before submitting.', 'error'); return; }
-    let final = toChordPro(trimmed);
-    final = ensureKeyDirective(final);
+    if (readOnly) return;
     try {
-      await apiCall('POST', `/api/songs/${songId}/correction`, { content: final });
+      const prepared = requirePreparedSong(content, { requireLanguage: false });
+      await apiCall('POST', `/api/songs/${songId}/correction`, { content: prepared.content });
       toast('Correction submitted for review', 'success');
-      navigate('song-view', { id: String(songId) });
-    } catch (e) { toast((e as Error).message, 'error'); }
+      navigate('song-view', { id: String(songId) }, { leave: true });
+    } catch (e) { notifyError(e); }
   };
 
   return (
     <>
       <Group mb="lg">
-        <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate('song-view', { id: String(songId) })}>&#8592; Cancel</Button>
+        <BackButton onClick={() => navigate('song-view', { id: String(songId) }, { leave: true })}>Cancel</BackButton>
         <Title order={2} size="h3" flex="1 1 160px">Submit Correction</Title>
-        <Button size="xs" className="btn btn-sm" onClick={submit}>Submit</Button>
+        <Button size="xs" disabled={readOnly} onClick={submit}>Submit</Button>
       </Group>
       <Text size="sm" c="dimmed" mb="sm">
         Edit the chords below. Your correction will be reviewed by the song owner before being applied.

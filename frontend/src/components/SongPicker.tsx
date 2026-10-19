@@ -1,12 +1,15 @@
-import { Badge, Flex, Modal, Button, NativeSelect, TextInput, SimpleGrid, Group, Text } from '@mantine/core';
+import { Badge, Flex, Modal, Button, NativeSelect, Group, Text } from '@mantine/core';
+import { SearchField } from './SearchField';
 import { EmptyState } from './EmptyState';
 import { ListCard } from './ListCard';
+import { CardGrid } from './CardGrid';
 import { SearchRow } from './SearchRow';
-import { useModals } from '@mantine/modals';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../context/I18nContext';
+import { useStackedModalProps } from '../hooks/useStackedModalProps';
 import type { SongListItem, SongVersion } from '../types';
+import { versionLabel } from '../lib/format';
 
 interface SongPickerProps {
   opened: boolean;
@@ -15,10 +18,10 @@ interface SongPickerProps {
 }
 
 export function SongPicker({ opened, onPick, onClose }: SongPickerProps) {
-  const modalManager = useModals();
+  const stacked = useStackedModalProps();
   const { t } = useI18n();
   return (
-    <Modal opened={opened} onClose={onClose} title={t('setlist.pickSong')} trapFocus={modalManager.modals.length === 0} closeOnEscape={modalManager.modals.length === 0} closeOnClickOutside={modalManager.modals.length === 0}>
+    <Modal opened={opened} onClose={onClose} title={t('setlist.pickSong')} {...stacked}>
       {opened && <SongPickerContent onPick={onPick} />}
     </Modal>
   );
@@ -26,7 +29,7 @@ export function SongPicker({ opened, onPick, onClose }: SongPickerProps) {
 
 function SongPickerContent({ onPick }: Pick<SongPickerProps, 'onPick'>) {
   const api = useApi();
-  const { t } = useI18n();
+  const { t, tReplace } = useI18n();
   const [songs, setSongs] = useState<SongListItem[]>([]);
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -64,42 +67,31 @@ function SongPickerContent({ onPick }: Pick<SongPickerProps, 'onPick'>) {
 
   return (
     <>
-
-
         <SearchRow mb={8}>
-          <TextInput aria-label={t('songs.searchPlaceholder')}
-            flex={3}
-            miw={0}
-            type="search"
-            placeholder={t('songs.searchPlaceholder')}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') load(search); }}
-            data-autofocus
-          />
-          <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => load(search)}>Search</Button>
+          <SearchField label={t('songs.searchPlaceholder')} value={search} onChange={setSearch}
+            onSearch={() => load(search)} onClear={() => { setSearch(''); load(''); }} modalAutoFocus />
+          <Button variant="default" size="xs" onClick={() => load(search)}>{t('songs.search')}</Button>
         </SearchRow>
-        <SimpleGrid className="song-grid" minColWidth="min(100%, 320px)" autoFlow="auto-fill" spacing={12}>
+        <CardGrid>
           {songs.length === 0 ? (
             <EmptyState text={t('songs.noPublicSongs')} />
           ) : songs.map((s) => (
             <div key={s.id} className="song-picker-item" style={{ display: 'contents' }}>
               <ListCard
-                className="mantine-focus-auto"
                 title={s.title}
                 meta={<>
                   {s.artist || ''}
                   {(s.version_count ?? 0) > 1 && (
-                    <Badge variant="filled" ml={8}>{s.version_count} Versions</Badge>
+                    <Badge variant="filled" ml={8}>{tReplace('songs.versionCount', { count: s.version_count ?? 0 })}</Badge>
                   )}
                 </>}
                 onClick={() => { void handleCardClick(s); }}
                 style={expandedId === s.id ? { borderColor: 'var(--accent)', boxShadow: '0 0 0 1px var(--accent)' } : undefined}
               />
               {expandedId === s.id && (
-                <Flex className="song-card version-list-card" align="center" justify="space-between" wrap="wrap" gap={12} px={16} py={12} mt={-12} style={{ gridColumn: '1 / -1', borderTopLeftRadius: 0, borderTopRightRadius: 0, background: 'var(--bg-alt)' }}>
+                <Flex className="song-card version-list-card" align="center" justify="space-between" wrap="wrap" gap={12} px={16} py={12} mt={-12} bg="var(--bg-alt)" bdrs="0 0 14px 14px" style={{ gridColumn: '1 / -1' }}>
                   {loadingVersions ? (
-                    <div style={{ padding: 8, color: 'var(--muted)', fontSize: 13 }}>Loading versions...</div>
+                    <Text p={8} fz={13} c="dimmed">Loading versions...</Text>
                   ) : (
                     <>
                       <Group gap="xs" wrap="nowrap" maw="100%">
@@ -116,21 +108,21 @@ function SongPickerContent({ onPick }: Pick<SongPickerProps, 'onPick'>) {
                           <option value="" disabled>Select...</option>
                           {versions.map((v, idx) => (
                             <option key={v.id} value={v.id}>
-                              {idx + 1} (@{v.username}) {v.youtube_url ? '▶' : ''}
+                              {versionLabel(v, idx)}
                             </option>
                           ))}
                         </NativeSelect>
                       </Group>
-                      <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500 }}>
+                      <Text fz={12} c="dimmed" fw={500}>
                         {versions.length} {t('setlist.versions').toLowerCase()}
-                      </div>
+                      </Text>
                     </>
                   )}
                 </Flex>
               )}
             </div>
           ))}
-        </SimpleGrid>
+        </CardGrid>
 
     </>
   );

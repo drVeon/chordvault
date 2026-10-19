@@ -8,7 +8,7 @@ describe('KeyPicker', () => {
   const onSaveLocal = vi.fn();
 
   it('renders all 12 keys when visible', () => {
-    render(<KeyPicker currentKey="G" onPickKey={onPickKey} visible={true} />);
+    render(<KeyPicker currentKey="G" onPickKey={onPickKey} />);
     const keys = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B'];
     keys.forEach(k => {
       expect(screen.getByText(k)).toBeDefined();
@@ -16,7 +16,7 @@ describe('KeyPicker', () => {
   });
 
   it('highlights the active key', () => {
-    render(<KeyPicker currentKey="G" onPickKey={onPickKey} visible={true} />);
+    render(<KeyPicker currentKey="G" onPickKey={onPickKey} />);
     const activeBtn = screen.getByRole('button', { name: 'G' });
     expect(activeBtn).toHaveAttribute('aria-pressed', 'true');
   });
@@ -26,7 +26,6 @@ describe('KeyPicker', () => {
       <KeyPicker
         currentKey="A"
         onPickKey={onPickKey}
-        visible={true}
         isModified={true}
         onSaveOnline={onSaveOnline}
         onSaveLocal={onSaveLocal}
@@ -42,7 +41,6 @@ describe('KeyPicker', () => {
       <KeyPicker
         currentKey="A"
         onPickKey={onPickKey}
-        visible={true}
         isModified={true}
         onSaveOnline={onSaveOnline}
       />
@@ -56,7 +54,6 @@ describe('KeyPicker', () => {
       <KeyPicker
         currentKey="A"
         onPickKey={onPickKey}
-        visible={true}
         isModified={true}
         onSaveLocal={onSaveLocal}
       />
@@ -70,7 +67,6 @@ describe('KeyPicker', () => {
       <KeyPicker
         currentKey="A"
         onPickKey={onPickKey}
-        visible={true}
         isModified={false}
       />
     );
@@ -78,7 +74,7 @@ describe('KeyPicker', () => {
   });
 
   it('marks the original key without making it active', () => {
-    render(<KeyPicker currentKey="G" originalKey="A" onPickKey={onPickKey} visible={true} />);
+    render(<KeyPicker currentKey="G" originalKey="A" onPickKey={onPickKey} />);
     const orig = screen.getByRole('button', { name: 'A' });
     expect(orig.className).toContain('original');
     expect(orig.getAttribute('aria-pressed')).toBe('false');
@@ -87,7 +83,7 @@ describe('KeyPicker', () => {
   });
 
   it('marks nothing when the original key is in the other mode', () => {
-    const { container } = render(<KeyPicker currentKey="Em" originalKey="A" onPickKey={onPickKey} visible={true} />);
+    const { container } = render(<KeyPicker currentKey="Em" originalKey="A" onPickKey={onPickKey} />);
     expect(container.querySelector('.original')).toBeNull();
   });
 });

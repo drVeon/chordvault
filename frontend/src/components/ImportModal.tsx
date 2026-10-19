@@ -1,10 +1,13 @@
 import { Modal, Button, FileInput, Stack, Text } from '@mantine/core';
-import { modals, useModals } from '@mantine/modals';
+import { modals } from '@mantine/modals';
 import { useFocusReturn } from '@mantine/hooks';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useDemo } from '../context/DemoContext';
-import { showStatusNotification as toast } from '../lib/notifications';
+import { notifyError } from '../lib/errors';
+import { useStackedModalProps } from '../hooks/useStackedModalProps';
+import { useActiveRef } from '../hooks/useActiveRef';
+import { readFile } from '../lib/files';
 import { importSongs, ApiError, type ImportResult } from '../lib/api';
 import { fileToSong, chunkSongs } from '../lib/import';
 import { IMPORT_ACCEPT, IMPORT_CONFIRM_FILE_COUNT, DEMO_MAX_IMPORT } from '../lib/constants';
@@ -12,7 +15,6 @@ import { IMPORT_ACCEPT, IMPORT_CONFIRM_FILE_COUNT, DEMO_MAX_IMPORT } from '../li
 interface ImportModalProps {
   opened: boolean;
   onClose: () => void;
-  onDone: () => void;
 }
 
 interface Summary {
@@ -21,33 +23,23 @@ interface Summary {
   errors: { filename: string; error: string }[];
 }
 
-function readText(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsText(file);
-  });
-}
-
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export function ImportModal({ opened, onClose, onDone }: ImportModalProps) {
-  const modalManager = useModals();
+export function ImportModal({ opened, onClose }: ImportModalProps) {
   useFocusReturn({ opened });
   const [busy, setBusy] = useState(false);
+  const stacked = useStackedModalProps({ locked: busy });
   useEffect(() => { if (!opened) setBusy(false); }, [opened]);
   const close = () => { if (!busy) onClose(); };
   return (
-    <Modal opened={opened} onClose={close} title="Import ChordPro files" returnFocus={false} trapFocus={modalManager.modals.length === 0} closeOnEscape={!busy && modalManager.modals.length === 0} closeOnClickOutside={!busy && modalManager.modals.length === 0} closeButtonProps={{ disabled: busy }}>
-      {opened && <ImportContent busy={busy} setBusy={setBusy} onClose={close} onDone={onDone} />}
+    <Modal opened={opened} onClose={close} title="Import ChordPro files" returnFocus={false} {...stacked} closeButtonProps={{ disabled: busy }}>
+      {opened && <ImportContent busy={busy} setBusy={setBusy} onClose={close} />}
     </Modal>
   );
 }
 
-function ImportContent({ busy, setBusy, onClose, onDone }: Omit<ImportModalProps, 'opened'> & { busy: boolean; setBusy: (busy: boolean) => void }) {
-  const active = useRef(true);
-  useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
+function ImportContent({ busy, setBusy, onClose }: Omit<ImportModalProps, 'opened'> & { busy: boolean; setBusy: (busy: boolean) => void }) {
+  const active = useActiveRef();
   const { user } = useAuth();
   const { demoMode } = useDemo();
   const [files, setFiles] = useState<File[]>([]);
@@ -86,7 +78,7 @@ function ImportContent({ busy, setBusy, onClose, onDone }: Omit<ImportModalProps
 
     setBusy(true);
     try {
-      const texts = await Promise.all(files.map(readText));
+      const texts = await Promise.all(files.map(file => readFile(file, 'text')));
       if (!active.current) return;
       const songs = texts.map((t, i) => fileToSong(files[i].name, t));
       const batches = chunkSongs(songs);
@@ -106,9 +98,8 @@ function ImportContent({ busy, setBusy, onClose, onDone }: Omit<ImportModalProps
         setProgress(offset);
       }
       setSummary(agg);
-      onDone();
     } catch (e) {
-      if (active.current) toast((e as Error).message, 'error');
+      if (active.current) notifyError(e);
     } finally {
       if (active.current) setBusy(false);
     }

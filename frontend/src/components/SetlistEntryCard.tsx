@@ -1,8 +1,13 @@
-import { Badge, Box, Button, VisuallyHidden, CloseButton, Flex, Group } from '@mantine/core';
-import { IconGripVertical, IconLock } from '@tabler/icons-react';
+import { Badge, Box, Button, VisuallyHidden, CloseButton, Flex, Group, Text } from '@mantine/core';
+import { IconGripVertical, IconLock, IconPencil } from '@tabler/icons-react';
 import { getSongKey } from '../lib/chords';
-import { entrySemitones } from '../lib/setlistKeys';
+import { entryContent, entrySemitones, entryStartKey } from '../lib/setlistKeys';
 import type { SetlistEntry } from '../types';
+import { VISIBILITY } from '../lib/constants';
+import { useI18n } from '../context/I18nContext';
+import { cardButtonProps } from '../lib/cardButton';
+import { CardTitle } from './CardTitle';
+import { CardMeta } from './CardMeta';
 
 interface SetlistEntryCardProps {
   entry: SetlistEntry;
@@ -12,7 +17,7 @@ interface SetlistEntryCardProps {
   onRemove: (entryId: number | string, idx: number) => void;
   onStepKey: (entryId: number | string, idx: number, direction: 1 | -1) => void;
   onClick: (idx: number) => void;
-  t: (key: string) => string;
+  onEdit?: (idx: number) => void;
   dragProps?: React.HTMLAttributes<HTMLDivElement>;
   handleProps?: React.HTMLAttributes<HTMLDivElement>;
   isDragging?: boolean;
@@ -26,19 +31,20 @@ export function SetlistEntryCard({
   onRemove,
   onStepKey,
   onClick,
-  t,
+  onEdit,
   dragProps,
   handleProps,
   isDragging,
 }: SetlistEntryCardProps) {
-  const content = entry.content_override || entry.content;
+  const { t } = useI18n();
+  const content = entryContent(entry);
   const semitones = entrySemitones(content, entry.target_key);
   const keyDisplay = getSongKey(content, semitones);
-  const canStep = !!(entry.target_key || getSongKey(content, 0));
+  const canStep = !!entryStartKey(entry);
 
   return (
     <Flex
-      className={`song-card setlist-song-item ${isDragging ? 'dragging' : ''}`}
+      className={`song-card mantine-focus-auto setlist-song-item ${isDragging ? 'dragging' : ''}`}
       align="center"
       wrap="wrap"
       columnGap={{ base: 6, xs: 12 }}
@@ -46,7 +52,7 @@ export function SetlistEntryCard({
       px={{ base: 12, xs: 20 }}
       py={{ base: 10, xs: 12 }}
       mih={72}
-      onClick={() => onClick(idx)}
+      {...cardButtonProps(() => onClick(idx))}
       {...dragProps}
     >
       {isEditable && (
@@ -55,35 +61,44 @@ export function SetlistEntryCard({
           mr={{ base: 0, xs: 16 }}
           onClick={(e) => e.stopPropagation()}
           {...handleProps}
-          title="Drag to reorder"
+          title={t('admin.dragToReorder')}
         >
           <IconGripVertical size={20} aria-hidden />
         </Box>
       )}
-      <Box className="setlist-song-pos" mr={{ base: 4, xs: 16 }} w={{ base: 20, xs: 24 }}>{idx + 1}</Box>
+      <Text component="div" fz={15} fw={700} c="dimmed" ta="center" mr={{ base: 4, xs: 16 }} w={{ base: 20, xs: 24 }} style={{ fontVariantNumeric: 'tabular-nums' }}>{idx + 1}</Text>
       <Box className="song-card-info" flex={1} miw={0}>
-        <div className="song-card-title">
+        <CardTitle>
           {entry.title}
-          {entry.visibility === 'private' && (
+          {entry.visibility === VISIBILITY.PRIVATE && (
             <Badge ml={8} px={8} title="Private"><IconLock size={14} aria-hidden /><VisuallyHidden>Private</VisuallyHidden></Badge>
           )}
           {!isLocal && isEditable && entry.content_override && (
             <Badge ml={8}>{t('setlist.edited')}</Badge>
           )}
-        </div>
-        <div className="song-card-meta">
+        </CardTitle>
+        <CardMeta>
           {entry.artist ? `${entry.artist} · ` : ''}
           {keyDisplay}
-        </div>
+        </CardMeta>
       </Box>
-      {isEditable && (
+      {(isEditable || onEdit) && (
         <Group className="setlist-entry-controls" gap={4} wrap="nowrap" justify="flex-end" w={{ base: '100%', xs: 'auto' }} onClick={(e) => e.stopPropagation()}>
-          <Button variant="default" size="xs" className="btn btn-ghost btn-sm" disabled={!canStep} onClick={() => onStepKey(entry.entry_id, idx, -1)}>
-            &#9837;
-          </Button>
-          <Button variant="default" size="xs" className="btn btn-ghost btn-sm" disabled={!canStep} onClick={() => onStepKey(entry.entry_id, idx, 1)}>
-            &#9839;
-          </Button>
+          {onEdit && (
+            <Button variant="default" size="xs" leftSection={<IconPencil size={14} aria-hidden />} onClick={() => onEdit(idx)}>
+              {t('songView.edit')}
+            </Button>
+          )}
+          {isEditable && (
+            <>
+              <Button variant="default" size="xs" disabled={!canStep} onClick={() => onStepKey(entry.entry_id, idx, -1)}>
+                &#9837;
+              </Button>
+              <Button variant="default" size="xs" disabled={!canStep} onClick={() => onStepKey(entry.entry_id, idx, 1)}>
+                &#9839;
+              </Button>
+            </>
+          )}
         </Group>
       )}
       {isEditable && (

@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { BrowseView } from '../BrowseView';
 import { MySongsView } from '../MySongsView';
 import { SetlistsView } from '../SetlistsView';
@@ -9,6 +10,11 @@ const { api, toast } = vi.hoisted(() => ({ api: vi.fn(), toast: vi.fn() }));
 vi.mock('../../hooks/useApi', () => ({ useApi: () => api }));
 vi.mock('../../context/I18nContext', () => ({ useI18n: () => ({ t: (s: string) => s }) }));
 vi.mock('../../lib/notifications', () => ({ showStatusNotification: toast }));
+// A fixed tag list without an API call: My Songs shows the tag filter too (veon),
+// and these tests count list requests and pick tags from upstream's default list.
+vi.mock('../../hooks/useTagList', () => ({
+  useTagList: () => ['worship', 'praise', 'hymn', 'opener', 'closer', 'communion', 'christmas', 'easter', 'kids', 'instrumental'],
+}));
 const user = { id: 1, username: 'demo', role: 'admin', token: 'fake' };
 const navigate = vi.fn();
 const cases = [
@@ -41,7 +47,7 @@ for (const { View, prefix, path } of cases) {
       api.mockRejectedValueOnce(new Error('Search failed'));
       fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'failed' } });
       fireEvent.click(screen.getByRole('button', { name: 'songs.search' }));
-      await waitFor(() => expect(toast).toHaveBeenCalledWith('Search failed', 'error'));
+      expect(await screen.findByRole('alert')).toHaveTextContent('Search failed');
       expect(sessionStorage.getItem(`${prefix}_query`)).toBe('恩典 Grace');
       fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'Holy' } });
       fireEvent.click(screen.getByRole('button', { name: 'songs.search' }));
@@ -95,8 +101,7 @@ for (const { View, prefix, path } of cases.filter(c => c.prefix.includes('setlis
     expect(screen.getByLabelText('From')).toHaveValue('2026-10-01');
     api.mockRejectedValueOnce(new Error('Date search failed'));
     fireEvent.change(screen.getByLabelText('From'), { target: { value: '2026-09-01' } });
-    if (prefix === 'cv_setlists') fireEvent.click(screen.getByRole('button', { name: 'songs.search' }));
-    await waitFor(() => expect(toast).toHaveBeenCalledWith('Date search failed', 'error'));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Date search failed');
     expect(sessionStorage.getItem(`${prefix}_date_from`)).toBe('2026-10-01');
   });
 }
@@ -107,6 +112,45 @@ it('preserves raw language and immediate filter visibility', async () => {
   await waitFor(() => expect(api).toHaveBeenCalledWith('GET', '/api/songs/public?language=zh&page=1&limit=20'));
   fireEvent.click(screen.getByRole('button', { name: 'Filters' }));
   expect(sessionStorage.getItem('cv_browse_show_filters')).toBe('true');
-  fireEvent.change(screen.getByRole('combobox', { name: 'Filter by language' }), { target: { value: 'en' } });
+  fireEvent.change(screen.getByRole('combobox', { name: 'songs.language' }), { target: { value: 'en' } });
   await waitFor(() => expect(sessionStorage.getItem('cv_browse_lang')).toBe('en'));
+});
+
+it('rechecks the stored account on focus without replacing an unchanged user', async () => {
+  let current: ReturnType<typeof useAuth>['user'] = null;
+  function Probe() { current = useAuth().user; return <span>{current?.username || 'signed out'}</span>; }
+  render(<AuthProvider><Probe /></AuthProvider>);
+  const before = current;
+  fireEvent.focus(window);
+  expect(current).toBe(before);
+  localStorage.removeItem('cv_user');
+  fireEvent.focus(window);
+  expect(await screen.findByText('signed out')).toBeInTheDocument();
+});
+
+it('browse restores the saved tag filter and sends it', async () => {
+  sessionStorage.setItem('cv_browse_tags', 'christmas,kids');
+  sessionStorage.setItem('cv_browse_show_filters', 'true');
+  render(<AuthProvider><BrowseView navigate={navigate} /></AuthProvider>);
+  await waitFor(() => expect(api).toHaveBeenCalledWith('GET', '/api/songs/public?tags=christmas%2Ckids&page=1&limit=20'));
+  expect(screen.getByRole('combobox', { name: 'songs.tags' }).parentElement).toHaveTextContent('christmaskids');
+});
+
+it('browse saves a picked tag and keeps it when the language changes', async () => {
+  sessionStorage.setItem('cv_browse_show_filters', 'true');
+  render(<AuthProvider><BrowseView navigate={navigate} /></AuthProvider>);
+  await userEvent.type(screen.getByRole('combobox', { name: 'songs.tags' }), 'kids');
+  await userEvent.click(await screen.findByRole('option', { name: 'kids' }));
+  await waitFor(() => expect(sessionStorage.getItem('cv_browse_tags')).toBe('kids'));
+  fireEvent.change(screen.getByRole('combobox', { name: 'songs.language' }), { target: { value: 'zh' } });
+  await waitFor(() => expect(api).toHaveBeenLastCalledWith('GET', '/api/songs/public?language=zh&tags=kids&page=1&limit=20'));
+});
+
+it('signed out, a saved tag alone keeps the hero hidden and the Filters button filled', async () => {
+  localStorage.removeItem('cv_user');
+  sessionStorage.setItem('cv_browse_tags', 'kids');
+  render(<AuthProvider><BrowseView navigate={navigate} /></AuthProvider>);
+  await waitFor(() => expect(api).toHaveBeenCalledWith('GET', '/api/songs/public?tags=kids&page=1&limit=20'));
+  expect(screen.getByRole('searchbox')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Filters' })).toHaveAttribute('data-variant', 'filled');
 });

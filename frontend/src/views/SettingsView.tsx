@@ -1,44 +1,51 @@
-import { Anchor, Box, Group, Text, Select, Paper, Pill, Button, NativeSelect, PasswordInput, Stack, Textarea, Title } from '@mantine/core';
+import { OfflineLibrarySettings } from '../components/OfflineLibrarySettings';
+import { useOffline } from '../context/OfflineContext';
+import { Anchor, Box, Group, Text, Select, Pill, Button, PasswordInput, Stack, Textarea } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
-import { LANGUAGES, languageName } from '../lib/languages';
+import { useBusyAction } from '../hooks/useBusyAction';
+import { useStatusMessage } from '../hooks/useStatusMessage';
+import { StatusText } from '../components/StatusText';
+import { downloadBlob } from '../lib/download';
+import { errorMessage } from '../lib/errors';
+import { languageName, languageOptions } from '../lib/languages';
 import { useDemo } from '../context/DemoContext';
 import { useAuth } from '../context/AuthContext';
 import { exportSongsBlob } from '../lib/api';
 import { ImportModal } from '../components/ImportModal';
 import { GeminiKeySettings } from '../components/GeminiKeySettings';
-import { MAX_PREFERRED_LANGUAGES, MAX_OCR_PROMPT, DEFAULT_GEMINI_MODEL } from '../lib/constants';
+import { MAX_PREFERRED_LANGUAGES, MAX_OCR_PROMPT, MIN_PASSWORD_LENGTH, DEFAULT_GEMINI_MODEL } from '../lib/constants';
 import { PageTitle } from '../components/PageTitle';
+import { SettingsSection } from '../components/SettingsSection';
+import { ModelSelect } from '../components/ModelSelect';
+import { getLanguages, getOcrModels, type OcrModels } from '../lib/settingsApi';
+import { useI18n } from '../context/I18nContext';
 
 export function SettingsView() {
+  const { readOnly } = useOffline();
+  const { t } = useI18n();
   const apiCall = useApi();
   const { demoMode } = useDemo();
   const { user, isAdmin } = useAuth();
-  const passwordForm = useForm({ initialValues: { currentPw: '', newPw: '', confirmPw: '' }, validate: { currentPw: value => value ? null : 'All fields are required', newPw: value => value.length >= 6 ? null : 'New password must be at least 6 characters', confirmPw: (value, values) => value === values.newPw ? null : 'New passwords do not match' } });
-  const { currentPw, newPw, confirmPw } = passwordForm.values;
-  const [changingPassword, setChangingPassword] = useState(false);
-  const [pwMsg, setPwMsg] = useState<{ text: string; color: string } | null>(null);
+  const passwordForm = useForm({ initialValues: { currentPw: '', newPw: '', confirmPw: '' }, validate: { currentPw: value => value ? null : 'All fields are required', newPw: value => value.length >= MIN_PASSWORD_LENGTH ? null : `New password must be at least ${MIN_PASSWORD_LENGTH} characters`, confirmPw: (value, values) => value === values.newPw ? null : 'New passwords do not match' } });
+  const { currentPw, newPw } = passwordForm.values;
+  const pwStatus = useStatusMessage();
+  const langStatus = useStatusMessage();
+  const promptStatus = useStatusMessage();
+  const modelStatus = useStatusMessage();
+  const exportStatus = useStatusMessage();
+  const passwordAction = useBusyAction();
+  const exportAction = useBusyAction();
   const [preferredLangs, setPreferredLangs] = useState<string[]>([]);
-  const [langMsg, setLangMsg] = useState<{ text: string; color: string } | null>(null);
   const [ocrPrompt, setOcrPrompt] = useState('');
   const [defaultPrompt, setDefaultPrompt] = useState('');
   const [hasCustomPrompt, setHasCustomPrompt] = useState(false);
-  const [promptMsg, setPromptMsg] = useState<{ text: string; color: string } | null>(null);
   const [ocrModel, setOcrModel] = useState(DEFAULT_GEMINI_MODEL);
-  const [modelList, setModelList] = useState<{ id: string; label: string }[]>([]);
-  const [modelMsg, setModelMsg] = useState<{ text: string; color: string } | null>(null);
-  const [exporting, setExporting] = useState(false);
-  const [exportMsg, setExportMsg] = useState<{ text: string; color: string } | null>(null);
+  const [modelList, setModelList] = useState<OcrModels['models']>([]);
   const [showImport, { open: openImport, close: closeImport }] = useDisclosure(false);
 
-  const loadPreferredLangs = useCallback(async () => {
-    try {
-      const data = await apiCall<{ languages: string[] }>('GET', '/api/settings/languages');
-      setPreferredLangs(data.languages);
-    } catch {}
-  }, [apiCall]);
 
   const loadOcrPrompt = useCallback(async () => {
     try {
@@ -51,50 +58,38 @@ export function SettingsView() {
     } catch {}
   }, [apiCall]);
 
-  const loadOcrModel = useCallback(async () => {
-    try {
-      const data = await apiCall<{ model: string; models: { id: string; label: string }[] }>('GET', '/api/settings/ocr-model');
-      setOcrModel(data.model);
-      setModelList(data.models);
-    } catch {}
-  }, [apiCall]);
 
-  useEffect(() => { loadOcrPrompt(); loadOcrModel(); }, [loadOcrPrompt, loadOcrModel]);
-  useEffect(() => { loadPreferredLangs(); }, [loadPreferredLangs]);
+  useEffect(() => {
+    loadOcrPrompt();
+    getOcrModels(apiCall).then(data => { setOcrModel(data.model); setModelList(data.models); }).catch(() => {});
+    getLanguages(apiCall).then(setPreferredLangs).catch(() => {});
+  }, [apiCall, loadOcrPrompt]);
 
-  const changePassword = async () => {
-    if (changingPassword) return;
-    setPwMsg(null);
-    if (!currentPw || !newPw || !confirmPw) { setPwMsg({ text: 'All fields are required', color: 'var(--danger)' }); return; }
-    if (newPw.length < 6) { setPwMsg({ text: 'New password must be at least 6 characters', color: 'var(--danger)' }); return; }
-    if (newPw !== confirmPw) { setPwMsg({ text: 'New passwords do not match', color: 'var(--danger)' }); return; }
-    setChangingPassword(true);
-    try {
-      await apiCall('PUT', '/api/auth/password', { current_password: currentPw, new_password: newPw });
-      setPwMsg({ text: 'Password changed successfully', color: 'var(--success)' });
-      passwordForm.reset();
-    } catch (e) { setPwMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
-    finally { setChangingPassword(false); }
-  };
+  const changePassword = () => passwordAction.run(async () => {
+    pwStatus.clear();
+    await apiCall('PUT', '/api/auth/password', { current_password: currentPw, new_password: newPw });
+    pwStatus.succeed('Password changed successfully');
+    passwordForm.reset();
+  }, (e) => pwStatus.fail(errorMessage(e)));
 
   const saveOcrModel = async (model: string) => {
     setOcrModel(model);
-    setModelMsg(null);
+    modelStatus.clear();
     try {
       await apiCall('PUT', '/api/settings/ocr-model', { model });
-      setModelMsg({ text: 'Default model saved', color: 'var(--success)' });
-    } catch (e) { setModelMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
+      modelStatus.succeed('Default model saved');
+    } catch (e) { modelStatus.fail(errorMessage(e)); }
   };
 
   const saveOcrPrompt = async () => {
-    setPromptMsg(null);
-    if (!ocrPrompt.trim()) { setPromptMsg({ text: 'Prompt cannot be empty', color: 'var(--danger)' }); return; }
-    if (ocrPrompt.length > MAX_OCR_PROMPT) { setPromptMsg({ text: `Prompt must be under ${MAX_OCR_PROMPT} characters`, color: 'var(--danger)' }); return; }
+    promptStatus.clear();
+    if (!ocrPrompt.trim()) { promptStatus.fail('Prompt cannot be empty'); return; }
+    if (ocrPrompt.length > MAX_OCR_PROMPT) { promptStatus.fail(`Prompt must be under ${MAX_OCR_PROMPT} characters`); return; }
     try {
       await apiCall('PUT', '/api/settings/ocr-prompt', { prompt: ocrPrompt });
-      setPromptMsg({ text: 'Custom prompt saved', color: 'var(--success)' });
+      promptStatus.succeed('Custom prompt saved');
       setHasCustomPrompt(true);
-    } catch (e) { setPromptMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
+    } catch (e) { promptStatus.fail(errorMessage(e)); }
   };
 
   const resetOcrPrompt = async () => {
@@ -102,71 +97,51 @@ export function SettingsView() {
       await apiCall('DELETE', '/api/settings/ocr-prompt');
       setOcrPrompt('');
       setHasCustomPrompt(false);
-      setPromptMsg({ text: 'Reset to default prompt', color: 'var(--success)' });
-    } catch (e) { setPromptMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
+      promptStatus.succeed('Reset to default prompt');
+    } catch (e) { promptStatus.fail(errorMessage(e)); }
   };
 
-  const addLang = async (code: string) => {
-    if (preferredLangs.includes(code)) return;
-    const updated = [...preferredLangs, code];
+  const saveLanguages = async (updated: string[]) => {
     try {
       await apiCall('PUT', '/api/settings/languages', { languages: updated });
       setPreferredLangs(updated);
-      setLangMsg({ text: 'Saved', color: 'var(--success)' });
-    } catch (e) { setLangMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
+      langStatus.succeed('Saved');
+    } catch (e) { langStatus.fail(errorMessage(e)); }
   };
+  const addLang = (code: string) => { if (!preferredLangs.includes(code)) void saveLanguages([...preferredLangs, code]); };
+  const removeLang = (code: string) => saveLanguages(preferredLangs.filter((c) => c !== code));
 
-  const removeLang = async (code: string) => {
-    const updated = preferredLangs.filter(c => c !== code);
-    try {
-      await apiCall('PUT', '/api/settings/languages', { languages: updated });
-      setPreferredLangs(updated);
-      setLangMsg({ text: 'Saved', color: 'var(--success)' });
-    } catch (e) { setLangMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
-  };
-
-  const handleExport = async () => {
-    if (!user?.token) return;
-    setExporting(true);
-    setExportMsg(null);
-    try {
-      const { blob, filename } = await exportSongsBlob(user.token);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      setExportMsg({ text: (e as Error).message, color: 'var(--danger)' });
-    } finally {
-      setExporting(false);
-    }
+  const handleExport = () => {
+    const token = user?.token;
+    if (!token) return;
+    void exportAction.run(async () => {
+      exportStatus.clear();
+      const { blob, filename } = await exportSongsBlob(token);
+      downloadBlob(blob, filename);
+    }, (e) => exportStatus.fail(errorMessage(e)));
   };
 
   return (
     <>
       <Group justify="space-between" mb="lg"><PageTitle className="view-title">Settings</PageTitle></Group>
+      <OfflineLibrarySettings />
+      <Box component="fieldset" disabled={readOnly} bd={0} p={0} m={0} miw={0} mt="lg">
       <div className="settings-grid">
-        <Paper component="section" withBorder radius="lg" p="lg" bg="var(--cv-raise)" className="settings-section">
-          <Title order={3} fz={16} mb={4}>Change Password</Title>
+        <SettingsSection title="Change Password">
           {demoMode ? (
-            <Text size="sm" c="dimmed">Disabled in demo mode</Text>
+            <Text size="sm" c="dimmed">{t('common.demoDisabled')}</Text>
           ) : (
             <Stack gap="sm" renderRoot={(props) => <form {...props} onSubmit={passwordForm.onSubmit(changePassword)} />}>
-              <PasswordInput label={<>Current Password</>} type="password" {...passwordForm.getInputProps('currentPw')} autoComplete="current-password" />
-              <PasswordInput label={<>New Password</>} type="password" {...passwordForm.getInputProps('newPw')} autoComplete="new-password" />
-              <PasswordInput label={<>Confirm New Password</>} type="password" {...passwordForm.getInputProps('confirmPw')} autoComplete="new-password" />
-              <Button style={{ alignSelf: 'flex-start' }} type="submit" loading={changingPassword} disabled={changingPassword}>Change Password</Button>
-              {pwMsg && <Text size="sm" c={pwMsg.color} role={pwMsg.color === 'var(--danger)' ? 'alert' : 'status'}>{pwMsg.text}</Text>}
+              <PasswordInput label={<>Current Password</>} {...passwordForm.getInputProps('currentPw')} autoComplete="current-password" />
+              <PasswordInput label={<>New Password</>} {...passwordForm.getInputProps('newPw')} autoComplete="new-password" />
+              <PasswordInput label={<>Confirm New Password</>} {...passwordForm.getInputProps('confirmPw')} autoComplete="new-password" />
+              <Button style={{ alignSelf: 'flex-start' }} type="submit" loading={passwordAction.busy} disabled={passwordAction.busy}>Change Password</Button>
+              <StatusText status={pwStatus.status} />
             </Stack>
           )}
-        </Paper>
+        </SettingsSection>
 
-        <Paper component="section" withBorder radius="lg" p="lg" bg="var(--cv-raise)" className="settings-section">
-          <Title order={3} fz={16} mb={4}>My Languages</Title>
+        <SettingsSection title="My Languages">
           <Text size="sm" c="dimmed" mb="sm">
             Your preferred languages appear at the top of the language picker when creating songs.
           </Text>
@@ -180,14 +155,13 @@ export function SettingsView() {
               {preferredLangs.length === 0 && <Text size="sm" c="dimmed">No languages set</Text>}
             </Group>
             {preferredLangs.length < MAX_PREFERRED_LANGUAGES && (
-              <Select searchable label="Add a language" placeholder="Search languages" value={null} data={LANGUAGES.filter(language => !preferredLangs.includes(language.code)).map(language => ({ value: language.code, label: `${language.name} (${language.code})` }))} onChange={(value) => { if (value) void addLang(value); }} />
+              <Select searchable label="Add a language" placeholder="Search languages" value={null} data={languageOptions(code => !preferredLangs.includes(code))} onChange={(value) => { if (value) addLang(value); }} />
             )}
-            {langMsg && <Text size="sm" c={langMsg.color} role={langMsg.color === 'var(--danger)' ? 'alert' : 'status'}>{langMsg.text}</Text>}
+            <StatusText status={langStatus.status} />
           </Stack>
-        </Paper>
+        </SettingsSection>
 
-        <Paper component="section" withBorder radius="lg" p="lg" bg="var(--cv-raise)" className="settings-section">
-          <Title order={3} fz={16} mb={4}>{isAdmin ? 'Import & Export' : 'Export Songs'}</Title>
+        <SettingsSection title={isAdmin ? 'Import & Export' : 'Export Songs'}>
           <Text size="sm" c="dimmed" mb="sm">
             Download all songs you can access as ChordPro (.cho) files in a zip.
             {isAdmin ? ' As an admin, you can also bulk import ChordPro files into the library.' : ''}
@@ -195,42 +169,33 @@ export function SettingsView() {
           <Stack gap="sm">
             <Group>
               {isAdmin && (
-                <Button size="xs" className="btn btn-sm" onClick={openImport}>Import Songs</Button>
+                <Button size="xs" onClick={openImport}>{t('admin.importSongs')}</Button>
               )}
-              <Button size="xs" className="btn btn-sm" onClick={handleExport} disabled={exporting}>
-                {exporting ? 'Exporting…' : 'Export Songs'}
+              <Button size="xs" onClick={handleExport} disabled={exportAction.busy}>
+                {exportAction.busy ? 'Exporting…' : 'Export Songs'}
               </Button>
             </Group>
-            {exportMsg && <Text size="sm" c={exportMsg.color} role={exportMsg.color === 'var(--danger)' ? 'alert' : 'status'}>{exportMsg.text}</Text>}
+            <StatusText status={exportStatus.status} />
           </Stack>
-          <ImportModal opened={showImport} onClose={closeImport} onDone={() => {}} />
-        </Paper>
+          <ImportModal opened={showImport} onClose={closeImport} />
+        </SettingsSection>
 
-        <Paper component="section" withBorder radius="lg" p="lg" bg="var(--cv-raise)" className="settings-section">
-          <Title order={3} fz={16} mb={4}>OCR: API Key</Title>
+        <SettingsSection title="OCR: API Key">
           <Text size="sm" c="dimmed" mb="sm">
             Smart OCR uses Google Gemini to extract chords from photos with higher accuracy. Get a free API key at{' '}
             <Anchor href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" inherit>aistudio.google.com/apikey</Anchor>
           </Text>
           <GeminiKeySettings />
-        </Paper>
+        </SettingsSection>
 
-        <Paper component="section" withBorder radius="lg" p="lg" bg="var(--cv-raise)" className="settings-section">
-          <Title order={3} fz={16} mb={4}>OCR: Model &amp; Prompt</Title>
+        <SettingsSection title="OCR: Model & Prompt">
           <Text size="sm" c="dimmed" mb="sm">
             Choose which Gemini model to use for OCR and customize the extraction prompt. You can also change the model per-extraction in the OCR modal.
           </Text>
           <Stack gap="sm">
             <Box>
-              <NativeSelect label={<>Model</>}
-                value={ocrModel}
-                onChange={(e) => saveOcrModel(e.target.value)}
-              >
-                {modelList.map(m => (
-                  <option key={m.id} value={m.id}>{m.label}</option>
-                ))}
-              </NativeSelect>
-              {modelMsg && <Text size="sm" mt={4} c={modelMsg.color} role={modelMsg.color === 'var(--danger)' ? 'alert' : 'status'}>{modelMsg.text}</Text>}
+              <ModelSelect label="Model" models={modelList} value={ocrModel} onChange={saveOcrModel} />
+              <StatusText status={modelStatus.status} mt={4} />
             </Box>
             <Box>
               <Textarea label={<>Prompt</>}
@@ -239,27 +204,28 @@ export function SettingsView() {
                 placeholder={defaultPrompt}
                 rows={7}
                 maxLength={MAX_OCR_PROMPT}
-                styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: 12, resize: 'vertical' } }}
+                resize="vertical" styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: 12 } }}
               />
               <Text size="xs" c="dimmed" ta="right" mt={4}>
                 {ocrPrompt.length} / {MAX_OCR_PROMPT}
               </Text>
             </Box>
             <Group gap="xs">
-              <Button size="xs" className="btn btn-sm" onClick={saveOcrPrompt}>Save Prompt</Button>
+              <Button size="xs" onClick={saveOcrPrompt}>Save Prompt</Button>
               {!ocrPrompt && (
-                <Button size="xs" className="btn btn-sm" style={{ background: 'var(--surface-alt, var(--surface))' }} onClick={() => setOcrPrompt(defaultPrompt)}>
+                <Button size="xs" variant="default" onClick={() => setOcrPrompt(defaultPrompt)}>
                   Copy Default
                 </Button>
               )}
               {hasCustomPrompt && (
-                <Button color="red" size="xs" className="btn btn-danger btn-sm" onClick={resetOcrPrompt}>Reset to Default</Button>
+                <Button color="red" size="xs" onClick={resetOcrPrompt}>Reset to Default</Button>
               )}
             </Group>
-            {promptMsg && <Text size="sm" c={promptMsg.color} role={promptMsg.color === 'var(--danger)' ? 'alert' : 'status'}>{promptMsg.text}</Text>}
+            <StatusText status={promptStatus.status} />
           </Stack>
-        </Paper>
+        </SettingsSection>
       </div>
+      </Box>
     </>
   );
 }

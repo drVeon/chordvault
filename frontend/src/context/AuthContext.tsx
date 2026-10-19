@@ -1,7 +1,10 @@
 import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from 'react';
 import type { User } from '../types';
-import { getStoredUser, setStoredUser, removeStoredUser, clearSearchSession } from '../lib/storage';
-import { isAdminRole } from '../lib/chords';
+import { getStoredUser, setStoredUser, removeStoredUser, clearSearchSession, USER_STORAGE_KEY } from '../lib/storage';
+import { isAdminRole } from '../lib/constants';
+
+import { useWindowEvent } from '@mantine/hooks';
+import { offlineLibrary } from '../lib/offlineLibrary';
 
 interface AuthContextValue {
   user: User | null;
@@ -16,16 +19,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => getStoredUser());
 
   const login = useCallback((u: User) => {
+    const previous = getStoredUser();
+    if (previous && previous.id !== u.id) void offlineLibrary.disable(previous.id).catch(() => {});
     setUser(u);
     setStoredUser(u);
     clearSearchSession();
   }, []);
 
   const logout = useCallback(() => {
+    const previous = getStoredUser();
+    if (previous) void offlineLibrary.disable(previous.id).catch(() => {});
     setUser(null);
     removeStoredUser();
     clearSearchSession();
   }, []);
+
+  const syncStoredUser = useCallback(() => {
+    const next = getStoredUser();
+    if (next?.id === user?.id && next?.token === user?.token
+      && next?.role === user?.role && next?.username === user?.username) return;
+    if (user && user.id !== next?.id) void offlineLibrary.disable(user.id).catch(() => {});
+    setUser(next);
+    clearSearchSession();
+  }, [user]);
+
+  useWindowEvent('storage', event => {
+    if (event.key === USER_STORAGE_KEY || event.key === null) syncStoredUser();
+  });
+  useWindowEvent('focus', syncStoredUser);
 
   const isAdmin = useMemo(() => user ? isAdminRole(user.role) : false, [user]);
 

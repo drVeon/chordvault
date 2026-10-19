@@ -223,3 +223,44 @@ test('callGemini wraps a network failure', async () => {
     restore();
   }
 });
+
+test('imageTurn puts the prompt before the decoded image', () => {
+  const { imageTurn } = require('../lib/gemini');
+  assert.deepEqual(imageTurn('Read', 'data:image/png;base64,QUJD'), {
+    parts: [{ text: 'Read' }, { inline_data: { mime_type: 'image/png', data: 'QUJD' } }],
+  });
+});
+
+test('callGemini gives up on a hung request with the network error', async () => {
+  let seen;
+  const restore = stubFetch(async (_url, init) => {
+    seen = init.signal;
+    throw new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+  });
+  try {
+    await assert.rejects(callGemini(ARGS), (e) => e.code === 'GEMINI_NETWORK' && e.status === 502);
+    assert.ok(seen instanceof AbortSignal);
+  } finally {
+    restore();
+  }
+});
+
+test('callGemini reports a failure while reading the reply as the network error', async () => {
+  for (const error of [new DOMException('The operation was aborted due to timeout', 'TimeoutError'), new TypeError('terminated')]) {
+    const restore = stubFetch(async () => ({ ok: true, status: 200, json: async () => { throw error; } }));
+    try {
+      await assert.rejects(callGemini(ARGS), (e) => e.code === 'GEMINI_NETWORK' && e.status === 502);
+    } finally {
+      restore();
+    }
+  }
+});
+
+test('callGemini still reports an unparseable reply as an invalid response', async () => {
+  const restore = stubFetch(async () => ({ ok: true, status: 200, json: async () => JSON.parse('{nope') }));
+  try {
+    await assert.rejects(callGemini(ARGS), (e) => e.code === 'GEMINI_BAD_JSON');
+  } finally {
+    restore();
+  }
+});

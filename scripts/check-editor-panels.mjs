@@ -1,22 +1,14 @@
 import assert from 'node:assert/strict';
-import { chromium } from 'playwright';
+import { launchBrowser, newAppContext } from './lib/browser.mjs';
+import { scriptCredentials, signIn } from './lib/session.mjs';
 
 const base = process.env.CV_CHECK_BASE || 'http://localhost:3118';
 const songId = process.env.CV_CHECK_SONG_ID || '2';
-const response = await fetch(`${base}/api/auth/login`, {
-  method: 'POST', headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ username: process.env.CV_CHECK_USER || 'demo', password: process.env.CV_CHECK_PASSWORD || 'demopass123' }),
-});
-assert(response.ok, 'Test account login failed');
-const account = await response.json();
-const browser = await chromium.launch({ ...(process.env.CV_CHECK_CHANNEL ? { channel: process.env.CV_CHECK_CHANNEL } : {}) });
+const account = await signIn(base, scriptCredentials());
+const browser = await launchBrowser();
 try {
   for (const theme of ['light', 'dark']) {
-    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
-    await context.addInitScript(({ account, theme }) => {
-      localStorage.setItem('cv_user', JSON.stringify(account));
-      localStorage.setItem('cv_theme', theme);
-    }, { account, theme });
+    const context = await newAppContext(browser, { account, storage: { cv_theme: theme }, viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
     const page = await context.newPage();
     page.setDefaultTimeout(15000);
     await page.goto(`${base}/#song/${songId}`);

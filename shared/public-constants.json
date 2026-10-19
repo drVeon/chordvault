@@ -1,0 +1,29 @@
+{
+  "limits": {
+    "MAX_CONTENT": 100000,
+    "MAX_BPM": 300,
+    "MIN_BPM": 1,
+    "MAX_SETLIST_NAME": 200,
+    "MAX_IMPORT": 500,
+    "DEMO_MAX_IMPORT": 20,
+    "MAX_PREFERRED_LANGUAGES": 10,
+    "MAX_OCR_PROMPT": 5000,
+    "MAX_TAGS": 50,
+    "MAX_TAG_LENGTH": 30,
+    "PASSWORD_MIN": 6
+  },
+  "DEFAULT_GEMINI_MODEL": "gemini-3.8-flash",
+  "DEMO_ACCOUNT": { "username": "demo", "password": "demopass123" },
+  "DEFAULT_TAGS": [
+    "christmas",
+    "country",
+    "easy",
+    "folk",
+    "hard",
+    "instrumental",
+    "medium",
+    "pop",
+    "rock",
+    "singer-songwriter"
+  ]
+}

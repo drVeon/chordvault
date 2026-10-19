@@ -1,114 +1,65 @@
+import { Button, Group, Flex } from '@mantine/core';
+import { useLibraryRead } from '../hooks/useLibraryRead';
+import { useOffline } from '../context/OfflineContext';
 import { SearchField } from '../components/SearchField';
 import { SearchRow } from '../components/SearchRow';
-import { Button, SimpleGrid, Group } from '@mantine/core';
 import { IconPlus, IconGuitarPick } from '@tabler/icons-react';
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useApi } from '../hooks/useApi';
+import { useCallback, useState } from 'react';
 import { useI18n } from '../context/I18nContext';
-import { showStatusNotification as toast } from '../lib/notifications';
 import { SongCard } from '../components/SongCard';
 import { EmptyState } from '../components/EmptyState';
+import { CardGrid } from '../components/CardGrid';
 import { Pagination } from '../components/Pagination';
-import type { SongListItem } from '../types';
-import { useSearchSessionValue, searchPage } from '../hooks/useSearchSessionValue';
-import { PageTitle } from '../components/PageTitle';
+import { useSessionField, useSearchSessionValue } from '../hooks/useSearchSessionValue';
 import { TagFilter } from '../components/TagFilter';
+import { splitTags } from '../lib/tagName';
+import { searchKey } from '../lib/storage';
+import { LoadErrorAlert } from '../components/LoadErrorAlert';
+import { usePaginatedSearch } from '../hooks/usePaginatedSearch';
+import type { LibraryQuery } from '../types/offline';
+import { PageTitle } from '../components/PageTitle';
+import type { Navigate } from '../lib/routes';
 
 interface MySongsViewProps {
-  navigate: (view: string, params?: Record<string, string>) => void;
+  navigate: Navigate;
 }
 
 export function MySongsView({ navigate }: MySongsViewProps) {
-  const api = useApi();
   const { t } = useI18n();
-  const [songs, setSongs] = useState<SongListItem[]>([]);
-  const [savedQuery, saveQuery] = useSearchSessionValue('cv_mysongs_query');
-  const [query, setQuery] = useState(savedQuery);
-  const [savedTag, saveTag] = useSearchSessionValue('cv_mysongs_tag');
-  const [tagFilter, setTagFilter] = useState(savedTag);
-  const [loaded, setLoaded] = useState(false);
-  const [savedPage, savePage] = useSearchSessionValue('cv_mysongs_page', '1');
-  const [page, setPage] = useState(() => searchPage(savedPage));
-  const [totalPages, setTotalPages] = useState(1);
-
-  const active = useRef(false);
-  useEffect(() => {
-    active.current = true;
-    return () => { active.current = false; };
-  }, []);
-
-  const load = useCallback((q = '', tag = '', targetPage = 1) => {
-    let url = '/api/songs';
-    const params: string[] = [];
-    if (q.trim()) params.push(`q=${encodeURIComponent(q.trim())}`);
-    if (tag) params.push(`tag=${encodeURIComponent(tag)}`);
-    params.push(`page=${targetPage}`);
-    params.push(`limit=20`);
-    url += '?' + params.join('&');
-
-    interface PaginatedSongsResponse {
-      songs: SongListItem[];
-      total: number;
-      page: number;
-      limit: number;
-      totalPages: number;
-    }
-
-    api<PaginatedSongsResponse>('GET', url)
-      .then((data) => {
-        if (!active.current) return;
-        setSongs(data.songs);
-        setPage(data.page);
-        setTotalPages(data.totalPages);
-        setLoaded(true);
-        saveQuery(q);
-        saveTag(tag);
-        savePage(String(data.page));
-      })
-      .catch((e) => { if (active.current) toast(e.message, 'error'); });
-  }, [api, saveQuery, saveTag, savePage]);
-
-  useEffect(() => {
-    load(query, tagFilter, page);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [load]);
-
-  const handleClear = () => {
-    setQuery('');
-    load('', tagFilter, 1);
-  };
-
-  const doSearch = () => load(query, tagFilter, 1);
-
-  const changeTag = (tag: string) => {
-    setTagFilter(tag);
-    load(query, tag, 1);
-  };
-
-  const handlePageChange = (newPage: number) => {
-    load(query, tagFilter, newPage);
-    window.scrollTo(0, 0);
-  };
+  const { readOnly } = useOffline();
+  const { querySongs } = useLibraryRead();
+  const [query, setQuery, saveQuery] = useSessionField(searchKey('mysongs', 'query'));
+  const [savedTagFilter, saveTagFilter] = useSearchSessionValue(searchKey('mysongs', 'tags'));
+  const [tagFilter, setTagFilter] = useState(() => splitTags(savedTagFilter));
+  const fetchOwnSongs = useCallback((filters: LibraryQuery) => querySongs({ ...filters, q: filters.q?.trim(), own: true }), [querySongs]);
+  const { items: songs, page, totalPages, loaded, loadError, search, refine, clear, goToPage } = usePaginatedSearch({
+    pageKey: searchKey('mysongs', 'page'), listKey: 'songs', fetchPage: fetchOwnSongs,
+    filters: { q: query, tags: tagFilter }, setQuery,
+    persist: ({ q = '', tags = [] }) => { saveQuery(q); saveTagFilter(tags.join(',')); },
+  });
+  const changeTags = (next: string[]) => { setTagFilter(next); refine({ tags: next }); };
+  const addTag = (tag: string) => { if (!tagFilter.includes(tag)) changeTags([...tagFilter, tag]); };
 
   return (
     <>
+      <LoadErrorAlert message={loadError} />
       <Group justify="space-between" mb="lg">
         <PageTitle className="view-title">{t('songs.mySongs')}</PageTitle>
       </Group>
       <SearchRow>
-        <SearchField label={t('songs.searchPlaceholder')} value={query} onChange={setQuery} onSearch={doSearch} onClear={handleClear} />
-        <Button variant="default" size="sm" onClick={doSearch}>{t('songs.search')}</Button>
-        <Button size="sm" w={{ base: '100%', xs: 'auto' }} leftSection={<IconPlus size={16} aria-hidden />} onClick={() => navigate('song-edit')}>{t('songs.newSong')}</Button>
+        <SearchField label={t('songs.searchPlaceholder')} value={query} onChange={setQuery} onSearch={search} onClear={clear} />
+        <Button variant="default" size="sm" onClick={search}>{t('songs.search')}</Button>
+        <Button size="sm" w={{ base: '100%', xs: 'auto' }} leftSection={<IconPlus size={16} aria-hidden />} disabled={readOnly} onClick={() => navigate('song-edit')}>{t('songs.newSong')}</Button>
       </SearchRow>
-      <div className="search-filters">
-        <TagFilter selected={tagFilter} onChange={changeTag} />
-      </div>
-      <SimpleGrid className="song-grid" minColWidth="min(100%, 320px)" autoFlow="auto-fill" spacing={12}>
-        {loaded && songs.length === 0 ? (
+      <Flex mt={{ base: 0, xs: -12 }} mb={16}>
+        <TagFilter value={tagFilter} onChange={changeTags} />
+      </Flex>
+      <CardGrid>
+        {!loadError && loaded && songs.length === 0 ? (
           <EmptyState
             icon={<IconGuitarPick size={56} aria-hidden />}
-            text={query || tagFilter ? t('songs.noMatches') : t('songs.noSongs')}
-            action={!query && !tagFilter ? { label: t('songs.addFirst'), onClick: () => navigate('song-edit') } : undefined}
+            text={query || tagFilter.length ? t('songs.noMatches') : t('songs.noSongs')}
+            action={!readOnly && !query && !tagFilter.length ? { label: t('songs.addFirst'), onClick: () => navigate('song-edit') } : undefined}
           />
         ) : (
           songs.map((s) => (
@@ -117,13 +68,13 @@ export function MySongsView({ navigate }: MySongsViewProps) {
               song={s}
               isOwner
               onClick={() => navigate('song-view', { id: String(s.id) })}
-              onEdit={() => navigate('song-edit', { id: String(s.id) })}
-              onTagClick={changeTag}
+              onEdit={readOnly ? undefined : () => navigate('song-edit', { id: String(s.id) })}
+              onTagClick={addTag}
             />
           ))
         )}
-      </SimpleGrid>
-      <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+      </CardGrid>
+      <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
     </>
   );
 }

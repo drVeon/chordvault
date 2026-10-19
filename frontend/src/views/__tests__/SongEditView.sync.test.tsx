@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { SongEditView } from '../SongEditView';
+import { SONG_ERRORS } from '../../../../shared/song-errors.mjs';
 
 // ─── Mocks ──────────────────────────────────────────────────────────
 
@@ -122,6 +123,21 @@ describe('SongEditView two-way sync', () => {
     await waitFor(() => expect(mockApiCall).toHaveBeenCalledWith('POST', '/api/songs/1/version', expect.objectContaining({ content: expect.stringContaining('{title: Version latest}') })));
   });
 
+  it('shows the save-check message and posts no version for an invalid tempo', async () => {
+    mockApiCall.mockImplementation((method: string, path: string) => {
+      if (method === 'GET' && path === '/api/songs/1') return Promise.resolve({ id: 1, user_id: 1, title: 'Original', content: '{title: Original}\n{x_language: en}\n[G]Original', visibility: 'public' });
+      if (path === '/api/settings/languages') return Promise.resolve({ languages: [] });
+      return Promise.resolve({ id: 2 });
+    });
+    render(<SongEditView songId={1} navigate={navigate} />);
+    await waitFor(() => expect(getEditor().value).toContain('Original'));
+    fireEvent.change(getEditor(), { target: { value: '{title: Bad tempo}\n{tempo: 120bpm}\n{x_language: en}\n[C]a' } });
+    fireEvent.click(screen.getByRole('button', { name: 'songEdit.moreActions' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'songEdit.saveAsNewVersion' }));
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith(SONG_ERRORS.bpmRange, 'error'));
+    expect(mockApiCall).not.toHaveBeenCalledWith('POST', '/api/songs/1/version', expect.anything());
+  });
+
   it('opens a deletion confirmation and performs no write when canceled', async () => {
     mockApiCall.mockImplementation((method: string, path: string) => {
       if (method === 'GET' && path === '/api/songs/1') return Promise.resolve({ id: 1, user_id: 1, content: '{title: Original}\n{x_language: en}\n[G]Original', visibility: 'public' });
@@ -167,6 +183,17 @@ describe('SongEditView two-way sync', () => {
 
     const editor = getEditor();
     expect(editor.value).toContain('{tempo: 120}');
+  });
+
+  it('BPM is a whole-number field that leaves the song alone on blur', async () => {
+    await renderEditor();
+    fireEvent.change(getEditor(), { target: { value: '{tempo: 72}\n[G]Lyrics' } });
+    await waitFor(() => expect(getBpmInput().value).toBe('72'));
+    fireEvent.focus(getBpmInput());
+    fireEvent.blur(getBpmInput());
+    expect(getEditor().value).toBe('{tempo: 72}\n[G]Lyrics');
+    fireEvent.change(getBpmInput(), { target: { value: '80.5' } });
+    expect(getEditor().value).not.toContain('80.5');
   });
 
   it('clearing a field removes the directive from content', async () => {

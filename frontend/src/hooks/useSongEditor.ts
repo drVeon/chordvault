@@ -1,18 +1,8 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { useDebouncedCallback } from '@mantine/hooks';
 import { extractDirective, updateDirective, detectFormat, getOriginalKey } from '../lib/chords';
-
-export interface SongEditorState {
-  title: string;
-  artist: string;
-  content: string;
-  youtubeUrl: string;
-  bpm: string;
-  originalKey: string;
-  tags: string[];
-  language: string;
-  formatBadge: { text: string; ok: boolean } | null;
-}
+import { splitTags } from '../lib/tagName';
+import { SONG_ERRORS } from '../../../shared/song-errors.mjs';
 
 export function useSongEditor(initialContent: string = '') {
   const [content, setContent] = useState(initialContent);
@@ -25,12 +15,10 @@ export function useSongEditor(initialContent: string = '') {
   const [language, setLanguage] = useState('');
   const [formatBadge, setFormatBadge] = useState<{ text: string; ok: boolean } | null>(null);
 
-  const syncSource = useRef<'editor' | 'field' | null>(null);
-
   const updateBadge = useCallback((text: string) => {
     const fmt = detectFormat(text);
     if (fmt) setFormatBadge({ text: fmt, ok: true });
-    else if (text?.trim()) setFormatBadge({ text: 'No chords detected — add chords in [brackets] e.g. [G]lyrics', ok: false });
+    else if (text?.trim()) setFormatBadge({ text: SONG_ERRORS.noChords, ok: false });
     else setFormatBadge(null);
   }, []);
 
@@ -42,7 +30,7 @@ export function useSongEditor(initialContent: string = '') {
     setYoutubeUrl(extractDirective(text, 'x_youtube') || '');
     setOriginalKey(getOriginalKey(text));
     const tagStr = extractDirective(text, 'x_tags');
-    setTags(tagStr ? tagStr.split(',').map(t => t.trim()).filter(Boolean) : []);
+    setTags(splitTags(tagStr));
     setLanguage(extractDirective(text, 'x_language') || '');
     updateBadge(text);
   }, [updateBadge]);
@@ -58,37 +46,25 @@ export function useSongEditor(initialContent: string = '') {
   const handleContentChange = useCallback((text: string) => {
     setContent(text);
     updateBadge(text);
-    if (syncSource.current === 'field') return;
     scheduleSync(text);
   }, [scheduleSync, updateBadge]);
 
-  const handleFieldChange = useCallback((directive: string, value: string, setter: (v: string) => void) => {
+  const writeDirective = useCallback((directive: string, value: string | null) => {
     scheduleSync.cancel();
-    setter(value);
-    if (syncSource.current === 'editor') return;
-    syncSource.current = 'field';
-    setContent(prev => updateDirective(prev, directive, value || null));
-    syncSource.current = null;
+    setContent(prev => updateDirective(prev, directive, value));
   }, [scheduleSync]);
+
+  const handleFieldChange = useCallback((directive: string, value: string, setter: (v: string) => void) => {
+    setter(value);
+    writeDirective(directive, value || null);
+  }, [writeDirective]);
 
   const handleTagsChange = useCallback((newTags: string[]) => {
-    scheduleSync.cancel();
     setTags(newTags);
-    if (syncSource.current === 'editor') return;
-    syncSource.current = 'field';
-    const val = newTags.length > 0 ? newTags.join(',') : null;
-    setContent(prev => updateDirective(prev, 'x_tags', val));
-    syncSource.current = null;
-  }, [scheduleSync]);
+    writeDirective('x_tags', newTags.length > 0 ? newTags.join(',') : null);
+  }, [writeDirective]);
 
-  const handleLanguageChange = useCallback((lang: string) => {
-    scheduleSync.cancel();
-    setLanguage(lang);
-    if (syncSource.current === 'editor') return;
-    syncSource.current = 'field';
-    setContent(prev => updateDirective(prev, 'x_language', lang || null));
-    syncSource.current = null;
-  }, [scheduleSync]);
+  const handleLanguageChange = useCallback((lang: string) => handleFieldChange('x_language', lang, setLanguage), [handleFieldChange]);
 
   return {
     state: { title, artist, content, youtubeUrl, bpm, originalKey, tags, language, formatBadge },
@@ -97,7 +73,6 @@ export function useSongEditor(initialContent: string = '') {
     handleFieldChange,
     handleTagsChange,
     handleLanguageChange,
-    // Direct setters for individual fields if needed for UI components
     setTitle,
     setArtist,
     setYoutubeUrl,

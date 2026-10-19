@@ -14,7 +14,7 @@ const { api, localSetlists, auth, toast } = vi.hoisted(() => ({
 vi.mock('../../hooks/useApi', () => ({ useApi: () => api }));
 vi.mock('../../hooks/useLocalSetlists', () => ({ useLocalSetlists: () => localSetlists }));
 vi.mock('../../context/AuthContext', () => ({ useAuth: () => auth }));
-vi.mock('../../context/I18nContext', () => ({ useI18n: () => ({ t: (key: string) => key }) }));
+vi.mock('../../context/I18nContext', () => ({ useI18n: () => ({ t: (key: string) => key, tReplace: (key: string) => key }) }));
 vi.mock('../../lib/notifications', () => ({ showStatusNotification: toast }));
 
 beforeEach(() => { api.mockReset(); api.mockResolvedValue([]); auth.user = null; toast.mockReset(); localSetlists.setlists = []; localSetlists.addEntry.mockReset(); });
@@ -115,4 +115,13 @@ it('labels the expanded version selector and picks the chosen arrangement', asyn
   await userEvent.click(await screen.findByRole('button', { name: /Amazing Grace/ }));
   await userEvent.selectOptions(await screen.findByLabelText('Version'), '8');
   expect(pick).toHaveBeenCalledExactlyOnceWith({ ...song, id: 8, username: 'arranger' });
+});
+
+it('the picker search clears with the shared clear button', async () => {
+  render(<SongPicker opened onPick={vi.fn()} onClose={vi.fn()} />);
+  const box = await screen.findByRole('searchbox');
+  await waitFor(() => expect(box).toHaveFocus());
+  await userEvent.type(box, 'grace');
+  await userEvent.click(screen.getByRole('button', { name: 'Clear search' }));
+  expect(box).toHaveValue('');
 });

@@ -4,6 +4,8 @@ WORKDIR /app/frontend
 COPY frontend/package*.json frontend/.npmrc ./
 RUN npm ci
 COPY frontend/ ./
+COPY shared/ /app/shared/
+COPY public/locales/ /app/public/locales/
 RUN npm run build
 
 # Stage 2: Build backend native deps
@@ -20,10 +22,12 @@ WORKDIR /app
 COPY --from=backend /app/node_modules ./node_modules
 COPY server.js ./
 COPY lib/ ./lib/
+COPY shared/ ./shared/
 COPY routes/ ./routes/
 COPY --from=frontend /app/public ./public
 COPY public/locales ./public/locales
 COPY scripts/seed-data.mjs ./scripts/seed-data.mjs
+COPY scripts/lib/session.mjs ./scripts/lib/session.mjs
 COPY entrypoint.sh ./
 RUN chmod +x entrypoint.sh && mkdir -p data
 EXPOSE 3100

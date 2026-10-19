@@ -1,8 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { EditorActionBar } from '../EditorActionBar';
 
-const t = (k: string) => k;
-const base = { title: 'Edit song', dirty: false, onLeave: vi.fn(), saveLabel: 'Save', onSave: vi.fn(), t };
+vi.mock('../../context/I18nContext', () => ({ useI18n: () => ({ t: (key: string) => key }) }));
+
+const base = { title: 'Edit song', dirty: false, onLeave: vi.fn(), saveLabel: 'Save', onSave: vi.fn() };
 
 describe('EditorActionBar', () => {
   it('leaves through Back or Cancel and saves through the primary button', () => {
@@ -42,4 +43,13 @@ describe('EditorActionBar', () => {
     fireEvent.click(await screen.findByRole('menuitem', { name: 'songEdit.deleteSong' }));
     expect(onDelete).toHaveBeenCalled();
   });
+});
+
+it('joins Save and the actions menu as one Mantine button group', () => {
+  render(<EditorActionBar {...base} onSaveAsVersion={vi.fn()} />);
+  const group = screen.getByRole('button', { name: 'Save' }).closest('.mantine-ButtonGroup-group');
+  expect(group).not.toBeNull();
+  const more = screen.getByRole('button', { name: 'songEdit.moreActions' });
+  expect(group).toContainElement(more);
+  expect(more).toHaveAttribute('data-variant', 'filled');
 });

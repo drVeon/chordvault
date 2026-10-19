@@ -1,11 +1,13 @@
-import { Box, Button, Text, Textarea } from '@mantine/core';
-import { useState, useCallback, useMemo, useRef } from 'react';
-import { useApi } from '../hooks/useApi';
+import { Alert, Button, Box, Text } from '@mantine/core';
+import { IconLock } from '@tabler/icons-react';
+import { useOffline } from '../context/OfflineContext';
+import { useState, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
-import { showStatusNotification as toast } from '../lib/notifications';
 import { useSwipe } from '../hooks/useSwipe';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useLocalStorage } from '@mantine/hooks';
+import { useWakeLock } from '../hooks/useWakeLock';
 import { useSetlistPlayer } from '../hooks/useSetlistPlayer';
 import { useFontScale } from '../hooks/useFontScale';
 import { useTwoCol } from '../hooks/useTwoCol';
@@ -17,29 +19,29 @@ import { PlaybackDock, type PlaybackNav } from '../components/PlaybackDock';
 import { PlaybackMoreMenu } from '../components/PlaybackMoreMenu';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { EmptyState } from '../components/EmptyState';
+import { SetlistEntryEditor } from '../components/SetlistEntryEditor';
 import { Loading } from '../components/Loading';
-import { renderChordPro, getSongKey, getOriginalKey, clampFontSize, songHasKey, resolveEffectivePreferences, autoFit } from '../lib/chords';
+import { clampFontSize, autoFit, getOriginalKey } from '../lib/chords';
+import { useRenderedChords } from '../hooks/useRenderedChords';
 import { useSetlistPreferences } from '../hooks/useSetlistPreferences';
 import { stepKey } from '../lib/keys';
-import { entrySemitones } from '../lib/setlistKeys';
-import type { Setlist } from '../types';
+import { entryContent, entryStartKey } from '../lib/setlistKeys';
+import { songEditFromSetlist } from '../lib/songEditRoute';
+import { usePdfExport } from '../hooks/usePdfExport';
+import type { Navigate } from '../lib/routes';
 
 interface SetlistPlayViewProps {
   setlistId: number | string;
   isLocal?: boolean;
-  initialSetlist?: Setlist;
   initialIndex?: number;
-  navigate: (view: string, params?: Record<string, string>) => void;
+  navigate: Navigate;
 }
 
-export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, initialIndex, navigate }: SetlistPlayViewProps) {
-  const apiCall = useApi();
+export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialIndex, navigate }: SetlistPlayViewProps) {
   const { t } = useI18n();
-  const containerRef = useRef<HTMLDivElement>(null);
 
+  const { readOnly } = useOffline();
   const [editing, setEditing] = useState(false);
-  const [editContent, setEditContent] = useState('');
-  const [exportingPdf, setExportingPdf] = useState(false);
 
   // Global setlist settings
   const [slNashville, setSlNashville] = useState(false);
@@ -48,10 +50,9 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   const twoColState = useTwoCol();
   const layout = usePlaybackLayout();
 
-  const { setlist, entry, index, total, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } = useSetlistPlayer({
+  const { loadError, setlist, entry, index, total, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } = useSetlistPlayer({
     setlistId,
     isLocal: _isLocal,
-    initialSetlist,
     initialIndex,
     navigate,
     onNavigate: () => {
@@ -59,10 +60,12 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
     },
   });
 
-  const content = entry ? (entry.content_override || entry.content) : '';
+  const content = entry ? entryContent(entry) : '';
 
   const { user } = useAuth();
   const isOwner = setlist?.user_id && user && setlist.user_id === user.id;
+  const [keepScreenOn, setKeepScreenOn] = useLocalStorage({ key: 'cv_keep_screen_on', defaultValue: true, getInitialValueInEffect: false });
+  const wakeLock = useWakeLock(keepScreenOn && !!setlist);
 
   // Effective values for current entry
   const globalPrefs = useMemo(() => ({
@@ -77,23 +80,16 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   const effTwoCol = effectivePrefs.twoCol;
   const effFont = effectivePrefs.fontSize;
   const hideYt = effectivePrefs.hideYt;
-  const semitones = useMemo(() => entrySemitones(content, entry?.target_key), [entry?.target_key, content]);
-
-  const keyDisplay = entry ? getSongKey(content, semitones) : '';
+  const { renderedHtml, currentKey: keyDisplay, hasKey } = useRenderedChords(content, entry?.target_key, !!effNum);
   const originalKey = useMemo(() => getOriginalKey(content), [content]);
-
-  const renderedHtml = useMemo(() => {
-    if (!entry) return '';
-    return renderChordPro(content, semitones, !!effNum);
-  }, [content, effNum, entry, semitones]);
 
   // Key stepping
   const stepEntryKey = useCallback((direction: 1 | -1) => {
     if (!entry) return;
-    const current = entry.target_key || getSongKey(content, 0);
+    const current = entryStartKey(entry);
     if (!current) return;
     updateEntry({ target_key: stepKey(current, direction) });
-  }, [entry, content, updateEntry]);
+  }, [entry, updateEntry]);
 
   // Per-song overrides
   const toggleEntryNum = useCallback((checked: boolean) => {
@@ -106,27 +102,15 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
 
   const toggleEntryTwoCol = useCallback(() => {
     if (!entry) return;
-    const prefs = resolveEffectivePreferences(entry, {
-      nashville: slNashville,
-      twoCol: twoColState.twoCol,
-      fontSize: fontScale.fontSize,
-      hideYt: slHideYt,
-    });
-    const nextVal = !prefs.twoCol;
+    const nextVal = !effTwoCol;
     updateEntry({ _twoCol: nextVal === (!!twoColState.twoCol) ? null : nextVal });
-  }, [entry, slNashville, twoColState.twoCol, fontScale.fontSize, slHideYt, updateEntry]);
+  }, [entry, effTwoCol, twoColState.twoCol, updateEntry]);
 
   const changeEntryFont = useCallback((delta: number) => {
     if (!entry) return;
-    const prefs = resolveEffectivePreferences(entry, {
-      nashville: slNashville,
-      twoCol: twoColState.twoCol,
-      fontSize: fontScale.fontSize,
-      hideYt: slHideYt,
-    });
-    const nextVal = clampFontSize(prefs.fontSize + delta);
+    const nextVal = clampFontSize(effFont + delta);
     updateEntry({ _font: nextVal === fontScale.fontSize ? null : nextVal });
-  }, [entry, slNashville, twoColState.twoCol, fontScale.fontSize, slHideYt, updateEntry]);
+  }, [entry, effFont, fontScale.fontSize, updateEntry]);
 
   // Key picker
   const pickKey = useCallback((targetKey: string) => {
@@ -136,34 +120,12 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
 
   // Inline editor
   const openEditor = useCallback(() => {
-    if (!entry || setlist?.isLocal) return;
-    setEditContent(entry.content_override || entry.content);
+    if (readOnly || !entry || setlist?.isLocal) return;
     setEditing(true);
-  }, [entry, setlist]);
-
-  const saveEditorToSetlist = async () => {
-    if (!setlist || !entry) return;
-    try {
-      await apiCall('PUT', `/api/setlists/${setlist.id}/entries/${entry.entry_id}`, { content_override: editContent });
-      updateEntry({ content_override: editContent });
-      setEditing(false);
-      toast(t('setlist.editSaved'), 'success');
-    } catch (e) { toast((e as Error).message, 'error'); }
-  };
-
-  const saveEditorAsVersion = async () => {
-    if (!setlist || !entry) return;
-    try {
-      await apiCall('POST', `/api/songs/${entry.song_id}/version`, { content: editContent });
-      await apiCall('PUT', `/api/setlists/${setlist.id}/entries/${entry.entry_id}`, { content_override: editContent });
-      updateEntry({ content_override: editContent });
-      setEditing(false);
-      toast(t('setlist.versionCreated'), 'success');
-    } catch (e) { toast((e as Error).message, 'error'); }
-  };
+  }, [entry, setlist, readOnly]);
 
   // Swipe
-  useSwipe({ onNext: next, onPrev: prev, enabled: !editing && !!setlist, containerRef });
+  const swipeRef = useSwipe({ onNext: next, onPrev: prev, enabled: !editing && !!setlist });
 
   // Keyboard shortcuts
   const shortcuts = useMemo(() => ({
@@ -173,8 +135,8 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
     'ArrowDown': (e: KeyboardEvent) => { e.preventDefault(); stepEntryKey(-1); },
     'n': () => { if (entry) toggleEntryNum(!effNum); },
     'N': () => { if (entry) toggleEntryNum(!effNum); },
-    'e': () => openEditor(),
-    'E': () => openEditor(),
+    'e': (e: KeyboardEvent) => { e.preventDefault(); openEditor(); },
+    'E': (e: KeyboardEvent) => { e.preventDefault(); openEditor(); },
     'Escape': () => { if (editing) setEditing(false); else exit(); },
   }), [prev, next, stepEntryKey, entry, effNum, toggleEntryNum, openEditor, editing, exit]);
 
@@ -185,28 +147,12 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
     if (entry) updateEntry({ _font: null });
   };
 
-  const handleExportAllPdf = async () => {
-    if (!setlist || exportingPdf) return;
-    setExportingPdf(true);
-    try {
-      const { exportSetlistPdf } = await import('../lib/pdf-export');
-      const missing = await exportSetlistPdf(setlist, {
-        nashville: slNashville,
-        fontSize: fontScale.fontSize,
-      });
-      if (missing.length) {
-        toast(
-          `Setlist PDF exported, but these characters may be missing: ${missing.slice(0, 8).join(' ')}`,
-          'error',
-        );
-      } else {
-        toast('Setlist PDF exported', 'success');
-      }
-    } catch (e) {
-      toast((e as Error).message || 'PDF export failed', 'error');
-    } finally {
-      setExportingPdf(false);
-    }
+  const exportPdf = usePdfExport();
+  const handleExportAllPdf = () => {
+    if (!setlist) return;
+    void exportPdf('Setlist PDF exported', async () => (await import('../lib/pdf-export')).exportSetlistPdf(setlist, {
+      nashville: slNashville, fontSize: fontScale.fontSize,
+    }));
   };
 
   const doFit = () => {
@@ -218,6 +164,7 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
     window.scrollTo(0, 0);
   };
 
+  if (loadError) return <Alert title="Setlist unavailable" color="red">{loadError}<Button mt="sm" display="block" onClick={() => navigate('setlists')}>Back to setlists</Button></Alert>;
   if (!setlist) return <Loading />;
   if (!entry) return <EmptyState text={t('setlist.noSongsYet')} />;
 
@@ -227,7 +174,7 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
     currentKey: keyDisplay,
     originalKey,
     nashville: !!effNum,
-    nashvilleDisabled: !songHasKey(content, semitones),
+    nashvilleDisabled: !hasKey,
     onNashvilleChange: toggleEntryNum,
     twoCol: !!effTwoCol,
     onTwoColToggle: toggleEntryTwoCol,
@@ -236,8 +183,8 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
     onReset: resetEntryLayout,
     onPickKey: pickKey,
     onAutoFit: doFit,
-    onSaveOnline: isOwner ? () => saveOnline(false) : undefined,
-    onSaveLocal: () => saveLocal(false),
+    onSaveOnline: !readOnly && isOwner ? saveOnline : undefined,
+    onSaveLocal: readOnly ? undefined : saveLocal,
     onExportPdf: handleExportAllPdf,
     settingsPanel: (
       <SettingsPanel
@@ -250,6 +197,8 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
         fontSize={fontScale.fontSize}
         onFontChange={fontScale.changeFontSize}
         onFontReset={resetFont}
+        keepScreenOn={wakeLock.supported ? keepScreenOn : undefined}
+        onKeepScreenOnChange={wakeLock.supported ? setKeepScreenOn : undefined}
       />
     ),
     isModified,
@@ -257,42 +206,32 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
     overrides: { num: entry._num != null, twoCol: entry._twoCol != null, font: entry._font != null },
     canReset,
   };
+  const editSong = user && !readOnly && !entry.is_private_placeholder
+    ? () => navigate('song-edit', songEditFromSetlist(entry.song_id, 'setlist-play', setlistId, index))
+    : undefined;
   const nav: PlaybackNav = { onPrev: prev, onNext: next, hasPrev: index > 0, hasNext: index < total - 1 };
   const more = (
     <PlaybackMoreMenu nashville={!!effNum} nashvilleDisabled={toolbar.nashvilleDisabled} onNashvilleChange={toggleEntryNum}
       onExportPdf={handleExportAllPdf} onReset={resetEntryLayout} canReset={canReset}
-      bpm={entry.bpm} youtubeUrl={hideYt ? null : entry.youtube_url} />
+      bpm={entry.bpm} youtubeUrl={hideYt ? null : entry.youtube_url} onEdit={editSong} />
   );
 
   return (
-    <div ref={containerRef} className={`setlist-play-container${layout === 'desktop' ? '' : ' has-dock'}`}>
+    <div ref={swipeRef} className={`setlist-play-container${layout === 'desktop' ? '' : ' has-dock'}`}>
       <PlaybackTopBar layout={layout} title={entry.title} position={`${index + 1} of ${total}, ${setlist.name}`}
         nav={nav} onExit={exit} toolbar={toolbar} more={more}
-        bpm={entry.bpm} youtubeUrl={hideYt ? null : entry.youtube_url} />
+        bpm={entry.bpm} youtubeUrl={hideYt ? null : entry.youtube_url} onEdit={editSong} />
 
 
       {editing ? (
-        <div className="setlist-editor">
-          <Textarea
-            className="setlist-edit-textarea"
-            aria-label="Setlist chord sheet"
-            rows={12}
-            styles={{ input: { minHeight: 300, fontFamily: 'var(--font-mono)', lineHeight: 1.7 } }}
-            value={editContent}
-            onChange={(e) => setEditContent(e.target.value)}
-            autoFocus
-          />
-          <div className="setlist-editor-actions">
-            <Button size="xs" className="btn btn-sm" onClick={saveEditorToSetlist}>{t('setlist.saveToSetlist')}</Button>
-            <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={saveEditorAsVersion}>{t('setlist.saveAsVersion')}</Button>
-            <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => setEditing(false)}>{t('songEdit.cancel')}</Button>
-          </div>
-        </div>
+        <SetlistEntryEditor setlistId={setlist.id} entry={entry}
+          onSaved={(saved) => { updateEntry({ content_override: saved }); setEditing(false); }}
+          onCancel={() => setEditing(false)} />
       ) : (
         <>
           {entry?.is_private_placeholder ? (
             <Box mt={40}>
-              <EmptyState icon={<Text span fz={56} aria-hidden>🔒</Text>} text={<>This song is private<Text span display="block" size="sm" mt="xs">The song owner has marked it as private.</Text></>} />
+              <EmptyState icon={<IconLock size={56} aria-hidden />} text={entry.not_downloaded ? "This song is not downloaded. Connect and refresh your library." : <>This song is private<Text span display="block" size="sm" mt="xs">The song owner has marked it as private.</Text></>} />
             </Box>
           ) : (
             <ChordSheet

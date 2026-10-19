@@ -1,207 +1,88 @@
+import { Button, Group, Text } from '@mantine/core';
+import { useLibraryRead } from '../hooks/useLibraryRead';
+import { useOffline } from '../context/OfflineContext';
 import { SearchField } from '../components/SearchField';
 import { SearchRow } from '../components/SearchRow';
-import { Tabs, Button, TextInput, ActionIcon, SimpleGrid, Group } from '@mantine/core';
 import { IconCalendar, IconPlus, IconMusic } from '@tabler/icons-react';
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { showStatusNotification as toast } from '../lib/notifications';
-import { useLocalSetlists } from '../hooks/useLocalSetlists';
+import { notifyError } from '../lib/errors';
+import { useSetlistStore } from '../hooks/useSetlistStore';
 import { SetlistCard } from '../components/SetlistCard';
 import { EmptyState } from '../components/EmptyState';
+import { CardGrid } from '../components/CardGrid';
 import { Pagination } from '../components/Pagination';
-import type { SetlistListItem } from '../types';
-import { useSearchSessionValue, searchPage } from '../hooks/useSearchSessionValue';
+import { useSetlistSearchFilters } from '../hooks/useSearchSessionValue';
+import { LoadErrorAlert } from '../components/LoadErrorAlert';
+import { FilterToggle } from '../components/FilterToggle';
+import { DateRangeFilter, type DateRange } from '../components/DateRangeFilter';
+import { SetlistTabs } from '../components/SetlistTabs';
+import { usePaginatedSearch } from '../hooks/usePaginatedSearch';
 import { PageTitle } from '../components/PageTitle';
+import { setlistPlayParams, type Navigate } from '../lib/routes';
+import { localSetlistToListItem } from '../lib/setlists';
+import { openSetlistNameModal } from '../components/appModals';
 
 interface SetlistsViewProps {
-  navigate: (view: string, params?: Record<string, string>) => void;
-  initialTab?: string;
+  navigate: Navigate;
 }
 
 export function SetlistsView({ navigate }: SetlistsViewProps) {
-  const apiCall = useApi();
   const { user } = useAuth();
   const { t } = useI18n();
-  const ls = useLocalSetlists();
-
+  const { readOnly } = useOffline();
+  const { querySetlists } = useLibraryRead();
   const activeTab = user ? 'cloud' : 'local';
+  const store = useSetlistStore(activeTab === 'local');
 
-  const [setlists, setSetlists] = useState<SetlistListItem[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [showNew, setShowNew] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [savedQuery, saveQuery] = useSearchSessionValue('cv_setlists_query');
-  const [query, setQuery] = useState(savedQuery);
-  const [savedDateFrom, saveDateFrom] = useSearchSessionValue('cv_setlists_date_from');
-  const [dateFrom, setDateFrom] = useState(savedDateFrom);
-  const [savedDateTo, saveDateTo] = useSearchSessionValue('cv_setlists_date_to');
-  const [dateTo, setDateTo] = useState(savedDateTo);
-  const [savedShowDates, saveShowDates] = useSearchSessionValue('cv_setlists_show_dates', 'false');
-  const showDates = savedShowDates === 'true';
-  const [savedPage, savePage] = useSearchSessionValue('cv_setlists_page', '1');
-  const [page, setPage] = useState(() => searchPage(savedPage));
-  const [totalPages, setTotalPages] = useState(1);
-  const nameRef = useRef<HTMLInputElement>(null);
+  const { query, setQuery, dateFrom, dateTo, setDates, showDates, toggleDates, search: searchOptions } = useSetlistSearchFilters('setlists');
+  const { items: setlists, page, totalPages, loaded, loadError, search, refine, clear, goToPage } = usePaginatedSearch({
+    ...searchOptions, listKey: 'setlists', fetchPage: querySetlists, enabled: activeTab === 'cloud',
+  });
 
-  const active = useRef(false);
-  useEffect(() => {
-    active.current = true;
-    return () => { active.current = false; };
-  }, []);
-
-  const load = useCallback(async (q = '', from = '', to = '', targetPage = 1) => {
-    if (!user) return;
-    const params: string[] = [];
-    if (q) params.push(`q=${encodeURIComponent(q)}`);
-    if (from) params.push(`date_from=${encodeURIComponent(from)}`);
-    if (to) params.push(`date_to=${encodeURIComponent(to)}`);
-    params.push(`page=${targetPage}`);
-    params.push(`limit=20`);
-    const qs = params.length > 0 ? `?${params.join('&')}` : '';
+  const create = async (name: string) => {
+    if (readOnly) return;
     try {
-      interface PaginatedSetlistsResponse {
-        setlists: SetlistListItem[];
-        total: number;
-        page: number;
-        limit: number;
-        totalPages: number;
-      }
-      const data = await apiCall<PaginatedSetlistsResponse>('GET', `/api/setlists${qs}`);
-      if (!active.current) return;
-      setSetlists(data.setlists);
-      setPage(data.page);
-      setTotalPages(data.totalPages);
-      setLoaded(true);
-
-      saveQuery(q);
-      saveDateFrom(from);
-      saveDateTo(to);
-      savePage(String(data.page));
-    } catch (e) { if (active.current) toast((e as Error).message, 'error'); }
-  }, [apiCall, user, saveQuery, saveDateFrom, saveDateTo, savePage]);
-
-  useEffect(() => {
-    if (activeTab === 'cloud') {
-      load(query, dateFrom, dateTo, page);
-    } else {
-      setLoaded(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [load, activeTab]);
-
-  useEffect(() => { if (showNew && nameRef.current) nameRef.current.focus(); }, [showNew]);
-
-  const create = async () => {
-    if (!newName.trim()) { toast(t('setlist.nameRequired'), 'error'); return; }
-    if (newName.length > 200) { toast('Name too long', 'error'); return; }
-
-    if (activeTab === 'local') {
-      const sl = ls.create(newName.trim());
-      if (!sl) { toast('Max 50 setlists', 'error'); return; }
+      const id = await store.create(name);
       toast(t('setlist.created'), 'success');
-      navigate('setlist-edit', { id: sl.id });
-    } else {
-      try {
-        const result = await apiCall<{ id: number }>('POST', '/api/setlists', { name: newName.trim() });
-        toast(t('setlist.created'), 'success');
-        navigate('setlist-edit', { id: String(result.id) });
-      } catch (e) { toast((e as Error).message, 'error'); }
-    }
+      navigate('setlist-edit', { id });
+    } catch (e) { notifyError(e); }
   };
 
-  const handleClear = () => {
-    setQuery('');
-    if (activeTab === 'local') {
-      saveQuery('');
-    } else {
-      load('', dateFrom, dateTo, 1);
-    }
-  };
-
-  const handleSearch = () => {
-    if (activeTab === 'cloud') {
-      load(query, dateFrom, dateTo, 1);
-    }
-  };
-
-  const handlePageChange = (newPage: number) => {
-    if (activeTab === 'cloud') {
-      load(query, dateFrom, dateTo, newPage);
-      window.scrollTo(0, 0);
-    }
-  };
+  const changeDates = (range: DateRange) => { setDates(range); refine(range); };
 
   const localSetlistsToRender = query.trim()
-    ? ls.setlists.filter(sl => sl.name.toLowerCase().includes(query.toLowerCase()))
-    : ls.setlists;
+    ? store.setlists.filter(sl => sl.name.toLowerCase().includes(query.toLowerCase()))
+    : store.setlists;
 
   return (
     <>
+      <LoadErrorAlert message={loadError} />
       <Group justify="space-between" mb="lg">
         <PageTitle className="view-title">{t('setlist.title')}</PageTitle>
-        <Button size="xs" className="btn btn-sm" leftSection={<IconPlus size={14} aria-hidden />} onClick={() => setShowNew(true)}>{t('setlist.newSetlist')}</Button>
+        <Button disabled={readOnly} size="xs" leftSection={<IconPlus size={14} aria-hidden />} onClick={() => openSetlistNameModal(t('setlist.enterName'), create)}>{t('setlist.newSetlist')}</Button>
       </Group>
-      <Tabs variant="pills" value="mine" onChange={(tab) => navigate(tab === 'public' ? 'public-setlists' : 'setlists')} className="setlist-tabs">
-        <Tabs.List grow><Tabs.Tab value="mine">My Setlists</Tabs.Tab><Tabs.Tab value="public">Public Setlists</Tabs.Tab></Tabs.List>
-      </Tabs>
+      <SetlistTabs value="mine" navigate={navigate} />
       {!user && (
-        <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 16 }}>
+        <Text fz={13} c="dimmed" mb={16}>
           These setlists are saved in your browser. Sign in to create server-synced setlists.
-        </p>
-      )}
-      {showNew && (
-        <SearchRow mb={16}>
-          <TextInput aria-label={t('setlist.namePlaceholder')}
-            flex={3}
-            miw={0}
-            ref={nameRef}
-            type="text"
-            placeholder={t('setlist.namePlaceholder')}
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') create(); }}
-          />
-          <Button size="xs" className="btn btn-sm" onClick={create}>{t('setlist.create')}</Button>
-          <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => setShowNew(false)}>{t('songEdit.cancel')}</Button>
-        </SearchRow>
+        </Text>
       )}
       <SearchRow>
-        <SearchField label={t('setlist.searchPlaceholder')} value={query} onSearch={handleSearch} onClear={handleClear}
-
+        <SearchField label={t('setlist.searchPlaceholder')} value={query} onSearch={search} onClear={clear}
           onChange={(val) => {
-
             setQuery(val);
-
-            if (activeTab === 'local') saveQuery(val);
-
+            if (activeTab === 'local') refine({ q: val });
           }} />
-        <Button variant="default" size="sm" onClick={handleSearch}>{t('songs.search')}</Button>
+        <Button variant="default" size="sm" onClick={search}>{t('songs.search')}</Button>
         {activeTab === 'cloud' && (
-          <ActionIcon
-            size="input-sm"
-            variant={showDates ? 'filled' : 'default'}
-            aria-label="Filter by date"
-            aria-pressed={showDates}
-            title="Filter by date"
-            onClick={() => {
-              const next = !showDates;
-              saveShowDates(String(next));
-            }}
-          >
-            <IconCalendar size={18} aria-hidden />
-          </ActionIcon>
+          <FilterToggle label="Filter by date" icon={<IconCalendar size={18} aria-hidden />} pressed={showDates} onToggle={toggleDates} />
         )}
       </SearchRow>
-      {activeTab === 'cloud' && showDates && (
-        <SearchRow mt={-10}>
-          <TextInput label={<>From</>} type="date" flex={1} miw={0} value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-          <TextInput label={<>To</>} type="date" flex={1} miw={0} value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
-        </SearchRow>
-      )}
-      <SimpleGrid className="song-grid" minColWidth="min(100%, 320px)" autoFlow="auto-fill" spacing={12}>
-        {loaded && (
+      {activeTab === 'cloud' && showDates && <DateRangeFilter dateFrom={dateFrom} dateTo={dateTo} onChange={changeDates} />}
+      <CardGrid>
+        {!loadError && loaded && (
           activeTab === 'cloud' ? (
             setlists.length === 0 ? (
               <EmptyState icon={<IconMusic size={56} aria-hidden />} text={t('setlist.noSetlists')} />
@@ -211,7 +92,7 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
                   key={sl.id}
                   setlist={sl}
                   onClick={() => navigate('setlist-edit', { id: String(sl.id) })}
-                  onPlay={() => navigate('setlist-play', { id: String(sl.id) })}
+                  onPlay={() => navigate('setlist-play', setlistPlayParams(sl.id))}
                 />
               ))
             )
@@ -222,23 +103,17 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
               localSetlistsToRender.map((sl) => (
                 <SetlistCard
                   key={sl.id}
-                  setlist={{
-                    id: sl.id,
-                    name: sl.name,
-                    visibility: 'private',
-                    song_count: sl.entries.length,
-                    event_date: null,
-                  }}
+                  setlist={localSetlistToListItem(sl)}
                   onClick={() => navigate('setlist-edit', { id: sl.id })}
-                  onPlay={() => navigate('setlist-play', { id: sl.id, local: '1' })}
+                  onPlay={() => navigate('setlist-play', setlistPlayParams(sl.id))}
                 />
               ))
             )
           )
         )}
-      </SimpleGrid>
+      </CardGrid>
       {activeTab === 'cloud' && (
-        <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+        <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
       )}
     </>
   );

@@ -38,8 +38,35 @@ it('keeps invite redemption distinct when registration is closed', async () => {
   fireEvent.change(screen.getByLabelText('auth.username'), { target: { value: 'preview' } });
   fireEvent.change(screen.getByLabelText('auth.password'), { target: { value: 'password' } });
   fireEvent.click(document.querySelector('#auth-submit')!);
-  await waitFor(() => expect(navigate).toHaveBeenCalledWith('browse'));
+  await waitFor(() => expect(navigate).toHaveBeenCalledWith('browse', {}, { leave: true }));
   expect(api).toHaveBeenCalledWith('POST', '/api/auth/redeem-invite', {
     code: 'local-invite', username: 'preview', password: 'password', turnstile_token: null,
   });
+});
+
+it('prefills the demo account in demo mode', async () => {
+  api.mockImplementation((method: string) => method === 'GET' ? Promise.resolve({ allowRegistration: false, demoMode: true }) : new Promise(() => {}));
+  render(<AuthView navigate={vi.fn()} />);
+  await waitFor(() => expect(screen.getByLabelText('auth.username')).toHaveValue('demo'));
+  expect(screen.getByLabelText('auth.password')).toHaveValue('demopass123');
+});
+
+it('asks for the invite code under its field and sends nothing without it', async () => {
+  api.mockImplementation((method: string) => method === 'GET' ? Promise.resolve({ allowRegistration: false, invitesEnabled: true }) : Promise.resolve({}));
+  render(<AuthView navigate={vi.fn()} />);
+  fireEvent.click(await screen.findByRole('button', { name: 'auth.haveInvite' }));
+  fireEvent.change(screen.getByLabelText('auth.username'), { target: { value: 'preview' } });
+  fireEvent.change(screen.getByLabelText('auth.password'), { target: { value: 'password' } });
+  fireEvent.click(document.querySelector('#auth-submit')!);
+  await waitFor(() => expect(screen.getByLabelText('auth.inviteCode')).toHaveAttribute('aria-invalid', 'true'));
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(api.mock.calls.filter(call => call[0] === 'POST')).toHaveLength(0);
+});
+
+it('signs in without an invite code', async () => {
+  render(<AuthView navigate={vi.fn()} />);
+  fireEvent.change(screen.getByLabelText('auth.username'), { target: { value: 'preview' } });
+  fireEvent.change(screen.getByLabelText('auth.password'), { target: { value: 'password' } });
+  fireEvent.click(document.querySelector('#auth-submit')!);
+  await waitFor(() => expect(api).toHaveBeenCalledWith('POST', '/api/auth/login', { username: 'preview', password: 'password' }));
 });

@@ -1,27 +1,29 @@
-import { NativeSelect } from '@mantine/core';
-import { PRESET_TAGS } from '../lib/constants';
+import { MultiSelect } from '@mantine/core';
+import { useTagList } from '../hooks/useTagList';
+import { useI18n } from '../context/I18nContext';
+import { tagLabel } from '../lib/tagName';
 
 interface TagFilterProps {
-  selected: string;
-  onChange: (tag: string) => void;
+  value: string[];
+  onChange: (tags: string[]) => void;
 }
 
-// A dropdown rather than pills: the preset list outgrew one row. A custom tag
-// picked from a song card isn't a preset, so it gets its own option, in order, to stay selected.
-export function TagFilter({ selected, onChange }: TagFilterProps) {
-  const tags = selected && !PRESET_TAGS.includes(selected) ? [...PRESET_TAGS, selected].sort() : PRESET_TAGS;
-
+export function TagFilter({ value, onChange }: TagFilterProps) {
+  const tags = useTagList();
+  const { t } = useI18n();
+  const data = tags.map(name => ({ value: name, label: tagLabel(t, name) }));
   return (
-    <NativeSelect
-      className="language-filter tag-filter"
-      aria-label="Filter by tag"
-      value={selected}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      <option value="">All tags</option>
-      {tags.map((tag) => (
-        <option key={tag} value={tag}>{tag}</option>
-      ))}
-    </NativeSelect>
+    <MultiSelect
+      flex={1}
+      miw={0}
+      maw={{ base: 'none', xs: 420 }}
+      data={data}
+      value={value}
+      onChange={onChange}
+      searchable
+      clearable
+      aria-label={t('songs.tags')}
+      placeholder={value.length ? undefined : t('songs.allTags')}
+    />
   );
 }

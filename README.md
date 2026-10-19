@@ -15,7 +15,7 @@
 **For self-hosters.** Ridiculously lightweight.
 - Your entire library lives in a single SQLite file. No database server, no config, just one file you can back up or move.
 - Chord parsing, transposition, and Nashville numbers all run in the browser via ChordSheetJS. The server just does light reads and writes.
-- Zero background workers, minimal CPU and RAM. Runs happily on a Raspberry Pi, an old laptop, or whatever you have lying around.
+- Zero server background workers, minimal CPU and RAM. Runs happily on a Raspberry Pi, an old laptop, or whatever you have lying around.
 - One Docker command to deploy. Your data stays on your hardware.
 
 **For worship leaders & admins.** Keep your team organized.
@@ -30,6 +30,7 @@
 - Transpose on the fly, switch to Nashville numbers, link YouTube videos for reference.
 - Swipe through setlists during rehearsal with one hand. Side taps, swipe gestures, or arrow keys.
 - Adjust font size, hide distractions, go fullscreen. Whatever helps you focus on the music.
+- Download your library once and read songs or play saved setlists without an internet connection.
 
 ![ChordVault: setlist playback](docs/screenshots/setlist-play.png)
 
@@ -56,6 +57,14 @@
 
 </details>
 
+## Offline playback
+
+In **Settings**, turn on **Keep my library offline** and wait for the song count and **Last downloaded** time. This saves public songs, your private songs, all their accessible versions and your own saved setlists on that device. Installing ChordVault from your browser or adding it to your home screen is optional.
+
+You can browse, search, transpose, play setlists and export PDFs offline. Editing, saving and importing need a connection. Downloads refresh while the app is open and online, with automatic refresh paused during playback or unsaved editing. Use **Refresh now** before a rehearsal if you want to check for changes immediately.
+
+Offline access needs HTTPS (or localhost). The app and fonts take about 22 MB before song data. Signing out or turning the option off removes the downloaded library; clearing browser data can remove it too. Check the download status before relying on it, and refresh occasionally so deleted or newly private songs are reflected. An app update waits until all ChordVault tabs and app windows are closed.
+
 ## Features
 
 ### Songs & Chords
@@ -63,11 +72,11 @@
 - **Advanced search:** find songs by title, artist, or **lyrics** using SQLite FTS5 (full-text search). Powered by a `trigram` tokenizer for excellent CJK (Chinese, Japanese, Korean) support. Search your own library on the "My Songs" page or browse public songs.
 - **Multi-format input:** paste ChordPro, chords-over-lyrics, or Ultimate Guitar. Auto-detected on save.
 - **OCR (image/PDF → chord sheet):** snap a photo, pick an image, or upload a PDF. Gemini Flash extracts the text, then you review the result and use conversational refinement to fix any mistakes before saving (e.g. "move the G chord to the next word", "verse 2 should be Am not Em"). Choose your preferred Gemini model in Settings or per-extraction in the OCR modal. Works with CJK languages (Chinese, Japanese, Korean) and other non-Latin scripts.
-- **Key picker:** tap the current key to see all 12 keys, tap any key to transpose instantly. Set an original key (`{x_original_key: A}`, or the Original key field in the editor) and it is marked in the picker and shown under the title.
+- **Key picker:** tap the current key to see all 12 keys, tap any key to transpose instantly
 - **Number notation:** toggle to convert chords to numbers (1, 4, 5), independent of key
 - **Song versioning:** multiple arrangements per song, each optionally linked to a YouTube video
 - **YouTube link:** attach a YouTube URL to any song or version, opens in a new tab
-- **BPM & tags:** track tempo and categorize with preset tags (christmas, country, easy, folk, hard, instrumental, medium, pop, rock, singer-songwriter). Filter song lists by tag from the dropdown, or click a tag on a song card.
+- **BPM & tags:** track tempo and categorize with preset tags (worship, praise, hymn, opener, closer, etc.)
 - **Song language:** required on every song, searchable ISO 639-1 dropdown with preferred languages pinned at top. Filter songs by language on the browse page.
 - **Public/private songs:** toggle visibility per song. Private songs are only visible to you and admins
 - **Browse without an account:** all public songs and public setlists are readable by anyone
@@ -94,7 +103,7 @@
 - **Node.js + Express backend:** modular API with robust validation and rate limiting
 - **CodeMirror 6 editor:** ChordPro syntax highlighting, bracket matching, dark/light theme, live preview pane
 - **Single-file database:** SQLite via better-sqlite3 with WAL mode, no external DB server
-- **CI/CD:** GitHub Actions runs lint, typecheck, build, and smoke test on every push/PR
+- **CI/CD:** GitHub Actions checks lint, types, unit tests, browser smoke tests, and Docker build/startup on PRs targeting main and pushes to main
 - **Lightweight:** minimal CPU/RAM, runs on a Raspberry Pi
 
 ## Quick Start
@@ -169,11 +178,12 @@ npm run dev   # Starts backend + Vite dev server with hot reload
 **Run checks:**
 
 ```bash
-npm run lint                 # Lint backend
-cd frontend && npm run lint  # Lint frontend
-cd frontend && npm run test  # Run frontend unit tests (Vitest)
-npm run format               # Format backend with Prettier
-cd frontend && npm run build # Build frontend
+npm run lint                    # Lint backend and shared modules
+npm test                        # Run backend tests
+npm --prefix frontend run lint  # Lint frontend
+npm --prefix frontend test      # Run frontend unit tests (Vitest)
+npm run format                  # Format backend and shared files
+npm --prefix frontend run build # Typecheck and build frontend
 node test/smoke.js           # Playwright smoke test (requires running server)
 ```
 
@@ -185,7 +195,6 @@ A pre-commit hook (via Husky) automatically runs lint on staged files, TypeScrip
 |----------|---------|-------------|
 | `JWT_SECRET` | *(required)* | Secret key for signing auth tokens. **Must be set.** |
 | `PORT` | `3100` | Port the server listens on |
-| `TRUST_PROXY` | `1` | Number of reverse proxies in front of the app (e.g. `2` for Cloudflare Tunnel → Traefik). Used to determine the client IP for rate limiting |
 | `TURNSTILE_SITE_KEY` | *(optional)* | Cloudflare Turnstile site key. Enables bot protection on registration and invite redemption |
 | `TURNSTILE_SECRET_KEY` | *(optional)* | Cloudflare Turnstile secret key (pair with `TURNSTILE_SITE_KEY`) |
 
@@ -208,10 +217,11 @@ chords.example.com {
 ```
 server.js       Express entrypoint
 lib/            Backend modules (db, auth, validation, constants, errors)
+shared/         Browser-safe key definitions, languages and public limits
 routes/         API route handlers
 frontend/       React + TypeScript SPA (Vite)
 public/         Built frontend assets
-test/           Smoke test (Playwright)
+test/           Backend tests and browser/container smoke checks
 scripts/        Dev tooling (seed data, screenshots)
 docs/           Contributor guide, screenshots
 ```
@@ -312,8 +322,8 @@ A live format badge in the editor shows which format was detected. The editor it
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| GET | `/api/songs` | Yes | List your songs (`?q=`, `?language=`, `?tag=`, `?page=`, `?limit=`) |
-| GET | `/api/songs/public` | No | Browse public songs (`?q=`, `?language=`, `?tag=`, `?page=`, `?limit=`) |
+| GET | `/api/songs` | Yes | List your songs (`?q=`, `?language=`, `?tags=`, `?page=`, `?limit=`) |
+| GET | `/api/songs/public` | No | Browse public songs (`?q=`, `?language=`, `?tags=`, `?page=`, `?limit=`) |
 | GET | `/api/users/:username/songs` | No | Public songs by username (`?page=`, `?limit=`) |
 | GET | `/api/songs/:id` | Optional | Get song (public or your own) |
 | POST | `/api/songs` | Yes | Create song |
@@ -406,7 +416,7 @@ A live format badge in the editor shows which format was detected. The editor it
 
 ### Rate Limiting
 
-All `/api/` routes are protected by a global rate limiter. New routes are covered automatically.
+All `/api/` routes are covered by IP-based rate limiting using express-rate-limit. New routes receive the general limits automatically.
 
 | Scope | Limit | Window |
 |-------|-------|--------|
@@ -415,22 +425,26 @@ All `/api/` routes are protected by a global rate limiter. New routes are covere
 | Unauthenticated reads (sustained) | 60 requests | 1 minute |
 | Unauthenticated reads (burst) | 10 requests | 5 seconds |
 | Login | 15 requests | 15 minutes |
-| Register / redeem invite | 5 requests | 1 hour |
+| Register / redeem invite (combined) | 5 requests | 1 hour |
+| Song ZIP export | 5 requests | 1 minute |
 
-Unauthenticated reads must pass both the burst and sustained limiters. Auth endpoints override the global limiter with their own stricter limits.
+Public reads must pass both the burst and sustained limits. Only valid tokens for enabled users receive the authenticated allowance. Login, registration/invite redemption and export have dedicated limits and do not consume the general quotas.
+
+Counters reset at the end of each client window and on server restart. They are held in memory per server process; IPv6 addresses share a quota within the library's default /56 subnet. Rate limiting is bypassed in development and test mode.
 
 ### Input Validation
 
-All validators centralized in `validation.js`, all limits defined in `constants.js`:
+Server validators live in `lib/validation.js`. Public limits are shared with the frontend; server-only limits remain in `lib/constants.js`:
 
-- All route params parsed via `parseId()` (rejects NaN)
+- IDs must be positive safe integers; malformed values are rejected
 - Username length: 3 to 50 characters
 - Content size: 100KB max on create, update, version, and correction
 - Setlist name: max 200 characters
 - Setlist reorder array capped at 1000 entries
-- Transpose range: -12 to +12
+- Target keys must be valid supported key names
 - BPM: 1 to 300
-- Date format: YYYY-MM-DD
+- Dates must be real calendar dates in YYYY-MM-DD format
+- Invalid page/limit values return HTTP 400
 
 ### XSS Protection
 
@@ -439,7 +453,8 @@ All validators centralized in `validation.js`, all limits defined in `constants.
 
 ### Authorization
 
-- Song versioning requires ownership or admin role
+- Editing or deleting a song requires ownership or an admin role
+- Signed-in users can create versions of public songs; private songs remain restricted
 - Version history filtered by status (pending corrections hidden from public)
 - Community corrections require owner or admin review to approve/reject
 

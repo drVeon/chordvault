@@ -1,66 +1,31 @@
 require('dotenv').config();
 const express = require('express');
-const helmet = require('helmet');
 const path = require('path');
 const { db } = require('./lib/db');
+const { createApp } = require('./lib/app');
+const { createApiRateLimiter } = require('./lib/rateLimiter');
 const { createAuthRouter } = require('./routes/auth');
 const { createSongsRouter } = require('./routes/songs');
 const { createSetlistsRouter } = require('./routes/setlists');
 const { createAdminRouter } = require('./routes/admin');
 const { createSettingsRouter } = require('./routes/settings');
-const { errorHandler } = require('./lib/errors');
-const { LIMITS } = require('./lib/constants');
-
-const app = express();
+const { createOfflineRouter } = require('./routes/offline');
 
 if (!process.env.JWT_SECRET) {
   console.error('FATAL: JWT_SECRET environment variable is required. Set it in your .env file.');
   process.exit(1);
 }
 
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "https://challenges.cloudflare.com"],
-      styleSrc: ["'self'", "'unsafe-inline'", "fonts.googleapis.com"],
-      fontSrc: ["'self'", "fonts.gstatic.com"],
-      connectSrc: ["'self'"],
-      frameSrc: ["'self'", "https://challenges.cloudflare.com"],
-    }
-  }
-}));
-
-const {
-  apiRateLimiter,
-  withSkipGlobal,
-  authLimiter,
-  registerLimiter,
-  exportLimiter,
-} = require('./lib/rateLimiter');
-
-// Number of reverse proxies in front of the app, so req.ip (used for rate
-// limiting) is the real client and not the innermost proxy.
-// e.g. 2 for Cloudflare Tunnel -> Traefik -> app.
-const trustProxy = Number.parseInt(process.env.TRUST_PROXY ?? '1', 10);
-app.set('trust proxy', Number.isNaN(trustProxy) ? 1 : trustProxy);
-
-app.use(express.json({ limit: LIMITS.MAX_BODY_JSON }));
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.use('/api/', apiRateLimiter);
-
-app.use('/api/auth', createAuthRouter({
-  withSkipGlobal,
-  authLimiter,
-  registerLimiter,
-}));
-app.use('/api', createSongsRouter({ withSkipGlobal, exportLimiter }));
-app.use('/api', createSetlistsRouter());
-app.use('/api', createAdminRouter());
-app.use('/api', createSettingsRouter());
-
-app.use(errorHandler);
+const app = createApp((app) => {
+  app.use(express.static(path.join(__dirname, 'public')));
+  app.use('/api', createApiRateLimiter());
+  app.use('/api/auth', createAuthRouter());
+  app.use('/api', createSongsRouter());
+  app.use('/api', createSetlistsRouter());
+  app.use('/api', createAdminRouter());
+  app.use('/api', createSettingsRouter());
+  app.use('/api', createOfflineRouter());
+});
 
 const PORT = process.env.PORT || 3100;
 const server = app.listen(PORT, () => console.log(`ChordVault running on port ${PORT}`));

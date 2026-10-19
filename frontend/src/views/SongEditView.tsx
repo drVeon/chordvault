@@ -1,34 +1,43 @@
+import { useOffline, useOfflineActivity } from '../context/OfflineContext';
 import { useDisclosure } from '@mantine/hooks';
-import { Badge, Tabs, Switch, Button, TextInput, useComputedColorScheme, SimpleGrid, Stack, Group, Text, Box, Input, NativeSelect } from '@mantine/core';
-import { modals } from '@mantine/modals';
+import { Badge, Tabs, Switch, Button, TextInput, useComputedColorScheme, SimpleGrid, Stack, Group, Text, Box, Input, NumberInput, NativeSelect } from '@mantine/core';
+import { IconCamera, IconLock } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { showStatusNotification as toast } from '../lib/notifications';
+import { confirmAction, notifyError } from '../lib/errors';
 import { useSongEditor } from '../hooks/useSongEditor';
 import { TagPicker } from '../components/TagPicker';
 import { LanguagePicker } from '../components/LanguagePicker';
 import { OcrModal } from '../components/OcrModal';
 import { CodeMirrorEditor } from '../components/CodeMirrorEditor';
 import { EditorPreview } from '../components/EditorPreview';
-import { detectFormat, toChordPro, ensureKeyDirective, extractDirective, updateDirective } from '../lib/chords';
+import { extractDirective, updateDirective } from '../lib/chords';
+import { createSongVersion, requirePreparedSong } from '../lib/songSubmit';
 import type { Song } from '../types';
 import { ALL_KEYS, ALL_KEYS_MINOR } from '../lib/keys';
 import { EditorActionBar } from '../components/EditorActionBar';
+import type { Destination } from '../lib/songEditRoute';
+import { VISIBILITY, MIN_BPM, MAX_BPM, normalizeVisibility, type Visibility } from '../lib/constants';
+import { getGeminiKeySaved, getLanguages } from '../lib/settingsApi';
+import type { Navigate } from '../lib/routes';
 
 interface SongEditViewProps {
   songId?: number;
-  navigate: (view: string, params?: Record<string, string>) => void;
+  returnTo?: Destination;
+  navigate: Navigate;
 }
 
-export function SongEditView({ songId, navigate }: SongEditViewProps) {
+export function SongEditView({ songId, returnTo, navigate }: SongEditViewProps) {
   const apiCall = useApi();
+  const { readOnly } = useOffline();
   const { user } = useAuth();
   const { t } = useI18n();
   const [song, setSong] = useState<Song | null>(null);
-  const [visibility, setVisibility] = useState<'public' | 'private'>('public');
-  const [saved, setSaved] = useState<{ content: string; visibility: 'public' | 'private' }>({ content: '', visibility: 'public' });
+  const [visibility, setVisibility] = useState<Visibility>(VISIBILITY.PUBLIC);
+  const [saved, setSaved] = useState<{ content: string; visibility: Visibility }>({ content: '', visibility: VISIBILITY.PUBLIC });
   const [preferredLanguages, setPreferredLanguages] = useState<string[]>([]);
   const [ocrOpen, ocr] = useDisclosure(false);
   const [hasGeminiKey, setHasGeminiKey] = useState(false);
@@ -44,7 +53,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
       apiCall<Song>('GET', `/api/songs/${songId}`)
         .then((s) => {
           setSong(s);
-          setVisibility(s.visibility === 'private' ? 'private' : 'public');
+          setVisibility(normalizeVisibility(s.visibility));
 
           // CodeMirror joins lines with \n, so CRLF content would read as an unsaved edit.
           let c = s.content.replace(/\r\n?/g, '\n');
@@ -57,98 +66,69 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
           if (s.language && !extractDirective(c, 'x_language')) c = updateDirective(c, 'x_language', s.language);
 
           setInitialContent(c);
-          setSaved({ content: c, visibility: s.visibility === 'private' ? 'private' : 'public' });
+          setSaved({ content: c, visibility: normalizeVisibility(s.visibility) });
         })
-        .catch((e) => { toast(e.message, 'error'); navigate('my-songs'); });
+        .catch((e) => { notifyError(e); navigate('my-songs', {}, { leave: true }); });
     }
   }, [songId, apiCall, navigate, setInitialContent]);
 
   useEffect(() => {
     if (user) {
-      apiCall<{ hasKey: boolean }>('GET', '/api/settings/gemini-key')
-        .then((d) => setHasGeminiKey(d.hasKey))
-        .catch(() => {});
-      apiCall<{ languages: string[] }>('GET', '/api/settings/languages')
-        .then((d) => setPreferredLanguages(d.languages))
-        .catch(() => {});
+      getGeminiKeySaved(apiCall).then(setHasGeminiKey).catch(() => {});
+      getLanguages(apiCall).then(setPreferredLanguages).catch(() => {});
     }
   }, [apiCall, user]);
 
-  const save = async () => {
-    const { content } = state;
-    if (!extractDirective(content, 'title')?.trim()) { toast(t('songEdit.titleRequired'), 'error'); return; }
-    if (!content.trim()) { toast(t('songEdit.contentRequired'), 'error'); return; }
-    if (content.length > 100000) { toast(t('songEdit.contentTooLarge'), 'error'); return; }
-    const bpmVal = extractDirective(content, 'tempo');
-    if (bpmVal && (isNaN(parseInt(bpmVal, 10)) || parseInt(bpmVal, 10) < 1 || parseInt(bpmVal, 10) > 300)) {
-      toast('BPM must be between 1 and 300', 'error'); return;
-    }
-    const fmt = detectFormat(content);
-    if (!fmt) { toast('No chords detected. Add chords in [brackets] before the syllable, e.g. [G]Amazing [C]grace', 'error'); return; }
-    if (!extractDirective(content, 'x_language')) { toast('Please select a language', 'error'); return; }
-
-    let finalContent = toChordPro(content);
-    finalContent = ensureKeyDirective(finalContent);
-
-    try {
-      if (song) {
-        await apiCall('PUT', `/api/songs/${song.id}`, {
-          content: finalContent, format_detected: fmt, visibility
-        });
-        toast(t('songEdit.saved'), 'success');
-        navigate('song-view', { id: String(song.id) });
-      } else {
-        const result = await apiCall<{ id: number }>('POST', '/api/songs', {
-          content: finalContent, format_detected: fmt, visibility
-        });
-        toast(t('songEdit.created'), 'success');
-        navigate('song-view', { id: String(result.id) });
-      }
-    } catch (e) { toast((e as Error).message, 'error'); }
+  // Leaving the editor replaces its history entry, so Back does not reopen it.
+  const leave = (view: string, params: Record<string, string> = {}) => {
+    const dest = returnTo ?? { view, params };
+    navigate(dest.view, dest.params, { leave: true });
   };
 
-  const deleteSong = async () => {
-    if (!song) return;
-modals.openConfirmModal({ children: t('songEdit.confirmDelete'), labels: { confirm: 'Confirm', cancel: 'Cancel' }, onConfirm: async () => {
+  const save = async () => {
     try {
+      const prepared = requirePreparedSong(state.content);
+      const body = { content: prepared.content, format_detected: prepared.format, visibility };
+      if (song) {
+        await apiCall('PUT', `/api/songs/${song.id}`, body);
+        toast(t('songEdit.saved'), 'success');
+        leave('song-view', { id: String(song.id) });
+      } else {
+        const result = await apiCall<{ id: number }>('POST', '/api/songs', body);
+        toast(t('songEdit.created'), 'success');
+        navigate('song-view', { id: String(result.id) }, { leave: true });
+      }
+    } catch (e) { notifyError(e); }
+  };
+
+  const deleteSong = () => {
+    if (!song) return;
+    confirmAction(t('songEdit.confirmDelete'), async () => {
       await apiCall('DELETE', `/api/songs/${song.id}`);
       toast(t('songEdit.deleted'));
-      navigate('my-songs');
-    } catch (e) { toast((e as Error).message, 'error'); }
-
-} });
-};
+      leave('my-songs');
+    });
+  };
 
   const cancel = () => {
-    if (song) navigate('song-view', { id: String(song.id) });
-    else navigate('my-songs');
+    if (song) leave('song-view', { id: String(song.id) });
+    else leave('my-songs');
   };
 
   const isOwner = !song || (user && song && user.id === song.user_id);
 
   const saveAsVersion = async () => {
-    const { content } = state;
     const targetId = songId || (song?.id);
     if (!targetId) return;
-    if (!extractDirective(content, 'title')?.trim()) { toast(t('songEdit.titleRequired'), 'error'); return; }
-    if (!content.trim()) { toast(t('songEdit.contentRequired'), 'error'); return; }
-    const fmt = detectFormat(content);
-    if (!fmt) { toast('No chords detected. Add chords in [brackets] before the syllable, e.g. [G]Amazing [C]grace', 'error'); return; }
-    if (!extractDirective(content, 'x_language')) { toast('Please select a language', 'error'); return; }
-
-    let finalContent = toChordPro(content);
-    finalContent = ensureKeyDirective(finalContent);
-
     try {
-      const result = await apiCall<{ id: number }>('POST', `/api/songs/${targetId}/version`, {
-        content: finalContent
-      });
-      toast('Version created successfully', 'success');
-      navigate('song-view', { id: String(result.id) });
-    } catch (e) { toast((e as Error).message, 'error'); }
+      const result = await createSongVersion(apiCall, targetId, state.content);
+      toast(t('setlist.versionCreated'), 'success');
+      leave('song-view', { id: String(result.id) });
+    } catch (e) { notifyError(e); }
   };
 
   const dirty = state.content !== saved.content || visibility !== saved.visibility;
+  useOfflineActivity(dirty);
   const title = songId ? (isOwner ? t('songEdit.editSong') : t('songEdit.createVersion')) : t('songEdit.newSong');
 
   return (
@@ -161,14 +141,13 @@ modals.openConfirmModal({ children: t('songEdit.confirmDelete'), labels: { confi
         onSave={isOwner ? save : saveAsVersion}
         onSaveAsVersion={isOwner && songId ? saveAsVersion : undefined}
         onDelete={song && isOwner ? deleteSong : undefined}
-        t={t}
       />
       <Stack gap="sm">
         <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="sm">
           <TextInput label={<>{t('songEdit.titleLabel')}</>} type="text" value={state.title} onChange={(e) => handleFieldChange('title', e.target.value, editor.setTitle)} placeholder={t('songEdit.titlePlaceholder')} />
           <TextInput label={<>{t('songEdit.artistLabel')}</>} type="text" value={state.artist} onChange={(e) => handleFieldChange('artist', e.target.value, editor.setArtist)} placeholder={t('songEdit.artistPlaceholder')} />
           <LanguagePicker value={state.language} onChange={handleLanguageChange} preferredLanguages={preferredLanguages} />
-          <TextInput label={<>BPM</>} type="number" value={state.bpm} onChange={(e) => handleFieldChange('tempo', e.target.value, editor.setBpm)} placeholder="e.g. 120" min="1" max="300" />
+          <NumberInput label={<>BPM</>} value={state.bpm} onChange={(value) => handleFieldChange('tempo', String(value), editor.setBpm)} placeholder="e.g. 120" min={MIN_BPM} max={MAX_BPM} clampBehavior="none" allowDecimal={false} allowNegative={false} />
           <NativeSelect id="original-key" label="Original key" value={state.originalKey} onChange={(e) => handleFieldChange('x_original_key', e.target.value, editor.setOriginalKey)}>
             <option value="">—</option>
             <optgroup label="Major">
@@ -180,14 +159,13 @@ modals.openConfirmModal({ children: t('songEdit.confirmDelete'), labels: { confi
           </NativeSelect>
           <TextInput label={<>YouTube URL</>} type="url" value={state.youtubeUrl} onChange={(e) => handleFieldChange('x_youtube', e.target.value, editor.setYoutubeUrl)} placeholder="https://youtube.com/watch?v=..." />
         </SimpleGrid>
-        <Input.Wrapper label="Tags" labelElement="div">
-          <TagPicker label="Tags" selected={state.tags} onChange={handleTagsChange} />
+        <Input.Wrapper label={t('songs.tags')} labelElement="div">
+          <TagPicker label={t('songs.tags')} selected={state.tags} onChange={handleTagsChange} />
         </Input.Wrapper>
-        <Switch label={<>Public {visibility === 'private' && <Text span size="xs" c="dimmed">&#128274; Only you can see this song</Text>}</>}
-                type="checkbox"
+        <Switch label={<>Public {visibility === VISIBILITY.PRIVATE && <Text span size="xs" c="dimmed"><IconLock size={12} aria-hidden /> {t('songEdit.privateOnly')}</Text>}</>}
                 disabled={!isOwner}
-                checked={visibility === 'public'}
-                onChange={(e) => setVisibility(e.target.checked ? 'public' : 'private')}
+                checked={visibility === VISIBILITY.PUBLIC}
+                onChange={(e) => setVisibility(e.target.checked ? VISIBILITY.PUBLIC : VISIBILITY.PRIVATE)}
                />
         <Box>
           <Group align="flex-start" justify="space-between" gap="xs" mb="xs">
@@ -196,11 +174,11 @@ modals.openConfirmModal({ children: t('songEdit.confirmDelete'), labels: { confi
           </Group>
           {user && (
             <Box mb="xs">
-              <Button variant="default" size="xs" className="btn btn-sm btn-ghost" onClick={ocr.open}>&#128247; Import from image or PDF</Button>
+              <Button variant="default" size="xs" disabled={readOnly} leftSection={<IconCamera size={14} aria-hidden />} onClick={ocr.open}>Import from image or PDF</Button>
             </Box>
           )}
           <Tabs value={editorTab} onChange={(value) => { if (value === 'preview') { setEditorTab('preview'); setForceRender(n => n + 1); } else setEditorTab('edit'); }} keepMounted keepMountedMode="display-none">
-            <Tabs.List grow className="editor-tabs"><Tabs.Tab value="edit">Edit</Tabs.Tab><Tabs.Tab value="preview">Preview</Tabs.Tab></Tabs.List>
+            <Tabs.List grow hiddenFrom="sm"><Tabs.Tab value="edit">{t('songView.edit')}</Tabs.Tab><Tabs.Tab value="preview">Preview</Tabs.Tab></Tabs.List>
             <div className="editor-split">
               <Tabs.Panel value="edit" className="cm-editor-wrap">
                 <CodeMirrorEditor

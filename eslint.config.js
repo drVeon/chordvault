@@ -20,6 +20,9 @@ module.exports = [
         clearInterval: 'readonly',
         Buffer: 'readonly',
         URL: 'readonly',
+        URLSearchParams: 'readonly',
+        AbortSignal: 'readonly',
+        DOMException: 'readonly',
         fetch: 'readonly',
       },
     },
@@ -28,6 +31,7 @@ module.exports = [
       'no-empty': ['error', { allowEmptyCatch: true }],
     },
   },
+  { files: ['shared/**/*.mjs'], languageOptions: { sourceType: 'module', ecmaVersion: 'latest' } },
   {
     ignores: ['public/', 'frontend/', 'node_modules/', 'data/', 'scripts/', 'scratch/'],
   },

@@ -7,12 +7,11 @@ export interface SetlistEntry {
   content_override: string | null;
   target_key: string | null;
   nashville: number;
-  font: number | null;
-  two_col: number | null;
   bpm: number | null;
   youtube_url: string | null;
   language: string;
   is_private_placeholder?: boolean;
+  not_downloaded?: boolean;
   visibility?: string;
   // Per-song overrides (runtime only)
   _num?: number | null;
@@ -33,6 +32,7 @@ export interface Setlist {
   created_at?: string;
   updated_at?: string;
   isLocal?: boolean;
+  search?: string[];
 }
 
 export interface SetlistListItem {

@@ -1,10 +1,10 @@
 /* global localStorage */
-const { chromium } = require('../frontend/node_modules/playwright');
+const { launchBrowser } = require('../scripts/lib/browser.mjs');
 const { setTimeout: sleep } = require('node:timers/promises');
 
 async function run() {
   const baseUrl = process.env.BASE_URL || 'http://localhost:3100';
-  const browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) });
+  const browser = await launchBrowser(process.env.PLAYWRIGHT_CHANNEL);
   const page = await browser.newPage();
   const consoleErrors = [];
   const missingResources = [];
@@ -63,7 +63,7 @@ async function run() {
   // 1. Navigate to local setlists tab via navigation bar and tabs
   await page.goto(baseUrl + '/', { waitUntil: 'domcontentloaded', timeout: 10000 });
   await page.locator('#nav-links').getByRole('button', { name: 'Setlists', exact: true }).click();
-  await page.getByRole('tab', { name: 'My Setlists', exact: true }).click();
+  await page.getByText('My Setlists', { exact: true }).click();
   await page.waitForSelector('button:has-text("New Setlist")', { state: 'visible', timeout: 10000 });
   
   // 2. Open new setlist dialog
@@ -72,8 +72,8 @@ async function run() {
   await btn.click();
   
   // 3. Fill and Create
-  await page.getByRole('textbox', { name: 'Setlist name...' }).fill('Smoke Test Local Setlist');
-  await page.getByRole('button', { name: 'Create', exact: true }).click();
+  await page.getByRole('dialog').getByRole('textbox', { name: 'Setlist name' }).fill('Smoke Test Local Setlist');
+  await page.getByRole('button', { name: 'Create setlist', exact: true }).click();
   
   // 4. Verify we navigated to the setlist edit page
   await page.waitForURL(/.*#setlist\/local_\w+$/, { timeout: 10000 });
@@ -156,7 +156,7 @@ async function run() {
   await page.getByRole('button', { name: 'Delete', exact: true }).click();
   const confirmation = page.getByRole('dialog').filter({ hasText: 'Delete this setlist?' });
   await confirmation.getByRole('button', { name: 'Confirm', exact: true }).click();
-  await page.waitForURL(baseUrl + '/', { timeout: 5000 });
+  await page.waitForURL(baseUrl + '/#public-setlists', { timeout: 5000 });
   console.log('Cleaned up smoke test local setlist.');
   
   // 11. Test Sign In Page Navigation

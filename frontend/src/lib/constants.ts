@@ -1,23 +1,28 @@
-// Alphabetical: the tag picker and the tag filter list them in this order.
-export const PRESET_TAGS = [
-  'christmas', 'country', 'easy', 'folk', 'hard', 'instrumental', 'medium', 'pop', 'rock', 'singer-songwriter',
-];
+import shared from '../../../shared/public-constants.json';
+
+export { ROLES, STATUS, VISIBILITY, isAdminRole, normalizeVisibility, manageUserError } from '../../../shared/access.mjs';
+export type { Visibility } from '../../../shared/access.mjs';
+
+export const DEFAULT_TAGS: string[] = shared.DEFAULT_TAGS;
+export const MAX_TAG_LENGTH = shared.limits.MAX_TAG_LENGTH;
 
 export const MAX_LOCAL_SETLISTS = 50;
 export const MAX_LOCAL_ENTRIES = 100;
-export const MAX_CONTENT_LENGTH = 100000;
-export const MAX_BPM = 300;
-export const MIN_BPM = 1;
-export const MAX_SETLIST_NAME_LENGTH = 200;
-export const MAX_PREFERRED_LANGUAGES = 10;
-export const MAX_OCR_PROMPT = 5000;
+export const MAX_CONTENT_LENGTH = shared.limits.MAX_CONTENT;
+export const MAX_BPM = shared.limits.MAX_BPM;
+export const MIN_BPM = shared.limits.MIN_BPM;
+export const MIN_PASSWORD_LENGTH = shared.limits.PASSWORD_MIN;
+export const MAX_SETLIST_NAME_LENGTH = shared.limits.MAX_SETLIST_NAME;
+export const MAX_PREFERRED_LANGUAGES = shared.limits.MAX_PREFERRED_LANGUAGES;
+export const MAX_OCR_PROMPT = shared.limits.MAX_OCR_PROMPT;
 
-export const DEFAULT_GEMINI_MODEL = 'gemini-3.8-flash';
+export const DEFAULT_GEMINI_MODEL = shared.DEFAULT_GEMINI_MODEL;
+export const DEMO_ACCOUNT = shared.DEMO_ACCOUNT;
 
-export const IMPORT_MAX_BATCH = 500;
+export const IMPORT_MAX_BATCH = shared.limits.MAX_IMPORT;
 export const IMPORT_MAX_BATCH_BYTES = 12_000_000;
 export const IMPORT_CONFIRM_FILE_COUNT = 5000;
-export const DEMO_MAX_IMPORT = 20;
+export const DEMO_MAX_IMPORT = shared.limits.DEMO_MAX_IMPORT;
 export const IMPORT_ACCEPT = '.cho,.chopro,.pro,.chordpro,.crd,.txt';
 
 // Font family registered with jsPDF for PDF export. Lives here rather than in

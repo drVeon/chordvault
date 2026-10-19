@@ -1,32 +1,36 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const { isRegistrationAllowed } = require('../lib/db');
 const User = require('../lib/models/user');
 const Invite = require('../lib/models/invite');
-const { requireAuth, hashPassword } = require('../lib/auth');
-const { validateUserCredentials } = require('../lib/validation');
-const { ROLES, LIMITS } = require('../lib/constants');
-const { handleDbError } = require('../lib/errors');
-const { DEMO_MODE, blockInDemo } = require('../lib/demo');
+const { requireAuth, checkPassword, sessionResponse, createAccount, setPassword } = require('../lib/auth');
+const { CREDENTIALS_REQUIRED, validateObjectBody, assertValid, validateUserCredentials, validatePassword } = require('../lib/validation');
+const { LIMITS } = require('../lib/constants');
+const { AppError } = require('../lib/errors');
+const { DEMO_MODE, DEMO_DISABLED, blockInDemo } = require('../lib/demo');
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-async function verifyTurnstile(token) {
+async function assertTurnstile(token) {
   const secret = process.env.TURNSTILE_SECRET_KEY;
-  if (!secret) return true;
-  if (!token) return false;
-  const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(token)}`,
-  });
-  const data = await res.json();
-  return data.success === true;
+  if (!secret) return;
+  if (token) {
+    const verified = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body: new URLSearchParams({ secret, response: token }),
+      signal: AbortSignal.timeout(10_000),
+    }).then(res => res.json()).then(result => result.success === true, () => false);
+    if (verified) return;
+  }
+  throw new AppError('Bot verification failed. Please try again.', 400);
 }
 
-function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
+function assertCanRegister(userCount) {
+  if (userCount === 0) return;
+  if (DEMO_MODE) throw new AppError(DEMO_DISABLED, 403);
+  if (!isRegistrationAllowed()) throw new AppError('Registration is currently disabled', 403);
+}
+
+function createAuthRouter() {
   const router = express.Router();
+  router.use(validateObjectBody);
 
   router.get('/config', (req, res) => {
     const userCount = User.count().count;
@@ -34,82 +38,44 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
     res.json({ allowRegistration: isRegistrationAllowed() || userCount === 0, invitesEnabled: hasInvites, turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || null, demoMode: DEMO_MODE });
   });
 
-  router.post('/register', withSkipGlobal(registerLimiter), async (req, res) => {
-    const userCount = User.count().count;
-    if (DEMO_MODE && userCount > 0) {
-      return res.status(403).json({ error: 'Disabled in demo mode' });
-    }
-    if (!isRegistrationAllowed() && userCount > 0) {
-      return res.status(403).json({ error: 'Registration is currently disabled' });
-    }
-
+  router.post('/register', async (req, res) => {
+    assertCanRegister(User.count().count);
     const { username, password, turnstile_token } = req.body;
-    if (!(await verifyTurnstile(turnstile_token))) {
-      return res.status(400).json({ error: 'Bot verification failed. Please try again.' });
-    }
-    const credentialsErr = validateUserCredentials(username, password);
-    if (credentialsErr) return res.status(400).json({ error: credentialsErr });
-
-    const isFirstUser = userCount === 0;
-    const role = isFirstUser ? ROLES.OWNER : ROLES.USER;
-    const hash = await hashPassword(password);
-    try {
-      const result = User.create(username.trim(), hash, role);
-      const token = jwt.sign({ id: result.lastInsertRowid, username: username.trim() }, JWT_SECRET, { expiresIn: '30d' });
-      res.json({ token, id: result.lastInsertRowid, username: username.trim(), role });
-    } catch (e) {
-      const appErr = handleDbError(e, { uniqueMessage: 'Username already taken' });
-      return res.status(appErr.status).json({ error: appErr.message });
-    }
+    await assertTurnstile(turnstile_token);
+    assertValid(validateUserCredentials(username, password));
+    res.json(sessionResponse(await createAccount(username, password, (name, hash) => User.register(name, hash, assertCanRegister))));
   });
 
-  router.post('/login', withSkipGlobal(authLimiter), async (req, res) => {
+  router.post('/login', async (req, res) => {
     const { username, password } = req.body;
-    const user = User.findByUsername(username?.trim());
-    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
-      return res.status(401).json({ error: 'Invalid username or password' });
-    }
-    if (user.disabled) {
-      return res.status(403).json({ error: 'Account is disabled. Contact an administrator.' });
-    }
-    const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '30d' });
-    res.json({ token, id: user.id, username: user.username, role: user.role });
+    if (typeof username !== 'string' || typeof password !== 'string') throw new AppError(CREDENTIALS_REQUIRED, 400);
+    if (password.length > LIMITS.PASSWORD_MAX) throw new AppError('Invalid username or password', 401);
+    const user = User.findByUsername(username.trim());
+    const valid = await checkPassword(password, user?.password_hash);
+    if (!user || !valid) throw new AppError('Invalid username or password', 401);
+    if (user.disabled) throw new AppError('Account is disabled. Contact an administrator.', 403);
+    res.json(sessionResponse(user));
   });
 
-  router.post('/redeem-invite', blockInDemo, withSkipGlobal(registerLimiter), async (req, res) => {
+  router.post('/redeem-invite', blockInDemo, async (req, res) => {
     const { code, username, password, turnstile_token } = req.body;
-    if (!(await verifyTurnstile(turnstile_token))) {
-      return res.status(400).json({ error: 'Bot verification failed. Please try again.' });
-    }
-    if (!code?.trim()) return res.status(400).json({ error: 'Invite code is required' });
-    const credentialsErr = validateUserCredentials(username, password);
-    if (credentialsErr) return res.status(400).json({ error: credentialsErr });
+    await assertTurnstile(turnstile_token);
+    const inviteCode = typeof code === 'string' ? code.trim() : '';
+    if (!inviteCode) throw new AppError('Invite code is required', 400);
+    assertValid(validateUserCredentials(username, password));
+    if (!Invite.findByCode(inviteCode)) throw new AppError(Invite.INVALID_INVITE, 400);
 
-    const invite = Invite.findByCode(code.trim());
-    if (!invite) return res.status(400).json({ error: 'Invalid or already used invite code' });
-
-    const hash = await hashPassword(password);
-    try {
-      const result = Invite.redeem(code.trim(), username.trim(), hash);
-      const token = jwt.sign({ id: result.lastInsertRowid, username: username.trim() }, JWT_SECRET, { expiresIn: '30d' });
-      res.json({ token, id: result.lastInsertRowid, username: username.trim(), role: ROLES.USER });
-    } catch (e) {
-      const appErr = handleDbError(e, { uniqueMessage: 'Username already taken' });
-      return res.status(appErr.status).json({ error: appErr.message });
-    }
+    res.json(sessionResponse(await createAccount(username, password, (name, hash) => Invite.redeem(inviteCode, name, hash))));
   });
 
   router.put('/password', blockInDemo, requireAuth, async (req, res) => {
     const { current_password, new_password } = req.body;
-    if (!current_password || !new_password) return res.status(400).json({ error: 'Current password and new password are required' });
-    if (new_password.length < LIMITS.PASSWORD_MIN) return res.status(400).json({ error: `New password must be at least ${LIMITS.PASSWORD_MIN} characters` });
+    if (typeof current_password !== 'string' || typeof new_password !== 'string' || !current_password || !new_password) throw new AppError('Current password and new password are required', 400);
+    assertValid(validatePassword(new_password, 'New password'));
     const user = User.getFullById(req.user.id);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    if (!(await bcrypt.compare(current_password, user.password_hash))) {
-      return res.status(401).json({ error: 'Current password is incorrect' });
-    }
-    const hash = await hashPassword(new_password);
-    User.updatePassword(req.user.id, hash);
+    if (!user) throw new AppError('User not found', 404);
+    if (!(await checkPassword(current_password, user.password_hash))) throw new AppError('Current password is incorrect', 400);
+    await setPassword(req.user.id, new_password);
     res.json({ success: true });
   });
 

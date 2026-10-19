@@ -1,26 +1,28 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { TagFilter } from '../TagFilter';
-import { PRESET_TAGS } from '../../lib/constants';
 
-describe('TagFilter', () => {
-  const getSelect = () => screen.getByLabelText('Filter by tag') as HTMLSelectElement;
+vi.mock('../../hooks/useTagList', () => ({ useTagList: () => ['worship', 'kids'] }));
+vi.mock('../../context/I18nContext', () => ({
+  useI18n: () => ({ t: (key: string) => ({ 'tag.worship': '敬拜' } as Record<string, string>)[key] ?? key }),
+}));
 
-  it('offers "All tags" plus every preset', () => {
-    render(<TagFilter selected="" onChange={vi.fn()} />);
-    const values = Array.from(getSelect().options).map((o) => o.value);
-    expect(values).toEqual(['', ...PRESET_TAGS]);
-  });
+const input = () => screen.getByRole('combobox', { name: 'songs.tags' });
 
-  it('reports the picked tag, and "" for All tags', () => {
-    const onChange = vi.fn();
-    render(<TagFilter selected="rock" onChange={onChange} />);
-    fireEvent.change(getSelect(), { target: { value: 'folk' } });
-    fireEvent.change(getSelect(), { target: { value: '' } });
-    expect(onChange.mock.calls).toEqual([['folk'], ['']]);
-  });
+it('offers the admin tags in your language, searchable by label, and sends stored names', async () => {
+  const onChange = vi.fn();
+  render(<TagFilter value={[]} onChange={onChange} />);
+  await userEvent.type(input(), '敬');
+  expect(screen.queryByRole('option', { name: 'kids' })).not.toBeInTheDocument();
+  await userEvent.click(await screen.findByRole('option', { name: '敬拜' }));
+  expect(onChange).toHaveBeenLastCalledWith(['worship']);
+});
 
-  it('keeps a custom tag picked from a song card selectable', () => {
-    render(<TagFilter selected="kantavtor" onChange={vi.fn()} />);
-    expect(getSelect().value).toBe('kantavtor');
-  });
+it('keeps a picked tag that is no longer on the admin list, and it can be removed', async () => {
+  const onChange = vi.fn();
+  render(<TagFilter value={['advent', 'kids']} onChange={onChange} />);
+  expect(input().parentElement).toHaveTextContent('adventkids');
+  // Pill remove buttons are aria-hidden with tabindex -1, so role queries cannot reach them; the first belongs to 'advent'.
+  await userEvent.click(input().parentElement!.querySelector('button')!);
+  expect(onChange).toHaveBeenLastCalledWith(['kids']);
 });

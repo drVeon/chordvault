@@ -40,28 +40,9 @@
   padding: 20px 24px;
   border: 0;
   background: transparent;
-  box-shadow: none;
-}
-
-.editor-preview-wrap .chord-sheet h1 {
-  font-size: 20px;
-  margin-bottom: 8px;
-}
-
-.editor-preview-wrap .chord-sheet h2 {
-  font-size: 16px;
-}
-
-/* Mobile Tabs */
-.editor-tabs {
-  display: none;
 }
 
 @media (max-width: 767px) {
-  .editor-tabs {
-    display: flex;
-    border-bottom: 1px solid var(--border);
-  }
   .editor-split {
     flex-direction: column;
     min-height: 350px;
@@ -77,38 +58,13 @@
   }
 }
 
-/* Preview */
-.editor-preview {
-  padding: 12px;
-}
-
-.editor-preview-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-bottom: 8px;
-  margin-bottom: 8px;
-  border-bottom: 1px solid var(--border);
-  flex-wrap: wrap;
-}
-
-.editor-preview-empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 200px;
-  color: var(--muted);
-  font-style: italic;
-  font-size: 14px;
-}
-
 /* CodeMirror Overrides */
 .cm-editor-container .cm-editor {
   height: 100%;
 }
 
 .cm-editor-container .cm-scroller {
-  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 15px;
   line-height: 1.6;
   padding: 8px 12px;

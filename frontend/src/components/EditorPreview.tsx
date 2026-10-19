@@ -1,88 +1,46 @@
-import { Button, Popover } from '@mantine/core';
-import { useState, useMemo, useEffect } from 'react';
-import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
-import { renderChordPro, songHasKey } from '../lib/chords';
+import { ActionIcon, Box, Center, Divider, Group } from '@mantine/core';
+import { useEffect } from 'react';
+import { useDebouncedValue } from '@mantine/hooks';
+import { IconRestore } from '@tabler/icons-react';
+import { useChordRenderer } from '../hooks/useChordRenderer';
 import { ChordSheet } from './ChordSheet';
-import { KeyPicker } from './KeyPicker';
-import { normalizeKey, getTransposeDelta } from '../lib/keys';
+import { KeyGroup } from './ToolbarControls';
 
 interface EditorPreviewProps {
   content: string;
-  debounceMs?: number;
   forceRender?: number;
 }
 
-export function EditorPreview({ content, debounceMs = 300, forceRender }: EditorPreviewProps) {
-  const [debouncedContent, , { flush }] = useDebouncedValue(content, debounceMs);
-  const [targetKey, setTargetKey] = useState<string | null>(null);
-  const [nashville, setNashville] = useState(false);
-  const [keyPickerVisible, keyPicker] = useDisclosure(false);
+/** Live preview of the editor text, with the song page's key and notation controls. */
+export function EditorPreview({ content, forceRender }: EditorPreviewProps) {
+  const [debouncedContent, , { flush }] = useDebouncedValue(content, 300);
+  const chord = useChordRenderer(debouncedContent);
 
   useEffect(() => {
     if (forceRender !== undefined) flush();
   }, [forceRender, flush]);
 
-  // Derive current key from {key:} directive
-  const currentKey = useMemo(() => {
-    const m = debouncedContent.match(/\{key:\s*([^}]+)\}/i);
-    return m ? normalizeKey(m[1].trim()) : '';
-  }, [debouncedContent]);
-
-  const transpose = useMemo(
-    () => (targetKey && currentKey ? getTransposeDelta(currentKey, targetKey) : 0),
-    [currentKey, targetKey]
-  );
-
-  const html = useMemo(
-    () => renderChordPro(debouncedContent, transpose, nashville),
-    [debouncedContent, transpose, nashville]
-  );
-
-  const nashvilleDisabled = !songHasKey(debouncedContent, transpose);
-
-  // KeyPicker.onPickKey receives a key string — assign it directly
-  const handlePickKey = (pickedKey: string) => {
-    if (!currentKey) return;
-    setTargetKey(pickedKey);
-    keyPicker.close();
-  };
-
   if (!debouncedContent.trim()) {
     return (
-      <div className="editor-preview">
-        <div className="editor-preview-empty">Start typing to see a live preview</div>
-      </div>
+      <Box p={12} className="editor-preview">
+        <Center mih={200} c="dimmed" fz={14} fs="italic">Start typing to see a live preview</Center>
+      </Box>
     );
   }
 
   return (
-    <div className="editor-preview">
-      <div className="editor-preview-toolbar">
-        {currentKey && (
-          <Popover opened={keyPickerVisible} onChange={(opened) => opened ? keyPicker.open() : keyPicker.close()} trapFocus returnFocus width="min(90vw, 440px)">
-          <Popover.Target><Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={keyPicker.toggle}>
-            Key: {currentKey}
-          </Button></Popover.Target>
-          <Popover.Dropdown><KeyPicker currentKey={currentKey} onPickKey={handlePickKey} visible={keyPickerVisible} /></Popover.Dropdown>
-          </Popover>
+    <Box p={12} className="editor-preview">
+      <Group gap={8} pb={8}>
+        <KeyGroup currentKey={chord.currentKey} onPickKey={chord.pickKey} nashville={chord.nashville}
+          nashvilleDisabled={!chord.hasKey} onNashvilleChange={chord.toggleNashville} dense />
+        {chord.targetKey && (
+          <ActionIcon size="input-md" variant="default" aria-label="Reset transpose" title="Reset transpose" onClick={chord.resetKey}>
+            <IconRestore size={18} aria-hidden />
+          </ActionIcon>
         )}
-        <Button
-          className={`btn btn-ghost btn-sm${nashville ? ' active' : ''}`}
-          onClick={() => setNashville(!nashville)}
-          disabled={nashvilleDisabled}
-          title="Nashville numbers"
-          variant={nashville ? 'light' : 'default'}
-          aria-pressed={nashville}
-        >
-          #
-        </Button>
-        {targetKey && (
-          <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => setTargetKey(null)} title="Reset transpose">
-            &#8634;
-          </Button>
-        )}
-      </div>
-      <ChordSheet html={html} />
-    </div>
+      </Group>
+      <Divider mb={8} />
+      <ChordSheet html={chord.renderedHtml} />
+    </Box>
   );
 }

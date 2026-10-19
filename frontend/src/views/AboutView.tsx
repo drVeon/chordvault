@@ -1,12 +1,14 @@
 import { Button, Box, Stack, Title, Text, Group } from '@mantine/core';
+import { BackButton } from '../components/BackButton';
+import type { Navigate } from '../lib/routes';
 interface AboutViewProps {
-  navigate: (view: string) => void;
+  navigate: Navigate;
 }
 
 export function AboutView({ navigate }: AboutViewProps) {
   return (
     <Box maw={600} mx="auto">
-      <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate('browse')} mb="md">&#8592; Back</Button>
+      <BackButton onClick={() => navigate('browse', {}, { leave: true })} mb="md">Back</BackButton>
       <Title order={1} size={36} c="var(--cv-brand)" ta="center">&#9833; ChordVault</Title>
       <Text ta="center" c="dimmed" mb="xl">Your chord sheet library</Text>
 
@@ -41,7 +43,7 @@ export function AboutView({ navigate }: AboutViewProps) {
       </Stack>
 
       <Group justify="center" mt="xl">
-        <Button className="btn" onClick={() => navigate('auth')}>Sign in</Button>
+        <Button onClick={() => navigate('auth')}>Sign in</Button>
       </Group>
     </Box>
   );
